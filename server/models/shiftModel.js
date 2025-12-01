@@ -17,6 +17,14 @@ const shiftSchema = new mongoose.Schema(
       required: true,
     },
 
+    super_admin_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true, 
+        index: true
+    },
+    // 
+
     // Shift title or name (e.g., "Morning Shift", "Night Shift")
     title: {
       type: String,
@@ -172,6 +180,11 @@ shiftSchema.index({
   start_date_time: 1,
 });
 
+shiftSchema.index({
+  super_admin_id: 1,
+  start_date_time: 1,
+});
+
 // Pre-save middleware to calculate durations and status
 shiftSchema.pre("save", function (next) {
   // Calculate total worked minutes if actual times are available
@@ -226,7 +239,6 @@ shiftSchema.pre("save", function (next) {
   next();
 });
 
-// ⭐⭐ AUTO-APPROVAL MIDDLEWARE - NEW ⭐⭐
 // Auto-approval for shifts that don't require approval
 shiftSchema.pre("save", function (next) {
   // Auto-approve shifts that don't require manual approval

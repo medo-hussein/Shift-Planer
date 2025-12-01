@@ -3,11 +3,18 @@ import Attendance from "../models/attendanceModel.js";
 import User from "../models/userModel.js";
 import Shift from "../models/shiftModel.js";
 
+// Utility function to get the Super Admin ID (Tenant Owner ID)
+const getTenantOwnerId = (user) => {
+    return user.role === "super_admin" ? user._id : user.super_admin_id;
+};
+
 // GENERATE ATTENDANCE REPORT
 export const generateAttendanceReport = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { start_date, end_date, employee_id, type = "summary" } = req.body;
 
     if (!["super_admin", "admin"].includes(userRole)) {
@@ -38,7 +45,8 @@ export const generateAttendanceReport = async (req, res) => {
 
     // Build query based on user role
     let attendanceQuery = {
-      date: { $gte: start, $lte: end }
+      date: { $gte: start, $lte: end },
+      super_admin_id: tenantOwnerId // ISOLATION: Base filter for attendance records
     };
 
     let employees = [];
@@ -47,14 +55,15 @@ export const generateAttendanceReport = async (req, res) => {
       // Admin can only access their branch employees
       employees = await User.find({ 
         branch_admin_id: adminId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION: Filter user list
       });
       
       const employeeIds = employees.map(emp => emp._id);
       
       if (employee_id) {
-        // Verify the employee belongs to this admin
-        if (!employeeIds.includes(employee_id)) {
+        // Verify the employee belongs to this admin and tenant
+        if (!employeeIds.some(id => id.toString() === employee_id.toString())) {
           return res.status(403).json({ 
             success: false,
             message: "Employee not found in your branch" 
@@ -65,13 +74,17 @@ export const generateAttendanceReport = async (req, res) => {
         attendanceQuery.user_id = { $in: employeeIds };
       }
     } else if (userRole === "super_admin") {
-      // Super admin can access all employees
-      employees = await User.find({ role: "employee" });
+      // Super admin can access all employees owned by this tenant
+      employees = await User.find({ role: "employee", super_admin_id: tenantOwnerId });
       
       if (employee_id) {
         attendanceQuery.user_id = employee_id;
         const employee = await User.findById(employee_id);
-        if (employee) employees = [employee];
+        // Check employee ownership for Super Admin
+        if (!employee || employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+            return res.status(403).json({ success: false, message: "Employee not found in your system" });
+        }
+        employees = [employee];
       } else {
         const employeeIds = employees.map(emp => emp._id);
         attendanceQuery.user_id = { $in: employeeIds };
@@ -111,7 +124,8 @@ export const generateAttendanceReport = async (req, res) => {
       data: reportData,
       generated_by_admin_id: adminId,
       employee_id: employee_id || null,
-      format: type === "detailed" ? "detailed" : "summary"
+      format: type === "detailed" ? "detailed" : "summary",
+      super_admin_id: tenantOwnerId // ISOLATION: Save owner ID with the report
     });
 
     return res.status(201).json({
@@ -128,7 +142,7 @@ export const generateAttendanceReport = async (req, res) => {
           format: report.format,
           generated_at: report.createdAt
         },
-        report_data: reportData  // ⭐⭐ إضافة البيانات الفعلية
+        report_data: reportData 
       }
     });
   } catch (err) {
@@ -145,6 +159,8 @@ export const generateShiftReport = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { start_date, end_date, employee_id, shift_type } = req.body;
 
     if (!["super_admin", "admin"].includes(userRole)) {
@@ -160,19 +176,21 @@ export const generateShiftReport = async (req, res) => {
 
     // Build query based on user role
     let shiftQuery = {
-      start_date_time: { $gte: start, $lte: end }
+      start_date_time: { $gte: start, $lte: end },
+      super_admin_id: tenantOwnerId // ISOLATION: Base filter for shifts
     };
 
     if (userRole === "admin") {
       // Admin can only access their branch employees
       const employees = await User.find({ 
         branch_admin_id: adminId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION: Filter user list
       });
       const employeeIds = employees.map(emp => emp._id);
       
       if (employee_id) {
-        if (!employeeIds.includes(employee_id)) {
+        if (!employeeIds.some(id => id.toString() === employee_id.toString())) {
           return res.status(403).json({ 
             success: false,
             message: "Employee not found in your branch" 
@@ -182,8 +200,21 @@ export const generateShiftReport = async (req, res) => {
       } else {
         shiftQuery.employee_id = { $in: employeeIds };
       }
-    } else if (userRole === "super_admin" && employee_id) {
-      shiftQuery.employee_id = employee_id;
+    } else if (userRole === "super_admin") {
+      // Super admin must be restricted to their owned employees/shifts
+      if (employee_id) {
+        const employeeCheck = await User.findOne({ _id: employee_id, super_admin_id: tenantOwnerId });
+        if (!employeeCheck) {
+            return res.status(403).json({ success: false, message: "Employee not found in your system" });
+        }
+        shiftQuery.employee_id = employee_id;
+      } else {
+         // Get all employee IDs owned by this SA
+         const ownedAdmins = await User.find({ role: "admin", super_admin_id: tenantOwnerId }).select('_id');
+         const ownedAdminIdsArray = ownedAdmins.map(id => id._id);
+         const ownedEmployeeIds = await User.find({ role: "employee", branch_admin_id: { $in: ownedAdminIdsArray } }).select('_id');
+         shiftQuery.employee_id = { $in: ownedEmployeeIds.map(id => id._id) };
+      }
     }
 
     if (shift_type) {
@@ -210,7 +241,8 @@ export const generateShiftReport = async (req, res) => {
       data: reportData,
       generated_by_admin_id: adminId,
       employee_id: employee_id || null,
-      format: "summary"
+      format: "summary",
+      super_admin_id: tenantOwnerId // ISOLATION: Save owner ID with the report
     });
 
     return res.status(201).json({
@@ -227,7 +259,7 @@ export const generateShiftReport = async (req, res) => {
           format: report.format,
           generated_at: report.createdAt
         },
-        report_data: reportData  // ⭐⭐ إضافة البيانات الفعلية
+        report_data: reportData  
       }
     });
   } catch (err) {
@@ -244,6 +276,8 @@ export const generatePerformanceReport = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { start_date, end_date, employee_id } = req.body;
 
     if (!["super_admin", "admin"].includes(userRole)) {
@@ -257,10 +291,10 @@ export const generatePerformanceReport = async (req, res) => {
     const end = new Date(end_date);
     end.setHours(23, 59, 59, 999);
 
-    // Build queries based on user role
-    let employeeQuery = { role: "employee" };
-    let attendanceQuery = { date: { $gte: start, $lte: end } };
-    let shiftQuery = { start_date_time: { $gte: start, $lte: end } };
+    // Build queries based on user role and ISOLATION
+    let employeeQuery = { role: "employee", super_admin_id: tenantOwnerId };
+    let attendanceQuery = { date: { $gte: start, $lte: end }, super_admin_id: tenantOwnerId };
+    let shiftQuery = { start_date_time: { $gte: start, $lte: end }, super_admin_id: tenantOwnerId };
 
     if (userRole === "admin") {
       employeeQuery.branch_admin_id = adminId;
@@ -269,7 +303,7 @@ export const generatePerformanceReport = async (req, res) => {
       const employeeIds = employees.map(emp => emp._id);
       
       if (employee_id) {
-        if (!employeeIds.includes(employee_id)) {
+        if (!employeeIds.some(id => id.toString() === employee_id.toString())) {
           return res.status(403).json({ 
             success: false,
             message: "Employee not found in your branch" 
@@ -282,9 +316,23 @@ export const generatePerformanceReport = async (req, res) => {
         shiftQuery.employee_id = { $in: employeeIds };
       }
     } else if (userRole === "super_admin" && employee_id) {
+      // Check employee ownership
+      const employeeCheck = await User.findOne({ _id: employee_id, super_admin_id: tenantOwnerId });
+      if (!employeeCheck) {
+          return res.status(403).json({ success: false, message: "Employee not found in your system" });
+      }
+
       attendanceQuery.user_id = employee_id;
       shiftQuery.employee_id = employee_id;
       employeeQuery._id = employee_id;
+    } else if (userRole === "super_admin" && !employee_id) {
+         // If no employee specified, gather all employees owned by this SA
+         const ownedAdmins = await User.find({ role: "admin", super_admin_id: tenantOwnerId }).select('_id');
+         const ownedAdminIdsArray = ownedAdmins.map(id => id._id);
+         const ownedEmployeeIds = await User.find({ role: "employee", branch_admin_id: { $in: ownedAdminIdsArray } }).select('_id');
+         
+         attendanceQuery.user_id = { $in: ownedEmployeeIds.map(id => id._id) };
+         shiftQuery.employee_id = { $in: ownedEmployeeIds.map(id => id._id) };
     }
 
     // Get data in parallel
@@ -308,7 +356,8 @@ export const generatePerformanceReport = async (req, res) => {
       data: reportData,
       generated_by_admin_id: adminId,
       employee_id: employee_id || null,
-      format: "summary"
+      format: "summary",
+      super_admin_id: tenantOwnerId // ISOLATION: Save owner ID with the report
     });
 
     return res.status(201).json({
@@ -325,7 +374,7 @@ export const generatePerformanceReport = async (req, res) => {
           format: report.format,
           generated_at: report.createdAt
         },
-        report_data: reportData  // ⭐⭐ إضافة البيانات الفعلية
+        report_data: reportData  
       }
     });
   } catch (err) {
@@ -342,22 +391,28 @@ export const getReports = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { type, period, page = 1, limit = 10 } = req.query;
 
-    let query = {};
-
+    let query = {
+        super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID for all roles
+    };
+    
     // Build query based on user role
     if (userRole === "admin") {
-      query.generated_by_admin_id = userId;
+      // Admins only see reports generated by them
+      query.generated_by_admin_id = userId; 
     } else if (userRole === "employee") {
+      // Employees see their reports, reports shared with them, or public/branch reports owned by their tenant
       query.$or = [
         { employee_id: userId },
-        { access_level: "branch" },
+        { access_level: "branch", generated_by_admin_id: req.user.branch_admin_id },
         { access_level: "company_wide", is_public: true },
         { shared_with_users: userId }
       ];
     }
-    // Super admin can see all reports (no additional query)
+    // Super admin automatically sees all reports matching the super_admin_id filter
 
     // Add filters
     if (type) query.type = type;
@@ -410,9 +465,15 @@ export const getReportById = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { id } = req.params;
 
-    const report = await Report.findById(id)
+    // Find report with ownership check
+    const report = await Report.findOne({
+      _id: id,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+    })
       .populate("generated_by_admin_id", "name email branch_name")
       .populate("employee_id", "name email position")
       .populate("shared_with_users", "name email");
@@ -420,11 +481,11 @@ export const getReportById = async (req, res) => {
     if (!report) {
       return res.status(404).json({ 
         success: false,
-        message: "Report not found" 
+        message: "Report not found or not authorized" 
       });
     }
 
-    // Check permissions using the model method
+    // Check permissions using the model method (The model method is still useful for granular checks)
     if (!report.canUserAccess(userId, userRole)) {
       return res.status(403).json({ 
         success: false,
@@ -449,41 +510,50 @@ export const getReportById = async (req, res) => {
 export const shareReport = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { id } = req.params;
     const { user_ids, access_level = "private" } = req.body;
 
-    if (!["super_admin", "admin"].includes(req.user.role)) {
+    if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ 
         success: false,
         message: "Only admins can share reports" 
       });
     }
 
-    const report = await Report.findById(id);
+    // Find report with ownership check
+    const report = await Report.findOne({
+      _id: id,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+    });
+    
     if (!report) {
       return res.status(404).json({ 
         success: false,
-        message: "Report not found" 
+        message: "Report not found or not authorized" 
       });
     }
 
-    // Check if user owns the report or is super admin
-    if (report.generated_by_admin_id.toString() !== adminId.toString() && req.user.role !== "super_admin") {
+    // Check if user owns the report (Admin must be the creator, Super Admin passes the ownership check above)
+    if (userRole === "admin" && report.generated_by_admin_id.toString() !== adminId.toString()) {
       return res.status(403).json({ 
         success: false,
         message: "Not authorized to share this report" 
       });
     }
 
-    // Verify all users exist
+    // Verify all users exist AND belong to the same tenant
     const users = await User.find({ 
-      _id: { $in: user_ids }
+      _id: { $in: user_ids },
+      super_admin_id: tenantOwnerId // ISOLATION: Ensure shared users are from the same tenant
     });
 
     if (users.length !== user_ids.length) {
       return res.status(400).json({ 
         success: false,
-        message: "Some users not found" 
+        message: "Some users not found or do not belong to your system" 
       });
     }
 
@@ -520,13 +590,20 @@ export const deleteReport = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
     const { id } = req.params;
 
-    const report = await Report.findById(id);
+    // Find report with ownership check
+    const report = await Report.findOne({
+      _id: id,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+    });
+    
     if (!report) {
       return res.status(404).json({ 
         success: false,
-        message: "Report not found" 
+        message: "Report not found or not authorized" 
       });
     }
 
@@ -541,7 +618,7 @@ export const deleteReport = async (req, res) => {
       });
     }
 
-    await Report.findByIdAndDelete(id);
+    await report.deleteOne();
 
     return res.json({ 
       success: true,
@@ -561,6 +638,8 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = getTenantOwnerId(req.user); 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -573,18 +652,21 @@ export const getDashboardStats = async (req, res) => {
     let stats = {};
 
     if (userRole === "employee") {
-      // Employee dashboard stats
+      // Employee dashboard stats (Filter by owner ID)
       const [todayAttendance, weekAttendance, totalShifts] = await Promise.all([
         Attendance.findOne({
           user_id: userId,
+          super_admin_id: tenantOwnerId, // ISOLATION
           date: { $gte: today }
         }),
         Attendance.find({
           user_id: userId,
+          super_admin_id: tenantOwnerId, // ISOLATION
           date: { $gte: weekStart }
         }),
         Shift.countDocuments({
           employee_id: userId,
+          super_admin_id: tenantOwnerId, // ISOLATION
           start_date_time: { $gte: monthStart }
         })
       ]);
@@ -607,10 +689,11 @@ export const getDashboardStats = async (req, res) => {
       };
 
     } else if (userRole === "admin") {
-      // Admin branch dashboard stats
+      // Admin branch dashboard stats (Filter by tenant owner)
       const employees = await User.find({ 
         branch_admin_id: userId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION
       });
 
       const employeeIds = employees.map(emp => emp._id);
@@ -618,19 +701,23 @@ export const getDashboardStats = async (req, res) => {
       const [todayAttendance, weekAttendance, pendingShifts, branchReports] = await Promise.all([
         Attendance.find({
           user_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
           date: { $gte: today }
         }),
         Attendance.find({
           user_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
           date: { $gte: weekStart }
         }),
         Shift.countDocuments({
           employee_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
           status: "scheduled",
           start_date_time: { $gte: today }
         }),
         Report.countDocuments({
           generated_by_admin_id: userId,
+          super_admin_id: tenantOwnerId, // ISOLATION
           created_at: { $gte: monthStart }
         })
       ]);
@@ -658,12 +745,22 @@ export const getDashboardStats = async (req, res) => {
       };
 
     } else if (userRole === "super_admin") {
-      // Super admin system-wide stats
+      // Super admin system-wide stats (Filter by tenant owner)
+      const ownedAdmins = await User.find({ role: "admin", super_admin_id: userId }).select('_id');
+      const ownedAdminIds = ownedAdmins.map(id => id._id);
+
+      const ownedEmployees = await User.find({ role: "employee", branch_admin_id: { $in: ownedAdminIds } }).select('_id');
+      const ownedEmployeeIds = ownedEmployees.map(id => id._id);
+
       const [totalAdmins, totalEmployees, totalReports, systemAttendance] = await Promise.all([
-        User.countDocuments({ role: "admin" }),
-        User.countDocuments({ role: "employee" }),
-        Report.countDocuments({ created_at: { $gte: monthStart } }),
-        Attendance.countDocuments({ date: { $gte: today } })
+        // Only count admins owned by this SA
+        User.countDocuments({ role: "admin", super_admin_id: userId }), 
+        // Only count employees owned by this SA
+        User.countDocuments({ role: "employee", branch_admin_id: { $in: ownedAdminIds } }),
+        // Only count reports owned by this SA
+        Report.countDocuments({ generated_by_admin_id: { $in: ownedAdminIds }, super_admin_id: userId, created_at: { $gte: monthStart } }), 
+        // Only count attendance records owned by this SA
+        Attendance.countDocuments({ user_id: { $in: ownedEmployeeIds }, super_admin_id: userId, date: { $gte: today } }) 
       ]);
 
       stats = {
@@ -676,10 +773,12 @@ export const getDashboardStats = async (req, res) => {
         this_month: {
           new_branches: await User.countDocuments({ 
             role: "admin", 
+            super_admin_id: userId, // ISOLATION
             created_at: { $gte: monthStart } 
           }),
           new_employees: await User.countDocuments({ 
             role: "employee", 
+            super_admin_id: userId, // ISOLATION
             created_at: { $gte: monthStart } 
           })
         }
@@ -699,7 +798,7 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
-// HELPER FUNCTIONS (بدون تغيير)
+// HELPER FUNCTIONS (No change in logic, only comments removed/translated)
 async function generateAttendanceSummary(records, start, end, employees) {
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
   const employeeIds = [...new Set(records.map(r => r.user_id._id.toString()))];

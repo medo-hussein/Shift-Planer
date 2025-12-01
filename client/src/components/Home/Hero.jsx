@@ -5,7 +5,7 @@ import { PlayCircle } from "lucide-react";
 
 const Hero = () => {
   return (
-    <div className="flex flex-col md:flex-row items-center w-full bg-gradient-to-r from-sky-200 to-sky-50 px-6 md:px-12 py-10 md:py-20">
+    <div className="flex flex-col md:flex-row items-center w-full bg-linear-to-r from-sky-200 to-sky-50 px-6 md:px-12 py-10 md:py-20">
 
       {/* TEXT SECTION */}
       <div className="flex-1 mb-10 md:mb-0 md:pr-10">

@@ -3,80 +3,82 @@ import Shift from "../models/shiftModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Report from "../models/reportModel.js";
 
+// Utility function to get the Super Admin ID (Tenant Owner ID)
+const getTenantOwnerId = (user) => {
+    // Admin's owner ID is in super_admin_id field
+    return user.super_admin_id; 
+};
+
 // GET ADMIN DASHBOARD STATS
 export const getAdminDashboard = async (req, res) => {
   try {
     const adminId = req.user._id;
     const branchName = req.user.branch_name;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
 
-    // Get branch statistics
+    // 1. Find all employee IDs and the total counts for this admin and tenant
+    const ownedEmployees = await User.find({
+        branch_admin_id: adminId,
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+    }).select('_id is_active');
+    
+    const employeeIds = ownedEmployees.map(emp => emp._id);
+    const totalEmployees = ownedEmployees.length;
+    const activeEmployees = ownedEmployees.filter(emp => emp.is_active).length;
+
+    // Get today's start
+    const startOfDay = new Date().setHours(0, 0, 0, 0);
+
+    // Get dashboard data in parallel for owned employees/shifts/attendance
     const [
-      totalEmployees,
-      activeEmployees,
       todayShifts,
       todayAttendance,
       pendingShifts,
       recentEmployees
     ] = await Promise.all([
-      // Total employees in branch
-      User.countDocuments({ 
-        branch_admin_id: adminId, 
-        role: "employee" 
-      }),
-      
-      // Active employees
-      User.countDocuments({ 
-        branch_admin_id: adminId, 
-        role: "employee",
-        is_active: true 
-      }),
       
       // Today's shifts
       Shift.countDocuments({
-        employee_id: { 
-          $in: await User.find({ branch_admin_id: adminId }).select('_id') 
-        },
-        start_date_time: { 
-          $gte: new Date().setHours(0, 0, 0, 0) 
-        }
+        employee_id: { $in: employeeIds },
+        super_admin_id: tenantOwnerId, // ISOLATION
+        start_date_time: { $gte: startOfDay }
       }),
       
       // Today's attendance
       Attendance.countDocuments({
-        user_id: { 
-          $in: await User.find({ branch_admin_id: adminId }).select('_id') 
-        },
-        date: { $gte: new Date().setHours(0, 0, 0, 0) }
+        user_id: { $in: employeeIds },
+        super_admin_id: tenantOwnerId, // ISOLATION
+        date: { $gte: startOfDay }
       }),
       
       // Pending shifts (scheduled but not started)
       Shift.countDocuments({
-        employee_id: { 
-          $in: await User.find({ branch_admin_id: adminId }).select('_id') 
-        },
+        employee_id: { $in: employeeIds },
+        super_admin_id: tenantOwnerId, // ISOLATION
         status: "scheduled"
       }),
       
       // Recent employees (last 5)
       User.find({
         branch_admin_id: adminId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION
       })
       .select('name email position is_active created_at')
       .sort({ created_at: -1 })
       .limit(5)
     ]);
 
-    // Get weekly attendance summary
+    // Get weekly attendance summary (requires aggregation on owned records)
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
     
     const weeklyAttendance = await Attendance.aggregate([
       {
         $match: {
-          user_id: { 
-            $in: await User.find({ branch_admin_id: adminId }).select('_id') 
-          },
+          user_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
           date: { $gte: weekStart }
         }
       },
@@ -121,6 +123,7 @@ export const getAdminDashboard = async (req, res) => {
 export const getBranchEmployees = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { 
       page = 1, 
       limit = 10, 
@@ -131,7 +134,8 @@ export const getBranchEmployees = async (req, res) => {
 
     let query = { 
       branch_admin_id: adminId, 
-      role: "employee" 
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     };
 
     // Add filters
@@ -164,13 +168,21 @@ export const getBranchEmployees = async (req, res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // All sub-queries must be filtered by the tenantOwnerId
         const [todayAttendance, totalShifts, recentShifts] = await Promise.all([
           Attendance.findOne({
             user_id: employee._id,
+            super_admin_id: tenantOwnerId, // ISOLATION
             date: { $gte: today }
           }),
-          Shift.countDocuments({ employee_id: employee._id }),
-          Shift.find({ employee_id: employee._id })
+          Shift.countDocuments({ 
+            employee_id: employee._id,
+            super_admin_id: tenantOwnerId // ISOLATION
+          }),
+          Shift.find({ 
+            employee_id: employee._id,
+            super_admin_id: tenantOwnerId // ISOLATION
+          })
             .sort({ start_date_time: -1 })
             .limit(3)
         ]);
@@ -210,13 +222,15 @@ export const getBranchEmployees = async (req, res) => {
 export const getEmployeeDetails = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { employeeId } = req.params;
 
-    // Verify employee belongs to this branch
+    // Verify employee belongs to this branch AND tenant
     const employee = await User.findOne({
       _id: employeeId,
       branch_admin_id: adminId,
-      role: "employee"
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     })
     .select('-password -resetPasswordToken -resetPasswordExpire');
 
@@ -234,6 +248,7 @@ export const getEmployeeDetails = async (req, res) => {
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
+    // All subsequent queries must be filtered by the tenantOwnerId
     const [
       todayAttendance,
       weeklyAttendance,
@@ -244,6 +259,7 @@ export const getEmployeeDetails = async (req, res) => {
       // Today's attendance
       Attendance.findOne({
         user_id: employeeId,
+        super_admin_id: tenantOwnerId, // ISOLATION
         date: { $gte: today }
       }),
       
@@ -252,6 +268,7 @@ export const getEmployeeDetails = async (req, res) => {
         {
           $match: {
             user_id: employeeId,
+            super_admin_id: tenantOwnerId, // ISOLATION
             date: { $gte: weekStart }
           }
         },
@@ -264,11 +281,15 @@ export const getEmployeeDetails = async (req, res) => {
       ]),
       
       // Total shifts
-      Shift.countDocuments({ employee_id: employeeId }),
+      Shift.countDocuments({ 
+        employee_id: employeeId,
+        super_admin_id: tenantOwnerId // ISOLATION
+      }),
       
       // Upcoming shifts (next 7 days)
       Shift.find({
         employee_id: employeeId,
+        super_admin_id: tenantOwnerId, // ISOLATION
         start_date_time: { 
           $gte: today,
           $lte: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -280,6 +301,7 @@ export const getEmployeeDetails = async (req, res) => {
       // Attendance history (last 15 days)
       Attendance.find({
         user_id: employeeId,
+        super_admin_id: tenantOwnerId, // ISOLATION
         date: { 
           $gte: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)
         }
@@ -317,6 +339,7 @@ export const getEmployeeDetails = async (req, res) => {
 export const createEmployeeShift = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { employee_id, start_date_time, end_date_time, title, description, shift_type, location, notes } = req.body;
 
     // Validate required fields
@@ -327,11 +350,12 @@ export const createEmployeeShift = async (req, res) => {
       });
     }
 
-    // Verify employee belongs to this branch
+    // Verify employee belongs to this branch AND tenant
     const employee = await User.findOne({
       _id: employee_id,
       branch_admin_id: adminId,
-      role: "employee"
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     });
 
     if (!employee) {
@@ -359,9 +383,10 @@ export const createEmployeeShift = async (req, res) => {
       });
     }
 
-    // Check for overlapping shifts
+    // Check for overlapping shifts (add isolation key to query)
     const overlappingShift = await Shift.findOne({
       employee_id: employee_id,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       start_date_time: { $lt: end },
       end_date_time: { $gt: start }
     });
@@ -384,6 +409,7 @@ export const createEmployeeShift = async (req, res) => {
     const shift = await Shift.create({
       employee_id: employee_id,
       created_by_admin_id: adminId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Save the owner ID
       title: title || "Scheduled Shift",
       description: description || "",
       start_date_time: start,
@@ -416,6 +442,7 @@ export const createEmployeeShift = async (req, res) => {
 export const getBranchAttendanceReport = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { start_date, end_date, employee_id } = req.query;
 
     // Validate dates
@@ -434,20 +461,22 @@ export const getBranchAttendanceReport = async (req, res) => {
 
     // Build query
     let attendanceQuery = {
-      date: { $gte: start, $lte: end }
+      date: { $gte: start, $lte: end },
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     };
 
-    // Get all employees in branch
+    // Get all employees in branch (filter by tenant owner)
     const employees = await User.find({ 
       branch_admin_id: adminId,
-      role: "employee" 
+      role: "employee", 
+      super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
     }).select('_id name email position');
 
     const employeeIds = employees.map(emp => emp._id);
 
     if (employee_id) {
       // Verify employee belongs to this branch
-      if (!employeeIds.includes(employee_id)) {
+      if (!employeeIds.some(id => id.toString() === employee_id.toString())) {
         return res.status(403).json({
           success: false,
           message: "Employee not found in your branch"
@@ -500,14 +529,16 @@ export const getBranchAttendanceReport = async (req, res) => {
 export const updateEmployeeProfile = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { employeeId } = req.params;
     const { name, email, phone, position, department, is_active } = req.body;
 
-    // Verify employee belongs to this branch
+    // Verify employee belongs to this branch AND tenant
     const employee = await User.findOne({
       _id: employeeId,
       branch_admin_id: adminId,
-      role: "employee"
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     });
 
     if (!employee) {
@@ -559,6 +590,7 @@ export const updateEmployeeProfile = async (req, res) => {
 export const getBranchShiftsCalendar = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { start_date, end_date } = req.query;
 
     // Validate dates
@@ -566,18 +598,20 @@ export const getBranchShiftsCalendar = async (req, res) => {
     const end = end_date ? new Date(end_date) : new Date();
     end.setDate(end.getDate() + 7); // Default to next 7 days
 
-    // Get all employees in branch
+    // Get all employees in branch (filter by tenant owner)
     const employees = await User.find({ 
       branch_admin_id: adminId,
       role: "employee",
-      is_active: true 
+      is_active: true,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
     }).select('_id name email position');
 
     const employeeIds = employees.map(emp => emp._id);
 
-    // Get shifts for the period
+    // Get shifts for the period (filter by tenant owner)
     const shifts = await Shift.find({
       employee_id: { $in: employeeIds },
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter shifts by owner ID
       start_date_time: { $gte: start },
       end_date_time: { $lte: end }
     })

@@ -29,7 +29,7 @@ import E_TimeOff from "../pages/employee/TimeOffRequests";
 
 const routes = {
 
-  superAdmin: [
+  super_admin: [
       { path: "/dashboard", element: SA_Dashboard, label: "Dashboard", icon: LayoutDashboard },
       { path: "/teams", element: SA_Teams, label: "Teams", icon: Users },
       { path: "/employees", element: SA_Employees, label: "Employees", icon: UserCog },

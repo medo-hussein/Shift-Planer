@@ -30,6 +30,8 @@ export const registerSuperAdmin = async (req, res) => {
       });
     }
 
+    // ⭐⭐ التعديل: تم حذف التحقق من وجود Super Admin مسبقاً للسماح بتعدد حسابات Super Admin ⭐⭐
+    /*
     const existingSuperAdmin = await User.findOne({ role: "super_admin" });
     if (existingSuperAdmin) {
       return res.status(400).json({
@@ -38,6 +40,8 @@ export const registerSuperAdmin = async (req, res) => {
         message: "Super admin already exists"
       });
     }
+    */
+    // ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
 
     const exists = await User.findOne({ email });
     if (exists) {
@@ -512,6 +516,9 @@ export const updateMyProfile = async (req, res) => {
 export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, branch_name } = req.body;
+    
+    // ⭐ التعديل: نحتاج إلى الحصول على ID الـ Super Admin لربطه بالـ Admin الجديد ⭐
+    const superAdminId = req.user._id;
 
     const exists = await User.findOne({ email });
     if (exists) {
@@ -529,7 +536,8 @@ export const createAdmin = async (req, res) => {
       role: "admin",
       branch_name,
       is_active: true,
-      email_verified: true
+      email_verified: true,
+      super_admin_id: superAdminId // ⭐ ربط المدير بالـ Super Admin المالك
     });
 
     return res.status(201).json({
@@ -538,7 +546,8 @@ export const createAdmin = async (req, res) => {
       admin: {
         id: admin._id,
         email: admin.email,
-        branch_name: admin.branch_name
+        branch_name: admin.branch_name,
+        super_admin_id: admin.super_admin_id // تأكيد الربط
       }
     });
   } catch (err) {

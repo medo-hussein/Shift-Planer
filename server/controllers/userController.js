@@ -1,13 +1,25 @@
 import User from "../models/userModel.js";
 
-// GET ALL ADMINS (BRANCHES) - Super Admin only
+// Utility function to get the Super Admin ID (Tenant Owner ID)
+const getTenantOwnerId = (user) => {
+    // If the user is Super Admin, they are their own owner. Otherwise, use their stored Super Admin ID.
+    return user.role === "super_admin" ? user._id : user.super_admin_id;
+};
+
+// GET ALL ADMINS (BRANCHES) - Super Admin only (Now filtered by ownership)
 export const getAdmins = async (req, res) => {
   try {
     if (req.user.role !== "super_admin") {
       return res.status(403).json({ message: "Super admin access required" });
     }
 
-    const admins = await User.find({ role: "admin" })
+    const superAdminId = req.user._id; // Super Admin ID is the owner ID here
+
+    // ISOLATION: Fetch admins filtered by the current Super Admin's ID
+    const admins = await User.find({ 
+        role: "admin",
+        super_admin_id: superAdminId 
+    })
       .select('-password -resetPasswordToken -resetPasswordExpire')
       .sort({ createdAt: -1 });
 
@@ -25,17 +37,19 @@ export const getAdmins = async (req, res) => {
   }
 };
 
-// GET BRANCH EMPLOYEES - Admin only
+// GET BRANCH EMPLOYEES - Admin or Super Admin (Now filtered by ownership)
 export const getBranchEmployees = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
 
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ message: "Admin access required" });
     }
 
     let query = { role: "employee" };
+    query.super_admin_id = tenantOwnerId; // ISOLATION: Base filter for all employees
 
     // Admin can only see their own branch employees
     if (userRole === "admin") {
@@ -43,8 +57,28 @@ export const getBranchEmployees = async (req, res) => {
     }
 
     // Super admin can filter by branch
-    if (userRole === "super_admin" && req.query.branch_admin_id) {
-      query.branch_admin_id = req.query.branch_admin_id;
+    if (userRole === "super_admin") {
+        let adminIdsToFilter = [];
+
+        if (req.query.branch_admin_id) {
+            // If branch ID is provided, ensure it belongs to this SA
+            const targetAdmin = await User.findOne({
+                _id: req.query.branch_admin_id,
+                role: "admin",
+                super_admin_id: tenantOwnerId // ISOLATION Check: Must be owned by this SA
+            });
+            
+            if (!targetAdmin) {
+                return res.status(404).json({ success: false, message: "Branch admin not found or not owned by you" });
+            }
+            adminIdsToFilter.push(targetAdmin._id);
+        } else {
+            // Get all admin IDs owned by this SA
+            const ownedAdmins = await User.find({ role: "admin", super_admin_id: tenantOwnerId }).select('_id');
+            adminIdsToFilter = ownedAdmins.map(id => id._id);
+        }
+        
+        query.branch_admin_id = { $in: adminIdsToFilter };
     }
 
     const employees = await User.find(query)
@@ -66,11 +100,12 @@ export const getBranchEmployees = async (req, res) => {
   }
 };
 
-// CREATE EMPLOYEE - Admin only
+// CREATE EMPLOYEE - Admin or Super Admin (Save owner ID)
 export const createEmployee = async (req, res) => {
   try {
-    const adminId = req.user._id;
+    const creatorId = req.user._id;
     const userRole = req.user.role;
+    const creatorSuperAdminId = getTenantOwnerId(req.user); // ISOLATION KEY
 
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ message: "Admin access required" });
@@ -95,22 +130,27 @@ export const createEmployee = async (req, res) => {
     }
 
     // Determine branch_admin_id
-    let branch_admin_id = adminId;
+    let branch_admin_id = creatorId;
+    let super_admin_id_to_set = creatorSuperAdminId;
     
     // Super admin can specify which branch to add employee to
     if (userRole === "super_admin" && req.body.branch_admin_id) {
       const targetAdmin = await User.findOne({
         _id: req.body.branch_admin_id,
-        role: "admin"
+        role: "admin",
+        super_admin_id: creatorSuperAdminId // ISOLATION Check: Target must be owned by this SA
       });
       
       if (!targetAdmin) {
         return res.status(404).json({ 
           success: false,
-          message: "Branch admin not found" 
+          message: "Branch admin not found or not owned by you" 
         });
       }
       branch_admin_id = req.body.branch_admin_id;
+    } else if (userRole === "super_admin" && !req.body.branch_admin_id) {
+        // SA creates an employee directly
+        branch_admin_id = undefined;
     }
 
     const newEmployee = await User.create({
@@ -119,6 +159,7 @@ export const createEmployee = async (req, res) => {
       password,
       role: "employee",
       branch_admin_id,
+      super_admin_id: super_admin_id_to_set, // ISOLATION: Save owner ID
       phone: phone || "",
       position: position || "",
       department: department || "",
@@ -126,7 +167,9 @@ export const createEmployee = async (req, res) => {
     });
 
     // Get branch admin info for response
-    const branchAdmin = await User.findById(branch_admin_id).select('name branch_name');
+    const branchAdmin = branch_admin_id ? 
+        await User.findById(branch_admin_id).select('name branch_name') : 
+        { name: 'N/A', branch_name: 'Super Admin Level' };
 
     return res.status(201).json({
       success: true,
@@ -180,7 +223,8 @@ export const getMyProfile = async (req, res) => {
       department: user.department,
       is_active: user.is_active,
       lastLogin: user.lastLogin,
-      created_at: user.createdAt
+      created_at: user.createdAt,
+      super_admin_id: user.super_admin_id, // ISOLATION: Add owner ID to profile
     };
 
     // Add branch info for admin
@@ -254,15 +298,16 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-// UPDATE USER - Admin only
+// UPDATE USER - Admin or Super Admin (Check ownership)
 export const updateUser = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { id } = req.params;
     const { name, email, phone, position, department } = req.body;
 
-    // Check permissions
+    // Check permissions (Admin or owner)
     const isOwner = id === req.user._id.toString();
     const isAdmin = ["super_admin", "admin"].includes(userRole);
     
@@ -281,7 +326,15 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    // Check branch permissions for admin
+    // ISOLATION: Check Super Admin ownership for non-Super Admins
+    if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+         return res.status(403).json({ 
+            success: false,
+            message: "Not authorized to update a user not owned by you" 
+        });
+    }
+
+    // Check branch permissions for Admin (only their employees)
     if (userRole === "admin" && user.role === "employee") {
       if (user.branch_admin_id?.toString() !== adminId.toString()) {
         return res.status(403).json({ 
@@ -333,11 +386,12 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// DEACTIVATE/ACTIVATE USER - Admin only
+// DEACTIVATE/ACTIVATE USER - Admin or Super Admin (Check ownership)
 export const toggleUserStatus = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { id } = req.params;
     const { is_active } = req.body;
 
@@ -356,6 +410,14 @@ export const toggleUserStatus = async (req, res) => {
       });
     }
 
+    // ISOLATION: Check Super Admin ownership for non-Super Admins
+    if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+         return res.status(403).json({ 
+            success: false,
+            message: "Not authorized to modify a user not owned by you" 
+        });
+    }
+    
     // Check permissions
     if (userRole === "admin") {
       if (user.role === "employee" && user.branch_admin_id?.toString() !== adminId.toString()) {
@@ -410,6 +472,7 @@ export const getUserById = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { id } = req.params;
 
     const user = await User.findById(id)
@@ -434,6 +497,14 @@ export const getUserById = async (req, res) => {
       });
     }
 
+    // ISOLATION: Check Super Admin ownership for non-Super Admins
+    if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+         return res.status(403).json({ 
+            success: false,
+            message: "Not authorized to view a user not owned by you" 
+        });
+    }
+    
     // Check branch permissions for admin
     if (userRole === "admin" && user.role === "employee") {
       if (user.branch_admin_id?._id.toString() !== adminId.toString()) {
@@ -457,10 +528,11 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// DELETE USER - Super Admin only
+// DELETE USER - Super Admin only (Check ownership)
 export const deleteUser = async (req, res) => {
   try {
     const userRole = req.user.role;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { id } = req.params;
 
     if (userRole !== "super_admin") {
@@ -476,6 +548,14 @@ export const deleteUser = async (req, res) => {
         success: false,
         message: "User not found" 
       });
+    }
+
+    // ISOLATION: Check Super Admin ownership for non-Super Admins being deleted
+    if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+         return res.status(403).json({ 
+            success: false,
+            message: "Not authorized to delete a user not owned by you" 
+        });
     }
 
     // Prevent deleting yourself

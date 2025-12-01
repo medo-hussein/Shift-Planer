@@ -3,45 +3,80 @@ import Report from "../models/reportModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Shift from "../models/shiftModel.js";
 
-// GET SUPER ADMIN DASHBOARD STATS
+// GET SUPER ADMIN DASHBOARD STATS (يتم فلترتها الآن بناءً على المالك)
 export const getSuperAdminDashboard = async (req, res) => {
   try {
-    // Get system-wide statistics
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل (Super Admin ID الحالي)
+
+    // 1. الحصول على معرفات مديري الفروع (Admins) الذين يمتلكهم هذا الـ SA
+    const ownedAdmins = await User.find({ 
+        role: "admin", 
+        super_admin_id: superAdminId 
+    }).select('_id is_active');
+    const ownedAdminIdsArray = ownedAdmins.map(id => id._id);
+
+    // 2. الحصول على معرفات الموظفين (Employees) المرتبطين بمديري الفروع هؤلاء
+    const ownedEmployeeIds = await User.find({ 
+        role: "employee", 
+        branch_admin_id: { $in: ownedAdminIdsArray } 
+    }).select('_id');
+    const ownedEmployeeIdsArray = ownedEmployeeIds.map(id => id._id);
+
     const [
       totalBranches,
       totalEmployees,
       totalShifts,
-      totalAttendanceRecords,
       recentAdmins,
       systemReports
     ] = await Promise.all([
-      User.countDocuments({ role: "admin" }),
-      User.countDocuments({ role: "employee" }),
-      Shift.countDocuments(),
-      Attendance.countDocuments(),
-      User.find({ role: "admin" })
+      // إجمالي الفروع التي يديرها هذا الـ SA
+      User.countDocuments({ 
+          role: "admin", 
+          super_admin_id: superAdminId 
+      }), 
+      
+      // إجمالي الموظفين تحت إشراف الفروع المملوكة لهذا الـ SA
+      User.countDocuments({ 
+          role: "employee", 
+          branch_admin_id: { $in: ownedAdminIdsArray } 
+      }),
+
+      // إجمالي المناوبات التي تم إنشاؤها بواسطة مديري الفروع المملوكين
+      Shift.countDocuments({ 
+          created_by_admin_id: { $in: ownedAdminIdsArray } 
+      }),
+      
+      // أحدث مديري الفروع الذين يمتلكهم هذا الـ SA
+      User.find({ 
+          role: "admin", 
+          super_admin_id: superAdminId 
+      }) 
         .select('name email branch_name created_at is_active')
         .sort({ created_at: -1 })
         .limit(5),
+      
+      // تقارير النظام التي تم إنشاؤها بواسطة مديري الفروع المملوكين (آخر 7 أيام)
       Report.countDocuments({ 
+        generated_by_admin_id: { $in: ownedAdminIdsArray }, 
         created_at: { 
-          $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+          $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
         }
       })
     ]);
 
-    // Calculate active branches
-    const activeBranches = await User.countDocuments({ 
-      role: "admin", 
-      is_active: true 
-    });
+    // حساب الفروع النشطة
+    const activeBranches = ownedAdmins.filter(admin => admin.is_active).length;
 
-    // Get today's attendance summary
+    // الحصول على إجمالي سجلات الحضور للموظفين المملوكين لهذا الـ SA
+    const totalAttendanceRecords = await Attendance.countDocuments({ user_id: { $in: ownedEmployeeIdsArray } }); 
+
+    // الحصول على سجلات الحضور لهذا اليوم للموظفين المملوكين
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todayAttendance = await Attendance.countDocuments({
-      date: { $gte: today }
+    const todayAttendanceCount = await Attendance.countDocuments({
+        user_id: { $in: ownedEmployeeIdsArray },
+        date: { $gte: today }
     });
 
     const stats = {
@@ -53,7 +88,7 @@ export const getSuperAdminDashboard = async (req, res) => {
         total_attendance_records: totalAttendanceRecords
       },
       today: {
-        attendance_today: todayAttendance,
+        attendance_today: todayAttendanceCount,
         reports_generated_today: systemReports
       },
       recent_branches: recentAdmins
@@ -76,6 +111,7 @@ export const getSuperAdminDashboard = async (req, res) => {
 // CREATE BRANCH ADMIN
 export const createBranchAdmin = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { name, email, password, branch_name } = req.body;
 
     // Validate required fields
@@ -105,7 +141,8 @@ export const createBranchAdmin = async (req, res) => {
       password,
       role: "admin",
       branch_name: finalBranchName,
-      is_active: true
+      is_active: true,
+      super_admin_id: superAdminId // ⭐ حفظ معرف المالك (Isolation Key)
     });
 
     return res.status(201).json({
@@ -118,7 +155,8 @@ export const createBranchAdmin = async (req, res) => {
         branch_name: admin.branch_name,
         role: admin.role,
         is_active: admin.is_active,
-        created_at: admin.createdAt
+        created_at: admin.createdAt,
+        super_admin_id: admin.super_admin_id
       }
     });
   } catch (err) {
@@ -133,9 +171,13 @@ export const createBranchAdmin = async (req, res) => {
 // GET ALL BRANCHES (ADMINS)
 export const getAllBranches = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { page = 1, limit = 10, is_active, search } = req.query;
 
-    let query = { role: "admin" };
+    let query = { 
+        role: "admin",
+        super_admin_id: superAdminId // ⭐ فلترة أساسية: جلب الفروع المملوكة فقط
+    };
 
     // Add filters
     if (is_active !== undefined) {
@@ -150,7 +192,7 @@ export const getAllBranches = async (req, res) => {
       ];
     }
 
-    const admins = await User.find(query)
+    const admins = await User.find(query) 
       .select('-password -resetPasswordToken -resetPasswordExpire')
       .sort({ created_at: -1 })
       .limit(limit * 1)
@@ -158,7 +200,7 @@ export const getAllBranches = async (req, res) => {
 
     const total = await User.countDocuments(query);
 
-    // Get employee counts for each branch
+    // Get employee counts for each branch (للفروع المملوكة فقط)
     const branchesWithStats = await Promise.all(
       admins.map(async (admin) => {
         const employeeCount = await User.countDocuments({
@@ -202,19 +244,27 @@ export const getAllBranches = async (req, res) => {
 // GET BRANCH DETAILS
 export const getBranchDetails = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { branchId } = req.params;
 
-    const branchAdmin = await User.findById(branchId)
-      .select('-password -resetPasswordToken -resetPasswordExpire');
+    // فلترة بناءً على ID الفرع و ID المالك
+    const branchAdmin = await User.findOne({
+      _id: branchId,
+      role: "admin",
+      super_admin_id: superAdminId // ⭐ شرط الملكية
+    })
+    .select('-password -resetPasswordToken -resetPasswordExpire');
     
-    if (!branchAdmin || branchAdmin.role !== "admin") {
+    if (!branchAdmin) {
       return res.status(404).json({
         success: false,
-        message: "Branch not found"
+        message: "Branch not found or not owned by you" 
       });
     }
+    
+    const branchAdminId = branchAdmin._id;
 
-    // Get branch statistics
+    // باقي الإحصائيات تستخدم الآن branchAdminId الذي تم التحقق من ملكيته
     const [
       totalEmployees,
       activeEmployees,
@@ -222,21 +272,21 @@ export const getBranchDetails = async (req, res) => {
       todayAttendance
     ] = await Promise.all([
       User.countDocuments({ 
-        branch_admin_id: branchId, 
+        branch_admin_id: branchAdminId, 
         role: "employee" 
       }),
       User.countDocuments({ 
-        branch_admin_id: branchId, 
+        branch_admin_id: branchAdminId, 
         role: "employee",
         is_active: true 
       }),
       Shift.countDocuments({ 
-        created_by_admin_id: branchId 
+        created_by_admin_id: branchAdminId 
       }),
       Attendance.countDocuments({
         user_id: { 
           $in: await User.find({ 
-            branch_admin_id: branchId 
+            branch_admin_id: branchAdminId 
           }).select('_id') 
         },
         date: { $gte: new Date().setHours(0, 0, 0, 0) }
@@ -245,7 +295,7 @@ export const getBranchDetails = async (req, res) => {
 
     // Get recent employees
     const recentEmployees = await User.find({
-      branch_admin_id: branchId,
+      branch_admin_id: branchAdminId,
       role: "employee"
     })
     .select('name email position is_active created_at')
@@ -280,15 +330,20 @@ export const getBranchDetails = async (req, res) => {
 // UPDATE BRANCH ADMIN
 export const updateBranchAdmin = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { branchId } = req.params;
     const { name, email, branch_name, is_active } = req.body;
 
-    const branchAdmin = await User.findById(branchId);
+    // البحث مع شرط الملكية
+    const branchAdmin = await User.findOne({
+      _id: branchId,
+      super_admin_id: superAdminId // ⭐ شرط الملكية
+    });
     
     if (!branchAdmin || branchAdmin.role !== "admin") {
       return res.status(404).json({
         success: false,
-        message: "Branch admin not found"
+        message: "Branch admin not found or not owned by you"
       });
     }
 
@@ -331,9 +386,17 @@ export const updateBranchAdmin = async (req, res) => {
 // GET SYSTEM REPORTS
 export const getSystemReports = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { type, start_date, end_date, page = 1, limit = 10 } = req.query;
 
-    let query = {};
+    // الحصول على معرفات مديري الفروع المملوكين
+    const ownedAdminIds = await User.find({ role: "admin", super_admin_id: superAdminId }).select('_id');
+    const ownedAdminIdsArray = ownedAdminIds.map(id => id._id);
+
+    let query = {
+        // فلترة التقارير التي تم إنشاؤها فقط من قبل مديري الفروع المملوكين
+        generated_by_admin_id: { $in: ownedAdminIdsArray } 
+    };
 
     // Add filters
     if (type) query.type = type;
@@ -376,6 +439,7 @@ export const getSystemReports = async (req, res) => {
 // TRANSFER EMPLOYEE BETWEEN BRANCHES
 export const transferEmployee = async (req, res) => {
   try {
+    const superAdminId = req.user._id; // ⭐ مفتاح العزل
     const { employeeId, newBranchAdminId } = req.body;
 
     if (!employeeId || !newBranchAdminId) {
@@ -385,7 +449,20 @@ export const transferEmployee = async (req, res) => {
       });
     }
 
-    // Check employee exists
+    // 1. التحقق من أن المدير الجديد تابع لـ SA الحالي
+    const newBranchAdmin = await User.findOne({
+      _id: newBranchAdminId,
+      role: "admin",
+      super_admin_id: superAdminId // ⭐ التحقق من ملكية الفرع الجديد
+    });
+    if (!newBranchAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: "New branch admin not found or not owned by you"
+      });
+    }
+
+    // 2. التحقق من أن الموظف نفسه تابع لنظام الـ SA الحالي
     const employee = await User.findById(employeeId);
     if (!employee || employee.role !== "employee") {
       return res.status(404).json({
@@ -393,19 +470,21 @@ export const transferEmployee = async (req, res) => {
         message: "Employee not found"
       });
     }
+    
+    // التحقق من ملكية المدير الحالي للموظف
+    const currentAdmin = await User.findById(employee.branch_admin_id).select('super_admin_id');
 
-    // Check new branch admin exists
-    const newBranchAdmin = await User.findById(newBranchAdminId);
-    if (!newBranchAdmin || newBranchAdmin.role !== "admin") {
-      return res.status(404).json({
-        success: false,
-        message: "Branch admin not found"
-      });
+    if (currentAdmin?.super_admin_id?.toString() !== superAdminId.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: "Employee does not belong to a system managed by you"
+        });
     }
 
     // Update employee branch
     const oldBranchAdminId = employee.branch_admin_id;
     employee.branch_admin_id = newBranchAdminId;
+    employee.super_admin_id = superAdminId; // ⭐ تحديث معرف المالك للموظف
     await employee.save();
 
     const updatedEmployee = await User.findById(employeeId)

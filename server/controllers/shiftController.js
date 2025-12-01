@@ -1,7 +1,6 @@
 import Shift from "../models/shiftModel.js";
 import User from "../models/userModel.js";
 
-// Helpers
 const MS_IN_24H = 24 * 60 * 60 * 1000;
 
 const parseDateWithValidation = (dateString, fieldName) => {
@@ -30,12 +29,12 @@ const validateStartEnd = (startISO, endISO) => {
   }
 };
 
-// ===================================================
 // CREATE SHIFT (Admin only)
 export const createShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
 
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ 
@@ -85,10 +84,15 @@ export const createShift = async (req, res) => {
         message: "Cannot assign shift to inactive employee"
       });
     }
-
-    // Check permissions
+    
+    if (employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+       return res.status(403).json({
+          success: false,
+          message: "Employee does not belong to your system"
+        });
+    }
+    // Check permissions (Admin can only assign shifts to their own branch employees)
     if (userRole === "admin") {
-      // Admin can only assign shifts to their own branch employees
       if (employee.branch_admin_id?.toString() !== adminId.toString()) {
         return res.status(403).json({
           success: false,
@@ -97,9 +101,9 @@ export const createShift = async (req, res) => {
       }
     }
 
-    // Overlap check
     const overlapping = await Shift.findOne({
       employee_id: employee_id,
+      super_admin_id: tenantOwnerId,
       start_date_time: { $lt: end },
       end_date_time: { $gt: start },
     });
@@ -121,6 +125,7 @@ export const createShift = async (req, res) => {
     const shift = await Shift.create({
       employee_id: employee_id,
       created_by_admin_id: adminId,
+      super_admin_id: tenantOwnerId,
       title: title || "Scheduled Shift",
       description: description || "",
       start_date_time: start,
@@ -148,12 +153,12 @@ export const createShift = async (req, res) => {
   }
 };
 
-// ===================================================
 // GET BRANCH SHIFTS (Admin only)
 export const getBranchShifts = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
 
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ 
@@ -172,13 +177,15 @@ export const getBranchShifts = async (req, res) => {
     } = req.query;
 
     // Build query based on user role
-    let query = {};
+    let query = {
+      super_admin_id: tenantOwnerId 
+    };
 
     if (userRole === "admin") {
-      // Get all employees under this admin
       const employees = await User.find({ 
         branch_admin_id: adminId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId
       });
       const employeeIds = employees.map(emp => emp._id);
       
@@ -191,7 +198,8 @@ export const getBranchShifts = async (req, res) => {
         // Verify employee belongs to this admin
         const employee = await User.findOne({
           _id: employee_id,
-          branch_admin_id: adminId
+          branch_admin_id: adminId,
+          super_admin_id: tenantOwnerId
         });
         if (!employee) {
           return res.status(403).json({ 
@@ -252,12 +260,12 @@ export const getBranchShifts = async (req, res) => {
   }
 };
 
-// ===================================================
 // GET MY SHIFTS (Employee only)
 export const getMyShifts = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = req.user.super_admin_id; 
 
     if (userRole !== "employee") {
       return res.status(403).json({ 
@@ -275,7 +283,8 @@ export const getMyShifts = async (req, res) => {
     } = req.query;
 
     const query = { 
-      employee_id: userId
+      employee_id: userId,
+      super_admin_id: tenantOwnerId
     };
 
     // Add status filter
@@ -326,12 +335,12 @@ export const getMyShifts = async (req, res) => {
   }
 };
 
-// ===================================================
 // UPDATE SHIFT (Admin only)
 export const updateShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
     const { id } = req.params;
 
     if (!["super_admin", "admin"].includes(userRole)) {
@@ -343,15 +352,19 @@ export const updateShift = async (req, res) => {
 
     const { start_date_time, end_date_time, employee_id, title, description, shift_type, location, notes, status } = req.body;
 
-    const shift = await Shift.findById(id);
+    const shift = await Shift.findOne({
+      _id: id,
+      super_admin_id: tenantOwnerId 
+    });
+    
     if (!shift) {
       return res.status(404).json({ 
         success: false,
-        message: "Shift not found" 
+        message: "Shift not found or not authorized" // رسالة تجمع بين عدم الوجود وعدم الصلاحية
       });
     }
 
-    // Check permissions
+    // Check permissions (Admin must be the creator, Super Admin passes the ownership check above)
     if (userRole === "admin" && shift.created_by_admin_id.toString() !== adminId.toString()) {
       return res.status(403).json({ 
         success: false,
@@ -384,8 +397,14 @@ export const updateShift = async (req, res) => {
           message: "Cannot assign shift to inactive employee"
         });
       }
+      
+      if (newEmp.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+        return res.status(403).json({
+           success: false,
+           message: "New employee does not belong to your system"
+        });
+      }
 
-      // Check permissions for new employee
       if (userRole === "admin" && newEmp.branch_admin_id?.toString() !== adminId.toString()) {
         return res.status(403).json({
           success: false,
@@ -419,6 +438,7 @@ export const updateShift = async (req, res) => {
     // Overlap check with other shifts (exclude current shift)
     const overlapping = await Shift.findOne({
       employee_id: finalEmployee,
+      super_admin_id: tenantOwnerId,
       _id: { $ne: shift._id },
       start_date_time: { $lt: newEnd },
       end_date_time: { $gt: newStart },
@@ -469,14 +489,13 @@ export const updateShift = async (req, res) => {
   }
 };
 
-// ===================================================
 // DELETE SHIFT (Admin only)
 export const deleteShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
     const { id } = req.params;
-
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ 
         success: false,
@@ -484,15 +503,19 @@ export const deleteShift = async (req, res) => {
       });
     }
 
-    const shift = await Shift.findById(id);
+    const shift = await Shift.findOne({
+      _id: id,
+      super_admin_id: tenantOwnerId
+    });
+    
     if (!shift) {
       return res.status(404).json({ 
         success: false,
-        message: "Shift not found" 
+        message: "Shift not found or not authorized" 
       });
     }
 
-    // Check permissions
+    // Check permissions (Admin must be the creator, Super Admin passes the ownership check above)
     if (userRole === "admin" && shift.created_by_admin_id.toString() !== adminId.toString()) {
       return res.status(403).json({ 
         success: false,
@@ -515,13 +538,12 @@ export const deleteShift = async (req, res) => {
   }
 };
 
-// ===================================================
 // BULK SHIFTS CREATION (Admin only)
-// ===================================================
 export const createBulkShifts = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
 
     if (!["super_admin", "admin"].includes(userRole)) {
       return res.status(403).json({ 
@@ -596,7 +618,15 @@ export const createBulkShifts = async (req, res) => {
           });
           continue;
         }
-
+        
+        if (employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+          results.failed.push({
+            index,
+            employee_id: shiftData.employee_id,
+            error: "Employee does not belong to your system"
+          });
+          continue;
+        }
         // Check permissions for employee
         if (userRole === "admin" && employee.branch_admin_id?.toString() !== adminId.toString()) {
           results.failed.push({
@@ -610,6 +640,7 @@ export const createBulkShifts = async (req, res) => {
         // Overlap check
         const overlapping = await Shift.findOne({
           employee_id: shiftData.employee_id,
+          super_admin_id: tenantOwnerId,
           start_date_time: { $lt: end },
           end_date_time: { $gt: start },
         });
@@ -626,6 +657,7 @@ export const createBulkShifts = async (req, res) => {
         const shift = await Shift.create({
           employee_id: shiftData.employee_id,
           created_by_admin_id: adminId,
+          super_admin_id: tenantOwnerId,
           title: shiftData.title || "Scheduled Shift",
           description: shiftData.description || "",
           start_date_time: start,
@@ -663,14 +695,12 @@ export const createBulkShifts = async (req, res) => {
     });
   }
 };
-
-// ===================================================
 // GET TODAY'S SHIFTS (Employee only)
 export const getTodayShifts = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
-
+    const tenantOwnerId = req.user.super_admin_id; 
     if (userRole !== "employee") {
       return res.status(403).json({ 
         success: false,
@@ -684,6 +714,7 @@ export const getTodayShifts = async (req, res) => {
 
     const shifts = await Shift.find({
       employee_id: userId,
+      super_admin_id: tenantOwnerId,
       start_date_time: { 
         $gte: today,
         $lt: tomorrow 

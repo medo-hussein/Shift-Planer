@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import crypto from "crypto"; // ⭐ ADDED for token generation
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema(
       ref: "User"
     },
 
+    super_admin_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
     phone: { 
       type: String, 
       trim: true,
@@ -65,7 +70,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    // ⭐⭐ ADDED: Email verification fields
+    //ADDED: Email verification fields
     email_verified: { 
       type: Boolean, 
       default: false 
@@ -100,6 +105,7 @@ userSchema.pre("save", async function (next) {
     this.branch_name = undefined;
     this.branch_admin_id = undefined;
     this.position = undefined;
+    this.super_admin_id = undefined;
   }
   
   if (this.role === "admin") {
@@ -194,7 +200,7 @@ userSchema.methods.getBranchAdmin = async function () {
 
 // Static methods
 userSchema.statics.getAllBranches = function() {
-  return this.find({ role: "admin" })
+  return this.find({ role: "admin" }) 
     .select('-password')
     .sort({ createdAt: -1 });
 };
@@ -233,7 +239,8 @@ userSchema.virtual('profile').get(function() {
     lastLogin: this.lastLogin,
     email_verified: this.email_verified,
     phone_verified: this.phone_verified,
-    created_at: this.createdAt
+    created_at: this.createdAt,
+    super_admin_id: this.super_admin_id // إضافة معرف المالك للملف الشخصي
   };
 
   // Add branch info for admin

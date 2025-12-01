@@ -6,7 +6,8 @@ export const generateAccessToken = (user) => {
       id: user._id, 
       role: user.role, 
       branch_admin_id: user.branch_admin_id,  // Added for branch system
-      branch_name: user.branch_name           // Added for easy access
+      branch_name: user.branch_name,           // Added for easy access
+      super_admin_id: user.super_admin_id     // ISOLATION: The ID of the Tenant Owner
     },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRE || "15m" }

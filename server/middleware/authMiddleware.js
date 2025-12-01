@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 
+// Utility function to get the Super Admin ID (Tenant Owner ID)
+const getTenantOwnerId = (user) => {
+    // If the user is Super Admin, they are their own owner. Otherwise, use their stored Super Admin ID.
+    return user.role === "super_admin" ? user._id : user.super_admin_id;
+};
+
 export const protect = async (req, res, next) => {
   let token = req.headers.authorization?.split(" ")[1];
 
@@ -60,11 +66,14 @@ export const employeeOrAbove = (req, res, next) => {
   next();
 };
 
-// CHECK BRANCH ACCESS - For admin to access their branch resources
+// CHECK BRANCH ACCESS - For admin/sa to access their branch resources
 export const checkBranchAccess = async (req, res, next) => {
   try {
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
+
     if (req.user.role === "super_admin") {
-      return next(); // Super admin can access everything
+      // Super admin passes the access check here, but the controller must enforce data filtering
+      return next(); 
     }
 
     if (req.user.role === "admin") {
@@ -72,9 +81,18 @@ export const checkBranchAccess = async (req, res, next) => {
       const resourceId = req.params.id || req.body.employee_id || req.body.branch_admin_id;
       
       if (resourceId) {
-        // If accessing employee, check if employee belongs to this admin
-        const employee = await User.findById(resourceId);
-        if (employee && employee.branch_admin_id?.toString() !== req.user._id.toString()) {
+        // If accessing employee/resource by ID, check if it belongs to this admin AND tenant
+        const resource = await User.findById(resourceId);
+        
+        if (!resource) return res.status(404).json({ message: "Resource not found" });
+
+        // ISOLATION: Check if resource belongs to the current tenant
+        if (resource.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+             return res.status(403).json({ message: "Access denied. Resource belongs to another system." });
+        }
+        
+        // Local Check: Check if employee belongs to THIS admin's branch
+        if (resource.role === "employee" && resource.branch_admin_id?.toString() !== req.user._id.toString()) {
           return res.status(403).json({ message: "Access denied to this branch resource" });
         }
       }
@@ -103,12 +121,29 @@ export const checkBranchAccess = async (req, res, next) => {
 // CHECK EMPLOYEE ACCESS - For employees to access only their own data
 export const checkEmployeeAccess = async (req, res, next) => {
   try {
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
+      
     if (req.user.role === "super_admin" || req.user.role === "admin") {
-      return next(); // Admins can access employee data
+      
+      // If Super Admin/Admin is accessing an employee by ID (in URL params), enforce tenant isolation
+      const employeeId = req.params.employeeId || req.params.id;
+
+      if (employeeId) {
+          const employee = await User.findById(employeeId);
+
+          if (!employee) return res.status(404).json({ message: "Employee not found" });
+          
+          // ISOLATION: Check if employee belongs to the current tenant
+          if (employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
+              return res.status(403).json({ message: "Access denied. Employee belongs to another system." });
+          }
+      }
+
+      return next(); // Admins can access owned employee data
     }
 
     if (req.user.role === "employee") {
-      const employeeId = req.params.id || req.body.employee_id;
+      const employeeId = req.params.employeeId || req.params.id;
       
       // Employee can only access their own data
       if (employeeId && employeeId !== req.user._id.toString()) {
@@ -128,14 +163,32 @@ export const checkEmployeeAccess = async (req, res, next) => {
 // CHECK ADMIN BRANCH ACCESS - For admin to manage their branch
 export const checkAdminBranchAccess = async (req, res, next) => {
   try {
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
+
     if (req.user.role === "super_admin") {
-      return next(); // Super admin can access all branches
+      // Super admin can access all branches owned by them
+      const targetAdminId = req.params.id || req.body.admin_id;
+      
+      if (targetAdminId) {
+          const targetAdmin = await User.findById(targetAdminId);
+          if (!targetAdmin) return res.status(404).json({ message: "Admin not found" });
+
+          // ISOLATION: Admin ID must either be the Super Admin's own ID or belong to their owned tenant
+          const isOwned = targetAdmin.super_admin_id?.toString() === tenantOwnerId.toString();
+          const isSelf = targetAdminId.toString() === tenantOwnerId.toString();
+
+          if (!isOwned && !isSelf) {
+              return res.status(403).json({ message: "Access denied to other branches" });
+          }
+      }
+
+      return next(); 
     }
 
     if (req.user.role === "admin") {
       const targetAdminId = req.params.id || req.body.admin_id;
       
-      // Admin can only access their own branch
+      // Admin can only access their own branch ID
       if (targetAdminId && targetAdminId !== req.user._id.toString()) {
         return res.status(403).json({ message: "Access denied to other branches" });
       }
@@ -162,7 +215,7 @@ export const requirePermission = (allowedRoles = []) => {
   };
 };
 
-// CHECK RESOURCE OWNERSHIP
+// CHECK RESOURCE OWNERSHIP (Kept for compatibility, though largely superseded by Controller logic)
 export const checkResourceOwnership = (resourceType) => {
   return async (req, res, next) => {
     try {
@@ -181,11 +234,11 @@ export const checkResourceOwnership = (resourceType) => {
           break;
 
         case 'shift':
-          // Implementation would check if shift belongs to admin's branch
+          // The main isolation check for shifts is now in shiftController.js
           break;
 
         case 'attendance':
-          // Implementation would check if attendance record belongs to admin's branch
+          // The main isolation check for attendance is now in attendanceController.js
           break;
 
         default:

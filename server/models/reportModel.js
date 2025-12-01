@@ -48,6 +48,13 @@ const reportSchema = new mongoose.Schema({
     required: true 
   },
   
+  super_admin_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+    index: true
+  },
+
   // Employee ID if this is an employee-specific report
   employee_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -119,6 +126,8 @@ reportSchema.index({ employee_id: 1, type: 1 });
 reportSchema.index({ generated_by_admin_id: 1, created_at: -1 });
 reportSchema.index({ access_level: 1, is_public: 1 });
 
+reportSchema.index({ super_admin_id: 1, created_at: -1 });
+
 // Virtual for report period display
 reportSchema.virtual("period_display").get(function() {
   const periodMap = {
@@ -150,8 +159,7 @@ reportSchema.methods.canUserAccess = function(userId, userRole) {
   // Check access level
   if (this.access_level === "branch") {
     // For branch level, check if user belongs to the same branch
-    // This would require additional user lookup in controller
-    return false; // Default to false, handle in controller with user data
+    return false; 
   }
   
   if (this.access_level === "company_wide" && this.is_public) {

@@ -1,12 +1,24 @@
-import { Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
-// This component redirects to dashboard if user is already authenticated
-export default function PublicRoute({ children, isAuthenticated }) {
-  // If user is authenticated, redirect to dashboard
+export default function PublicRoute({ children }) {
+  const { isAuthenticated, status, loading } = useAuth();
+
+  // ❗ Prevent ALL redirects until auth finishes
+  if (loading) return null;
+
+  // ❗ If user just registered → force to OTP page
+  if (status === "pending_verification") {
+    if (window.location.pathname !== "/verify-otp") {
+      return <Navigate to="/verify-otp" replace />;
+    }
+    return children; // allow OTP page
+  }
+
+  // ❗ If authenticated → dashboard
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-  
-  // If not authenticated, show the public page
+
   return children;
 }

@@ -7,13 +7,17 @@ export const clockIn = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID from the user object
+    const tenantOwnerId = userRole === "super_admin" ? userId : req.user.super_admin_id; 
 
     // Check if already clocked in today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Add tenant isolation filter for defense in depth
     const existingAttendance = await Attendance.findOne({
       user_id: userId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       date: {
         $gte: today,
         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -25,10 +29,18 @@ export const clockIn = async (req, res) => {
         message: "You have already clocked in today",
       });
     }
-
-    // Find today's shift for the user
+    
+    // Fetch the employee's full data to get their super_admin_id if it wasn't in the token (defensive)
+    let employeeSAId = tenantOwnerId;
+    if (userRole === 'employee' && !employeeSAId) {
+        const employee = await User.findById(userId).select('super_admin_id');
+        employeeSAId = employee.super_admin_id;
+    }
+    
+    // Find today's shift for the user (add tenant isolation filter)
     const shift = await Shift.findOne({
       employee_id: userId,
+      super_admin_id: employeeSAId,
       status: "scheduled",
       start_date_time: { 
         $gte: today,
@@ -47,6 +59,7 @@ export const clockIn = async (req, res) => {
     // Create attendance record
     const attendance = await Attendance.create({
       user_id: userId,
+      super_admin_id: employeeSAId, // ISOLATION: Save the owner ID
       date: today,
       check_in: now,
       late_minutes: late_minutes,
@@ -83,13 +96,17 @@ export const clockIn = async (req, res) => {
 export const clockOut = async (req, res) => {
   try {
     const userId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID from the user object
+    const tenantOwnerId = userRole === "super_admin" ? userId : req.user.super_admin_id; 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find today's attendance record
+    // Find today's attendance record (Add tenant isolation filter)
     const attendance = await Attendance.findOne({
       user_id: userId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       date: {
         $gte: today,
         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -107,11 +124,13 @@ export const clockOut = async (req, res) => {
     attendance.check_out = now;
     attendance.notes = req.body.notes || attendance.notes;
 
+    // The pre-save middleware in attendanceModel will run and calculate total_hours/overtime.
     await attendance.save();
 
-    // Update shift status if exists
+    // Update shift status if exists (Add tenant isolation filter)
     const shift = await Shift.findOne({
       employee_id: userId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       status: "in_progress",
       start_date_time: { 
         $gte: today,
@@ -148,12 +167,17 @@ export const clockOut = async (req, res) => {
 export const startBreak = async (req, res) => {
   try {
     const userId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID from the user object
+    const tenantOwnerId = userRole === "super_admin" ? userId : req.user.super_admin_id; 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Find active attendance record (Add tenant isolation filter)
     const attendance = await Attendance.findOne({
       user_id: userId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       date: {
         $gte: today,
         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -196,12 +220,17 @@ export const startBreak = async (req, res) => {
 export const endBreak = async (req, res) => {
   try {
     const userId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID from the user object
+    const tenantOwnerId = userRole === "super_admin" ? userId : req.user.super_admin_id; 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Find today's attendance record (Add tenant isolation filter)
     const attendance = await Attendance.findOne({
       user_id: userId,
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       date: {
         $gte: today,
         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -240,13 +269,16 @@ export const endBreak = async (req, res) => {
 export const getMyAttendance = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { start_date, end_date } = req.query;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = req.user.super_admin_id; 
 
     let query = {
-      user_id: userId
+      user_id: userId,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     };
 
     // Add date range filter if provided
+    const { start_date, end_date } = req.query;
     if (start_date && end_date) {
       const start = new Date(start_date);
       const end = new Date(end_date);
@@ -277,21 +309,27 @@ export const getMyAttendance = async (req, res) => {
 export const getBranchAttendance = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
     const { date } = req.query;
 
     const targetDate = date ? new Date(date) : new Date();
     targetDate.setHours(0, 0, 0, 0);
 
-    // Get all employees under this admin
+    // Get all employees under this admin (filter by tenant owner)
     const employees = await User.find({ 
       branch_admin_id: adminId,
-      role: "employee"
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
     }).select('_id name email position');
 
     const employeeIds = employees.map(emp => emp._id);
 
+    // Get attendance records (filter by tenant owner)
     const attendance = await Attendance.find({
       user_id: { $in: employeeIds },
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter attendance by owner ID
       date: {
         $gte: targetDate,
         $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
@@ -328,6 +366,8 @@ export const getAttendanceSummary = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = userRole === "super_admin" ? userId : req.user.super_admin_id; 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -338,9 +378,10 @@ export const getAttendanceSummary = async (req, res) => {
     let summary = {};
 
     if (userRole === "employee") {
-      // Employee summary
+      // Employee summary (Filter by owner ID)
       const todayAttendance = await Attendance.findOne({
         user_id: userId,
+        super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
         date: {
           $gte: today,
           $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -349,6 +390,7 @@ export const getAttendanceSummary = async (req, res) => {
 
       const weekAttendance = await Attendance.find({
         user_id: userId,
+        super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
         date: {
           $gte: thisWeek,
           $lte: today
@@ -369,15 +411,17 @@ export const getAttendanceSummary = async (req, res) => {
           total_overtime: weekAttendance.reduce((sum, a) => sum + a.overtime, 0)
         }
       };
-    } else if (userRole === "admin") {
-      // Admin branch summary
+    } else if (userRole === "admin" || userRole === "super_admin") {
+      // Admin/Super Admin branch summary (Filter by tenant owner)
       const employees = await User.find({ 
         branch_admin_id: userId,
-        role: "employee"
+        role: "employee",
+        super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
       });
 
       const todayAttendance = await Attendance.find({
         user_id: { $in: employees.map(emp => emp._id) },
+        super_admin_id: tenantOwnerId, // ISOLATION: Filter attendance by owner ID
         date: {
           $gte: today,
           $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
@@ -407,14 +451,18 @@ export const getAttendanceSummary = async (req, res) => {
 export const getEmployeeAttendance = async (req, res) => {
   try {
     const adminId = req.user._id;
+    const userRole = req.user.role;
+    // ISOLATION KEY: Get the Super Admin ID for filtering
+    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
     const employeeId = req.params.employeeId;
     const { start_date, end_date } = req.query;
 
-    // Verify employee belongs to this admin
+    // Verify employee belongs to this admin AND the current tenant
     const employee = await User.findOne({
       _id: employeeId,
       branch_admin_id: adminId,
-      role: "employee"
+      role: "employee",
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     });
 
     if (!employee) {
@@ -422,7 +470,8 @@ export const getEmployeeAttendance = async (req, res) => {
     }
 
     let query = {
-      user_id: employeeId
+      user_id: employeeId,
+      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
     };
 
     if (start_date && end_date) {
@@ -436,6 +485,7 @@ export const getEmployeeAttendance = async (req, res) => {
       };
     }
 
+    // Retrieve attendance records (already filtered by owner in query)
     const attendance = await Attendance.find(query)
       .sort({ date: -1 })
       .populate("user_id", "name email position");

@@ -6,6 +6,14 @@ const attendanceSchema = new mongoose.Schema({
     ref: "User", 
     required: true 
   },
+  
+  super_admin_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true, 
+    index: true
+  },
+
   date: { 
     type: Date, 
     required: true,
@@ -49,6 +57,7 @@ const attendanceSchema = new mongoose.Schema({
 // Index for quick queries
 attendanceSchema.index({ user_id: 1, date: 1 }, { unique: true });
 
+attendanceSchema.index({ super_admin_id: 1, date: 1 });
 // Pre-save middleware to calculate durations
 attendanceSchema.pre("save", function(next) {
   // Calculate total worked hours

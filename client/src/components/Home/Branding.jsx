@@ -1,9 +1,9 @@
 import React from "react";
-import Button from "./Button";
+import Button from "../../utils/Button.jsx";
 
 const Branding = () => {
   return (
-    <section className="w-full bg-gradient-to-r from-sky-200 to-sky-100 py-20">
+    <section className="w-full bg-linear-to-r from-sky-200 to-sky-100 py-20">
       <div className="text-center px-6 max-w-4xl mx-auto">
         
         {/* TITLE */}
