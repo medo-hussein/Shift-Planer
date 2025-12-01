@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+.btn {
+  @apply bg-sky-600 hover:bg-sky-900 text-white font-bold py-2 px-5 rounded;
+}
+.btn2 {
+  @apply border border-sky-600 text-sky-600 bg-white hover:bg-sky-600 hover:text-white font-bold py-2 px-5 rounded transition;
+}
+.icon {
+  @apply bg-sky-900 w-8 h-8 flex items-center justify-center rounded;
+}
+.paragraph {
+  @apply text-gray-400 hover:text-white cursor-pointer mb-1;
+}
+.dashboardBtn {
+  @apply px-3 py-1 rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1 shadow-sm;
+}
+.card {
+  @apply shadow-sm border-sky-100 border rounded-lg p-4 flex items-center justify-between hover:bg-blue-100;
+}

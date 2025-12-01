@@ -1,0 +1,124 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router';
+import { useAuth } from "../../contexts/AuthContext.jsx";
+
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const result = await login(form.email, form.password);
+
+    if (result.success) {
+      navigate("/dashboard");
+    } else {
+      setError(result.error);
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F9F7F7] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-[#DBE2EF]">
+
+        {/* Header */}
+        <div>
+          <h2 className="mt-4 text-center text-3xl font-extrabold text-[#112D4E]">
+            Welcome Back to <span className="text-[#3F72AF]">Tadbire</span>
+          </h2>
+        </div>
+
+        {/* Form */}
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-5">
+
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-[#112D4E]">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] placeholder-gray-400 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
+                placeholder="Enter your email"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-[#112D4E]">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={form.password}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] placeholder-gray-400 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
+                placeholder="Enter your password"
+              />
+            </div>
+          </div>
+          <div className="text-right">
+            <Link
+              to="/forget-password"
+              className="text-sm font-medium text-[#3F72AF] hover:text-[#112D4E]"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-md bg-red-50 p-4 border border-red-200">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {/* Login Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-[#19283a] hover:bg-[#274b74] transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3F72AF] disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center">
+            <p className="text-sm text-[#3F72AF]">
+              Don’t have an account?{" "}
+              <Link
+                to="/register"
+                className="font-medium text-[#112D4E] hover:text-[#3F72AF]"
+              >
+                Sign up here
+              </Link>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

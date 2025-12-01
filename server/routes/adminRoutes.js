@@ -1,0 +1,77 @@
+import express from "express";
+import { 
+  protect, 
+  adminOnly 
+} from "../middleware/authMiddleware.js";
+import {
+  getAdminDashboard,
+  getBranchEmployees,
+  getEmployeeDetails,
+  createEmployeeShift,
+  getBranchAttendanceReport,
+  updateEmployeeProfile,
+  getBranchShiftsCalendar
+} from "../controllers/adminController.js";
+
+import {
+  getBranchAttendance,
+  getEmployeeAttendance
+} from "../controllers/attendanceController.js";
+
+import {
+  getBranchShifts,
+  createShift,
+  createBulkShifts,
+  updateShift,
+  deleteShift
+} from "../controllers/shiftController.js";
+
+import {
+  generateAttendanceReport,
+  generateShiftReport,
+  generatePerformanceReport,
+  getReports,
+  shareReport,
+  deleteReport,
+  getDashboardStats
+} from "../controllers/reportController.js";
+
+import { createEmployee } from "../controllers/userController.js";
+
+const router = express.Router();
+
+// All routes require admin authentication
+router.use(protect, adminOnly);
+
+// Dashboard
+router.get("/dashboard", getAdminDashboard);
+
+// Employee management
+router.get("/employees", getBranchEmployees);
+router.post("/employees", createEmployee);
+router.get("/employees/:employeeId", getEmployeeDetails);
+router.put("/employees/:employeeId", updateEmployeeProfile);
+
+// Attendance management
+router.get("/attendance", getBranchAttendance);
+router.get("/attendance/employee/:employeeId", getEmployeeAttendance);
+router.get("/attendance/report", getBranchAttendanceReport);
+
+// Shift management
+router.get("/shifts", getBranchShifts);
+router.get("/shifts/calendar", getBranchShiftsCalendar);
+router.post("/shifts", createShift);
+router.post("/shifts/bulk", createBulkShifts);
+router.put("/shifts/:id", updateShift);
+router.delete("/shifts/:id", deleteShift);
+
+// Report management
+router.get("/reports", getReports);
+router.get("/reports/dashboard-stats", getDashboardStats);
+router.post("/reports/attendance", generateAttendanceReport);
+router.post("/reports/shift", generateShiftReport);
+router.post("/reports/performance", generatePerformanceReport);
+router.post("/reports/:id/share", shareReport);
+router.delete("/reports/:id", deleteReport);
+
+export default router;

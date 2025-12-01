@@ -1,0 +1,1373 @@
+{
+  "info": {
+    "_postman_id": "shift-planner-api-v2",
+    "name": "Shift Planner API",
+    "description": "Complete API documentation for Shift Planner - Smart Workforce Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints for registration, login, and password management",
+      "item": [
+        {
+          "name": "Register Company & Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"My Company\",\n  \"name\": \"Admin Name\",\n  \"email\": \"admin@company.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/register",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.accessToken) {",
+                  "        pm.environment.set('token', responseData.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@company.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/login",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/auth/logout",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/auth/refresh",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forget Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/forget-password",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "forget-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token_from_email\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/reset-password",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/users",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@company.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"employee\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/create-employee",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "create-employee"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/users/me",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/users/{{userId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"email\": \"john.updated@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/{{userId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate User (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/{{userId}}/deactivate",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "{{userId}}", "deactivate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change User Role (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/{{userId}}/role",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "users", "{{userId}}", "role"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "description": "Team management and member operations",
+      "item": [
+        {
+          "name": "Create Team (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Development Team\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/teams",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Member to Team (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"team_id_here\",\n  \"userId\": \"user_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/teams/add-member",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "add-member"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member from Team (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"team_id_here\",\n  \"userId\": \"user_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/teams/remove-member",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "remove-member"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Add Members (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"team_id_here\",\n  \"userIds\": [\"user_id_1\", \"user_id_2\", \"user_id_3\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/teams/bulk-add-members",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "bulk-add-members"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Teams (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/teams/my-teams",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "my-teams"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Team (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/teams/my-team",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "my-team"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/teams/{{teamId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "{{teamId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Team (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Team Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/teams/{{teamId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "{{teamId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Team (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/teams/{{teamId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "teams", "{{teamId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shifts (Admin)",
+      "description": "Shift management endpoints for administrators",
+      "item": [
+        {
+          "name": "Create Shift",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"team_id_here\",\n  \"employeeId\": \"employee_id_here\",\n  \"startDateTime\": \"2025-01-15T09:00:00Z\",\n  \"endDateTime\": \"2025-01-15T17:00:00Z\",\n  \"role\": \"Developer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/shifts",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Bulk Shifts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shifts\": [\n    {\n      \"teamId\": \"team_id_here\",\n      \"employeeId\": \"employee_id_1\",\n      \"startDateTime\": \"2025-01-15T09:00:00Z\",\n      \"endDateTime\": \"2025-01-15T17:00:00Z\",\n      \"role\": \"Developer\"\n    },\n    {\n      \"teamId\": \"team_id_here\",\n      \"employeeId\": \"employee_id_2\",\n      \"startDateTime\": \"2025-01-15T17:00:00Z\",\n      \"endDateTime\": \"2025-01-16T01:00:00Z\",\n      \"role\": \"QA Engineer\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/shifts/bulk",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts", "bulk"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team Shifts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/shifts/team/{{teamId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts", "team", "{{teamId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shift",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDateTime\": \"2025-01-15T10:00:00Z\",\n  \"endDateTime\": \"2025-01-15T18:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/shifts/{{shiftId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts", "{{shiftId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Shift",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/shifts/{{shiftId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts", "{{shiftId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shifts (Employee)",
+      "description": "Shift viewing endpoints for employees",
+      "item": [
+        {
+          "name": "Get My Shifts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/shifts/me",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "shifts", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "description": "Clock in/out, breaks, and attendance tracking",
+      "item": [
+        {
+          "name": "Clock In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shiftId\": \"shift_id_here\",\n  \"location\": \"Office\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/clock-in",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "clock-in"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clock Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shiftId\": \"shift_id_here\",\n  \"location\": \"Office\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/clock-out",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "clock-out"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Break",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceId\": \"attendance_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/break/start",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "break", "start"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "End Break",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceId\": \"attendance_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/break/end",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "break", "end"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/my-attendance",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "my-attendance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/my-summary",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "my-summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/attendance/team/{{teamId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "attendance", "team", "{{teamId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Time Off",
+      "description": "Time off requests, approvals, and balance management",
+      "item": [
+        {
+          "name": "Create Time Off Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-02-01T00:00:00Z\",\n  \"endDate\": \"2025-02-05T00:00:00Z\",\n  \"type\": \"vacation\",\n  \"reason\": \"Personal vacation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Time Off Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/my-requests",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "my-requests"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Time Off Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/my-balance",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "my-balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Time Off Request",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/{{requestId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "{{requestId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team Time Off (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/team",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "team"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Requests (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/pending",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Time Off Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/statistics",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "statistics"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Request Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/timeoff/{{requestId}}/status",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "timeoff", "{{requestId}}", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Company",
+      "description": "Company management and statistics",
+      "item": [
+        {
+          "name": "Get My Company",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/companies/me",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Company (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Company Name\",\n  \"description\": \"Company description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/companies",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Company Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/companies/statistics",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "statistics"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Companies (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/companies/all",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Company by ID (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/companies/{{companyId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "{{companyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Company (SuperAdmin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/companies/{{companyId}}/deactivate",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "{{companyId}}", "deactivate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Company (SuperAdmin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/companies/{{companyId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "companies", "{{companyId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "Report generation and management endpoints",
+      "item": [
+        {
+          "name": "Generate Attendance Report (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-01-01T00:00:00Z\",\n  \"endDate\": \"2025-01-31T23:59:59Z\",\n  \"teamId\": \"team_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/reports/attendance",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "attendance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Time Off Report (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-01-01T00:00:00Z\",\n  \"endDate\": \"2025-01-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/reports/timeoff",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "timeoff"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Productivity Report (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-01-01T00:00:00Z\",\n  \"endDate\": \"2025-01-31T23:59:59Z\",\n  \"teamId\": \"team_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/reports/productivity",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "productivity"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/reports",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/reports/dashboard-stats",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "dashboard-stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/reports/{{reportId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "{{reportId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Share Report (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\"email@example.com\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/reports/{{reportId}}/share",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "{{reportId}}", "share"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/reports/{{reportId}}",
+              "host": ["{{baseURL}}"],
+              "path": ["api", "reports", "{{reportId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseURL",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shiftId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
