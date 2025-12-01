@@ -30,19 +30,6 @@ export const registerSuperAdmin = async (req, res) => {
       });
     }
 
-    // ⭐⭐ التعديل: تم حذف التحقق من وجود Super Admin مسبقاً للسماح بتعدد حسابات Super Admin ⭐⭐
-    /*
-    const existingSuperAdmin = await User.findOne({ role: "super_admin" });
-    if (existingSuperAdmin) {
-      return res.status(400).json({
-        success: false,
-        error: "SUPER_ADMIN_EXISTS",
-        message: "Super admin already exists"
-      });
-    }
-    */
-    // ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
-
     const exists = await User.findOne({ email });
     if (exists) {
       return res.status(400).json({
@@ -454,7 +441,8 @@ export const getMyProfile = async (req, res) => {
       avatar: user.avatar,
       is_active: user.is_active,
       email_verified: user.email_verified,
-      lastLogin: user.lastLogin
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt
     };
 
     if (user.role === "admin") {
@@ -478,7 +466,8 @@ export const getMyProfile = async (req, res) => {
 // UPDATE PROFILE
 export const updateMyProfile = async (req, res) => {
   try {
-    const { name, phone, position, department } = req.body;
+    // ✅ التعديل: إضافة avatar هنا
+    const { name, phone, position, department, avatar } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -488,6 +477,8 @@ export const updateMyProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    // ✅ التعديل: تحديث الصورة
+    if (avatar) user.avatar = avatar;
 
     if (position && user.role !== "super_admin") user.position = position;
     if (department && user.role !== "super_admin") user.department = department;
@@ -502,6 +493,7 @@ export const updateMyProfile = async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        avatar: user.avatar, // إرجاع الصورة الجديدة
         position: user.position,
         department: user.department
       }
@@ -512,12 +504,11 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-// ⭐ ADD createAdmin HERE ⭐
+// ADD createAdmin HERE
 export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, branch_name } = req.body;
     
-    // ⭐ التعديل: نحتاج إلى الحصول على ID الـ Super Admin لربطه بالـ Admin الجديد ⭐
     const superAdminId = req.user._id;
 
     const exists = await User.findOne({ email });
@@ -537,7 +528,7 @@ export const createAdmin = async (req, res) => {
       branch_name,
       is_active: true,
       email_verified: true,
-      super_admin_id: superAdminId // ⭐ ربط المدير بالـ Super Admin المالك
+      super_admin_id: superAdminId
     });
 
     return res.status(201).json({

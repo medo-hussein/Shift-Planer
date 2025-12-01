@@ -40,11 +40,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/otp", otpRoutes);
 
-// Remove old routes that are no longer needed
-// app.use("/api/companies", companyRoutes);    ❌ Removed
-// app.use("/api/teams", teamRoutes);          ❌ Removed  
-// app.use("/api/timeoff", timeOffRoutes);     ❌ Removed
-
 app.get("/", (req, res) => {
   res.send("ShiftMind API Running - Smart Workforce Management System");
 });
@@ -86,8 +81,3 @@ app.listen(PORT, () =>
 // Secure data isolation between branches
 // Flexible role-based permissions
 // Simplified user management
-
-// 🔄 Removed Features (No Longer Needed)
-// Company entity (replaced by branch system)
-// Team entity (replaced by branch hierarchy)  
-// TimeOff module (integrated into attendance system)

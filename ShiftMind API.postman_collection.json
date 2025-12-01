@@ -1,0 +1,1876 @@
+{
+	"info": {
+		"_postman_id": "97ed7df4-545d-4d2e-961a-086239225d33",
+		"name": "ShiftMind API",
+		"description": "Complete API documentation for ShiftMind - Smart Workforce Management System. Branch-based architecture with Super Admin, Admin, and Employee roles.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23370372"
+	},
+	"item": [
+		{
+			"name": "🔐 Shared Authentication",
+			"item": [
+				{
+					"name": "Register Super Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Super Admin ahmed3\",\n  \"email\": \"ahmed.hussein25x@gmail.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01064146167\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/register-super-admin",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register-super-admin"
+							]
+						},
+						"description": "First-time setup - Creates the super admin user for the system. Only works once."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('token', jsonData.token);",
+									"    pm.environment.set('userId', jsonData.user._id);",
+									"    pm.environment.set('userRole', jsonData.user.role);",
+									"    pm.environment.set('branchId', jsonData.user.branch_name);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"ahmed.hussein25x@gmail.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with email and password. Automatically saves token to environment variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/auth/refresh",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Refresh access token using existing token"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/auth/logout",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logout user and invalidate token"
+					},
+					"response": []
+				},
+				{
+					"name": "Forget Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"medoh745.ah@gmail.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/forget-password",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"forget-password"
+							]
+						},
+						"description": "Request password reset link via email"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"71a39e06858f915f399d0eb9c62b7bd78b7b91fcb42f4118e8269d7378d4d3dc\",\n  \"newPassword\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/reset-password",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Reset password using token from email"
+					},
+					"response": []
+				},
+				{
+					"name": "Verifying SuperAdmin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"ahmed.hussein25x@gmail.com\",\r\n  \"otp\": \"162777\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/verify-email",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify-email"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Public authentication endpoints accessible to all users"
+		},
+		{
+			"name": "👥 Shared User Management",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/auth/profile",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Get authenticated user's profile information"
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Medo Admin\",\n  \"phone\": \"01212232089\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/profile",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Update authenticated user's profile"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User (Users Route)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/users/me",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user from users route"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Current User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+1234567890\",\n  \"position\": \"Manager\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/users/me",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me"
+							]
+						},
+						"description": "Update current authenticated user from users route"
+					},
+					"response": []
+				}
+			],
+			"description": "User profile endpoints accessible to authenticated users"
+		},
+		{
+			"name": "🔑 Super Admin",
+			"item": [
+				{
+					"name": "Dashboard & Overview",
+					"item": [
+						{
+							"name": "Get Super Admin Dashboard",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/dashboard",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"dashboard"
+									]
+								},
+								"description": "Get system overview dashboard for super admin"
+							},
+							"response": []
+						},
+						{
+							"name": "Get System Reports",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/reports/system",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"reports",
+										"system"
+									]
+								},
+								"description": "Get system-wide reports"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "🏢 Branch Management",
+					"item": [
+						{
+							"name": "Get All Branches",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/branches",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"branches"
+									]
+								},
+								"description": "Get list of all branches in the system"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Branch Admin",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Branch4\",\n  \"email\": \"medo.ah@gmail.com\",\n  \"password\": \"123456\",\n  \"branch_name\": \"Branch4\",\n  \"phone\": \"+1234567890\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/branches",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"branches"
+									]
+								},
+								"description": "Create a new branch with admin user"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Branch Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/branches/{{branchId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"branches",
+										"{{branchId}}"
+									]
+								},
+								"description": "Get details of a specific branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Branch Admin",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Updated Branch Admin Medo\",\n  \"phone\": \"+9876543210\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/branches/{{branchId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"branches",
+										"{{branchId}}"
+									]
+								},
+								"description": "Update branch admin information"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "👥 Employee Management",
+					"item": [
+						{
+							"name": "Transfer Employee",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"employeeId\": \"employee-id-here\",\n  \"newBranchId\": \"new-branch-id\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/employees/transfer",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"employees",
+										"transfer"
+									]
+								},
+								"description": "Transfer employee to a different branch"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "🔧 System Management",
+					"item": [
+						{
+							"name": "Get All Admins",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/users/admins",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"admins"
+									]
+								},
+								"description": "Get list of all branch admins"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Admin User",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"New Admin Ahmed\",\n  \"email\": \"ahmed@gmail.com\",\n  \"password\": \"123456\",\n  \"branch_name\": \"Branch Name test\",\n  \"phone\": \"+1234567890\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/auth/create-admin",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"create-admin"
+									]
+								},
+								"description": "Create a new branch admin user (Super Admin only)"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/users/{{userId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"{{userId}}"
+									]
+								},
+								"description": "Delete a user from the system (Super Admin only)"
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "Super Admin endpoints - Full system access"
+		},
+		{
+			"name": "👔 Admin (Branch Admin)",
+			"item": [
+				{
+					"name": "Dashboard & Reports",
+					"item": [
+						{
+							"name": "Get Admin Dashboard",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/dashboard",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"dashboard"
+									]
+								},
+								"description": "Get admin dashboard for the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Admin Reports",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/reports",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"reports"
+									]
+								},
+								"description": "Get all reports accessible to this admin"
+							},
+							"response": []
+						},
+						{
+							"name": "Generate Attendance Report",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"start_date\": \"2025-12-01\",\n  \"end_date\": \"2025-12-02\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/reports/attendance",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"attendance"
+									]
+								},
+								"description": "Generate attendance report for the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Generate Shift Report",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"start_date\": \"2025-12-01\",\n  \"end_date\": \"2025-12-02\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/reports/shift",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"shift"
+									]
+								},
+								"description": "Generate shift report for the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Generate Performance Report",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"start_date\": \"2025-12-01\",\n  \"end_date\": \"2025-12-02\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/reports/performance",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"performance"
+									]
+								},
+								"description": "Generate performance report for an employee"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Dashboard Stats",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/reports/dashboard-stats",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"dashboard-stats"
+									]
+								},
+								"description": "Get dashboard statistics"
+							},
+							"response": []
+						},
+						{
+							"name": "Share Report",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sharedWith\": [\"user-id-1\", \"user-id-2\"]\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/reports/{{reportId}}/share",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"{{reportId}}",
+										"share"
+									]
+								},
+								"description": "Share a report with other users"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Report",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/reports/{{reportId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"{{reportId}}"
+									]
+								},
+								"description": "Delete a report"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "👥 Employee Management",
+					"item": [
+						{
+							"name": "Get Branch Employees",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/employees",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"employees"
+									]
+								},
+								"description": "Get list of all employees in the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Employee",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Ahmed Hussein\",\n  \"email\": \"medoh45.ah@gmail.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01064146167\",\n  \"position\": \"Manager\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/admin/employees",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"employees"
+									]
+								},
+								"description": "Create a new employee in the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Employee Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/employees/{{employeeId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"employees",
+										"{{employeeId}}"
+									]
+								},
+								"description": "Get details of a specific employee"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Employee Profile",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Updated2\",\n  \"phone\": \"+9876543210\",\n  \"position\": \"Senior Manager\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/admin/employees/{{employeeId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"employees",
+										"{{employeeId}}"
+									]
+								},
+								"description": "Update employee profile information"
+							},
+							"response": []
+						},
+						{
+							"name": "Toggle Employee Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/users/employees/{{employeeId}}/status",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"employees",
+										"{{employeeId}}",
+										"status"
+									]
+								},
+								"description": "Toggle employee status (active/inactive)"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "🕒 Attendance Management",
+					"item": [
+						{
+							"name": "Get Branch Attendance",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/branch",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"branch"
+									]
+								},
+								"description": "Get attendance records for all employees in the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Employee Attendance",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/employee/{{employeeId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"employee",
+										"{{employeeId}}"
+									]
+								},
+								"description": "Get attendance records for a specific employee"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Attendance Report",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/attendance/report",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"attendance",
+										"report"
+									]
+								},
+								"description": "Get comprehensive attendance report for the branch"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "📅 Shift Management",
+					"item": [
+						{
+							"name": "Get Branch Shifts",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/branch",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"branch"
+									]
+								},
+								"description": "Get all shifts for the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Shift",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"employee_id\": \"692d037c522e56865f97c75a\",\n  \"start_date_time\": \"2025-12-01T06:58:00.000Z\",  // ⭐ 6:42 مساءً الحالي\n  \"end_date_time\": \"2025-12-01T14:42:00.000Z\",    // 11:42 مساءً (7 ساعات)\n  \"title\": \"Immediate Evening Shift\",\n  \"shift_type\": \"regular\", \n  \"location\": \"Main Office\",\n  \"status\": \"in_progress\"  // ⭐ تبدأ فوراً\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/shifts",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts"
+									]
+								},
+								"description": "Create a new shift for an employee"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Bulk Shifts",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"shifts\": [\n    {\n    \"employee_id\": \"692c46d6d2712f9c4ee184b8\",\n    \"title\": \"Morning Shift\",\n    \"start_date_time\": \"2025-11-15T08:00:00Z\",\n    \"end_date_time\": \"2025-11-15T16:00:00Z\",\n    \"shift_type\": \"regular\"\n    },\n    {\n      \"employee_id\": \"employee-id-2\",\n      \"title\": \"Evening Shift\",\n      \"start_date_time\": \"2024-01-15T16:00:00Z\",\n      \"end_date_time\": \"2024-01-16T00:00:00Z\",\n      \"shift_type\": \"regular\"\n    }\n  ]\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/bulk",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"bulk"
+									]
+								},
+								"description": "Create multiple shifts at once"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Shifts Calendar",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/shifts/calendar",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"shifts",
+										"calendar"
+									]
+								},
+								"description": "Get shifts in calendar format for the branch"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Shift",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Updated Morning Shift\",\n  \"start_date_time\": \"2025-11-15T08:00:00Z\",\n  \"end_date_time\": \"2025-11-15T16:00:00Z\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/{{shiftId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"{{shiftId}}"
+									]
+								},
+								"description": "Update shift details"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Shift",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/{{shiftId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"{{shiftId}}"
+									]
+								},
+								"description": "Delete a shift"
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "Admin endpoints - Branch-specific management"
+		},
+		{
+			"name": "👨‍💼 Employee",
+			"item": [
+				{
+					"name": "Dashboard & Overview",
+					"item": [
+						{
+							"name": "Get Employee Dashboard",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/employee/dashboard",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"dashboard"
+									]
+								},
+								"description": "Get employee dashboard with overview"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "📋 My Profile",
+					"item": [
+						{
+							"name": "Get My Profile",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/employee/profile",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"profile"
+									]
+								},
+								"description": "Get my profile information"
+							},
+							"response": []
+						},
+						{
+							"name": "Update My Profile",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Ahmed Hussein\",\n  \"phone\": \"01064146167\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/employee/profile",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"profile"
+									]
+								},
+								"description": "Update my profile information"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "🕒 My Attendance",
+					"item": [
+						{
+							"name": "Get My Attendance",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/my-attendance",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"my-attendance"
+									]
+								},
+								"description": "Get my attendance records"
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Attendance Summary",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/my-summary",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"my-summary"
+									]
+								},
+								"description": "Get my attendance summary statistics"
+							},
+							"response": []
+						},
+						{
+							"name": "Clock In",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"shift_id\": \"shift-id-optional\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/clock-in",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"clock-in"
+									]
+								},
+								"description": "Clock in for work"
+							},
+							"response": []
+						},
+						{
+							"name": "Clock Out",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/clock-out",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"clock-out"
+									]
+								},
+								"description": "Clock out from work"
+							},
+							"response": []
+						},
+						{
+							"name": "Start Break",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"type\": \"lunch\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/break/start",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"break",
+										"start"
+									]
+								},
+								"description": "Start a break"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Today Status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/employee/attendance/today-status",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"attendance",
+										"today-status"
+									]
+								},
+								"description": "Get today's attendance status"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "📅 My Shifts",
+					"item": [
+						{
+							"name": "Get My Shifts",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/me",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"me"
+									]
+								},
+								"description": "Get all my shifts"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Today Shifts",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/shifts/today",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"shifts",
+										"today"
+									]
+								},
+								"description": "Get my shifts for today"
+							},
+							"response": []
+						},
+						{
+							"name": "End Break",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/attendance/break/end",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"attendance",
+										"break",
+										"end"
+									]
+								},
+								"description": "End a break"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "📊 My Reports",
+					"item": [
+						{
+							"name": "Get My Reports",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/employee/reports",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"reports"
+									]
+								},
+								"description": "Get reports accessible to me"
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Reports",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/reports",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports"
+									]
+								},
+								"description": "Get all reports with access control"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Report Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/reports/{{reportId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"reports",
+										"{{reportId}}"
+									]
+								},
+								"description": "Get details of a specific report"
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "Employee endpoints - Personal workspace"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "http://localhost:5000",
+			"type": "string",
+			"description": "Base URL for the ShiftMind API"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string",
+			"description": "JWT Bearer token (auto-populated on login)"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string",
+			"description": "Current user ID"
+		},
+		{
+			"key": "userRole",
+			"value": "",
+			"type": "string",
+			"description": "Current user role (super_admin, admin, or employee)"
+		},
+		{
+			"key": "employeeId",
+			"value": "",
+			"type": "string",
+			"description": "Employee ID for targeted operations"
+		},
+		{
+			"key": "branchId",
+			"value": "",
+			"type": "string",
+			"description": "Branch ID for branch-specific operations"
+		},
+		{
+			"key": "shiftId",
+			"value": "",
+			"type": "string",
+			"description": "Shift ID for shift operations"
+		},
+		{
+			"key": "reportId",
+			"value": "",
+			"type": "string",
+			"description": "Report ID for report operations"
+		}
+	]
+}

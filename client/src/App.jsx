@@ -1,6 +1,7 @@
 
 import Loader from "./components/Loader";
 import { useLoading } from "./contexts/LoaderContext";
+import Home from "./pages/Home/Home";
 import AppRouter from "./routes/AppRouter";
 
 function App() {

@@ -52,6 +52,7 @@ apiClient.interceptors.response.use(
             window.dispatchEvent(
               new CustomEvent("auth-update", { detail: me.data })
             );
+          // eslint-disable-next-line no-unused-vars
           } catch (err) {
             console.error("Failed to refresh user data.");
           }
@@ -63,6 +64,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem("accessToken");
         window.location.href = "/login";
 
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         localStorage.removeItem("accessToken");
         window.location.href = "/login";

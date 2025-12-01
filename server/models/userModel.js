@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
 
+    // ✅ الإضافة الجديدة: حقل الصورة
+    avatar: {
+      type: String,
+      default: ""
+    },
+
     position: { 
       type: String, 
       trim: true
@@ -70,7 +76,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    //ADDED: Email verification fields
+    // Email verification fields
     email_verified: { 
       type: Boolean, 
       default: false 
@@ -82,7 +88,7 @@ const userSchema = new mongoose.Schema(
       type: Date 
     },
 
-    // ⭐⭐ ADDED: OTP fields for phone verification
+    // OTP fields for phone verification
     phone_verified: {
       type: Boolean,
       default: false
@@ -129,7 +135,7 @@ userSchema.methods.updateLastLogin = async function () {
   return this;
 };
 
-// ⭐⭐ ADDED: Email verification methods
+// Email verification methods
 userSchema.methods.verifyEmail = function() {
   this.email_verified = true;
   this.email_verification_token = undefined;
@@ -150,7 +156,7 @@ userSchema.methods.generateEmailVerificationToken = function() {
   return verificationToken; // Return unhashed token for email
 };
 
-// ⭐⭐ ADDED: Phone OTP methods
+// Phone OTP methods
 userSchema.methods.generatePhoneOTP = function() {
   const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
   this.phone_otp = otp;
@@ -226,7 +232,7 @@ userSchema.statics.generateBranchName = function(adminName) {
   return `${adminName}'s Branch - ${Date.now()}`;
 };
 
-// ⭐⭐ ADDED: Virtual for full profile
+// Virtual for full profile
 userSchema.virtual('profile').get(function() {
   const profile = {
     id: this._id,
@@ -234,13 +240,14 @@ userSchema.virtual('profile').get(function() {
     email: this.email,
     role: this.role,
     phone: this.phone,
+    avatar: this.avatar, // ✅ إضافة الـ Avatar هنا كمان عشان يرجع في البروفايل
     position: this.position,
     is_active: this.is_active,
     lastLogin: this.lastLogin,
     email_verified: this.email_verified,
     phone_verified: this.phone_verified,
     created_at: this.createdAt,
-    super_admin_id: this.super_admin_id // إضافة معرف المالك للملف الشخصي
+    super_admin_id: this.super_admin_id
   };
 
   // Add branch info for admin
