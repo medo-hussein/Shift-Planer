@@ -98,8 +98,8 @@ export const findOrCreateGoogleUser = async (googleProfile, tokens) => {
       user.googleAccessToken = tokens.access_token;
       user.googleRefreshToken = tokens.refresh_token;
       user.googleProfilePicture = picture;
-      user.emailVerified = true; // Google emails are verified
-      user.isActive = true;
+      user.email_verified = true; // Google emails are verified
+      user.is_active = true;
       await user.save();
       
       return user;
@@ -119,11 +119,10 @@ export const findOrCreateGoogleUser = async (googleProfile, tokens) => {
       googleProfilePicture: picture,
       googleAccessToken: tokens.access_token,
       googleRefreshToken: tokens.refresh_token,
-      emailVerified: true, // Google emails are verified
-      isActive: true,
-      active: true,
-      role: 'superAdmin', // First Google user becomes superAdmin
-      // company: company._id,
+      email_verified: true, // Google emails are verified
+      is_active: true,
+      role: 'super_admin', // First Google user becomes superAdmin
+      company: company._id,
       password: Math.random().toString(36).slice(-8) // Random password for Google users
     });
 

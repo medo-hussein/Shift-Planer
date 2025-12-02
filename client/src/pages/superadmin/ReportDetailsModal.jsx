@@ -1,8 +1,8 @@
 import React from "react";
 import { X, Calendar, FileSpreadsheet, FileText } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // ✅ 1. التعديل هنا: استيراد الدالة
-import * as XLSX from "xlsx";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable"; // ✅ 1. التعديل هنا: استيراد الدالة
+// import * as XLSX from "xlsx";
 
 export default function ReportDetailsModal({ report, onClose }) {
   if (!report) return null;

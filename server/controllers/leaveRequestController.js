@@ -1,12 +1,14 @@
 import LeaveRequest from "../models/leaveRequestModel.js";
 import User from "../models/userModel.js";
+// ✅ 1. استيراد دالة إنشاء الإشعار
+import { createNotification } from "./notificationController.js"; 
 
 // Utility function to get the Super Admin ID (Tenant Owner ID)
 const getTenantOwnerId = (user) => {
     return user.role === "super_admin" ? user._id : user.super_admin_id;
 };
 
-// 1. Submit a new leave request (Employee or Admin submitting for themselves)
+// 1. Submit a new leave request
 export const createLeaveRequest = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -65,6 +67,19 @@ export const createLeaveRequest = async (req, res) => {
       is_half_day,
     });
 
+    // ✅ 2. إرسال إشعار للمدير (Approver)
+    if (approverId) {
+      await createNotification({
+        recipientId: approverId,
+        senderId: userId,
+        superAdminId: tenantOwnerId,
+        title: "New Leave Request",
+        message: `${req.user.name} has requested a ${leave_type} leave from ${start.toLocaleDateString()} to ${end.toLocaleDateString()}.`,
+        type: "info",
+        link: "/time-off" // رابط صفحة الإجازات عند المدير
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: "Leave request submitted successfully for review.",
@@ -122,9 +137,7 @@ export const getApprovalRequests = async (req, res) => {
             super_admin_id: tenantOwnerId, // Tenant isolation
         };
 
-        if (userRole === 'admin') {
-            query.status = status || 'pending';
-        } else if (userRole === 'super_admin') {
+        if (userRole === 'admin' || userRole === 'super_admin') {
             query.status = status || 'pending';
         } else {
              return res.status(403).json({ success: false, message: "Admin access required." });
@@ -178,6 +191,17 @@ export const updateRequestStatus = async (req, res) => {
         request.admin_notes = admin_notes || request.admin_notes;
 
         await request.save();
+
+        // ✅ 3. إرسال إشعار للموظف (صاحب الطلب) بالنتيجة
+        await createNotification({
+            recipientId: request.employee_id,
+            senderId: approverId,
+            superAdminId: tenantOwnerId,
+            title: "Leave Request Update",
+            message: `Your leave request has been ${status.toUpperCase()}. ${admin_notes ? `Note: ${admin_notes}` : ""}`,
+            type: status === 'approved' ? "success" : "error",
+            link: "/time-off" // رابط صفحة الإجازات عند الموظف
+        });
         
         return res.json({
             success: true,

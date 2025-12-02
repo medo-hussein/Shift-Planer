@@ -441,7 +441,8 @@ export const getReports = async (req, res) => {
           generated_by: report.generated_by_admin_id,
           created_at: report.createdAt,
           access_level: report.access_level,
-          is_public: report.is_public
+          is_public: report.is_public,
+          data: report.data // ✅ تم إضافة هذا السطر لضمان إرسال البيانات
         })),
         pagination: {
           page: parseInt(page),

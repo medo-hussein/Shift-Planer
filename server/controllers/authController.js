@@ -11,7 +11,7 @@ import { sendResetPasswordEmail, sendOTPEmail } from "../utils/emailService.js";
 // REGISTER SUPER ADMIN (First Setup) - With OTP Verification
 export const registerSuperAdmin = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, companyName } = req.body;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -30,6 +30,14 @@ export const registerSuperAdmin = async (req, res) => {
       });
     }
 
+    if (!companyName || companyName.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_COMPANY_NAME",
+        message: "Company name must be at least 2 characters long"
+      });
+    }
+
     const exists = await User.findOne({ email });
     if (exists) {
       return res.status(400).json({
@@ -39,12 +47,17 @@ export const registerSuperAdmin = async (req, res) => {
       });
     }
 
+    // Create company first
+    const Company = await import("../models/companyModel.js");
+    const company = await Company.default.create({ name: companyName.trim() });
+
     const superAdmin = await User.create({
       name,
       email,
       password,
       role: "super_admin",
       is_active: false,
+      company: company._id,
       email_verified: false
     });
 
@@ -68,7 +81,11 @@ export const registerSuperAdmin = async (req, res) => {
         email: superAdmin.email,
         role: superAdmin.role,
         email_verified: superAdmin.email_verified,
-        is_active: superAdmin.is_active
+        is_active: superAdmin.is_active,
+        company: {
+          id: company._id,
+          name: company.name
+        }
       }
     });
   } catch (err) {
@@ -251,7 +268,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    if (user.role === "super_admin" && !user.email_verified) {
+    if (user.role === "superAdmin" && !user.email_verified) {
       return res.status(403).json({
         success: false,
         error: "EMAIL_NOT_VERIFIED",

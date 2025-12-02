@@ -36,6 +36,15 @@ router.post("/reset-password", resetPassword);
 // Email verification routes (public)
 router.post("/verify-email", verifyEmail);           // Verify email with OTP
 router.post("/resend-verification", resendOTP);      // Resend verification OTP
+// Google OAuth routes (public, no auth required)
+router.get("/google/url", getGoogleAuthUrlController);
+router.get("/google/callback", googleAuthCallbackController);
+router.post("/google/signin", googleSignInController);
+
+// Google account management routes (protected)
+router.post("/google/link", protect, linkGoogleAccountController);
+router.post("/google/unlink", protect, unlinkGoogleAccountController);
+router.get("/google/status", protect, getGoogleAuthStatusController);
 
 // Protected routes (authentication required)
 router.use(protect); // All routes below this require authentication
@@ -46,14 +55,6 @@ router.put("/profile", updateMyProfile);
 // Super Admin only routes
 router.post("/create-admin", superAdminOnly, createAdmin); // Super admin creates branch admin
 
-// Google OAuth routes (public, no auth required)
-router.get("/google/url", getGoogleAuthUrlController);
-router.get("/google/callback", googleAuthCallbackController);
-router.post("/google/signin", googleSignInController);
 
-// Google account management routes (protected)
-router.post("/google/link", protect, linkGoogleAccountController);
-router.post("/google/unlink", protect, unlinkGoogleAccountController);
-router.get("/google/status", protect, getGoogleAuthStatusController);
 
 export default router;

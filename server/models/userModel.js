@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema(
       required: true
     },
 
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: false
+    },
+
     branch_name: {
       type: String,
       trim: true

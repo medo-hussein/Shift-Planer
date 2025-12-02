@@ -57,7 +57,9 @@ const routes = {
   employee: [
       { path: "/dashboard", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
       { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
-      { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane }
+      { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
+      { path: "/profile", element: SA_Profile, label: "Profile", icon: FingerprintPattern },
+
   ]
 };
 

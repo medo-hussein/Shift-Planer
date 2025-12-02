@@ -1,5 +1,5 @@
 // src/context/LoadingContext.jsx
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 const LoadingContext = createContext();
 
@@ -11,7 +11,7 @@ export function LoadingProvider({ children }) {
   const reset = () => setCounter(0);
   const loading = counter > 0;
 
-  const value = useMemo(() => ({ show, hide, reset, loading }), [loading]);
+  const value = { show, hide, reset, loading };
 
   return (
     <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>

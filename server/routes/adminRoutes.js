@@ -10,7 +10,8 @@ import {
   createEmployeeShift,
   getBranchAttendanceReport,
   updateEmployeeProfile,
-  getBranchShiftsCalendar
+  getBranchShiftsCalendar,
+  deleteEmployee //  تم إضافة فانكشن الحذف
 } from "../controllers/adminController.js";
 
 import {
@@ -41,7 +42,8 @@ import { createEmployee } from "../controllers/userController.js";
 import { 
     createLeaveRequest, 
     getApprovalRequests, 
-    updateRequestStatus 
+    updateRequestStatus,
+    getMyLeaveRequests
 } from "../controllers/leaveRequestController.js";
 
 const router = express.Router();
@@ -57,6 +59,7 @@ router.get("/employees", getBranchEmployees);
 router.post("/employees", createEmployee);
 router.get("/employees/:employeeId", getEmployeeDetails);
 router.put("/employees/:employeeId", updateEmployeeProfile);
+router.delete("/employees/:employeeId", deleteEmployee); // تم إضافة مسار الحذف هنا
 
 // Attendance management
 router.get("/attendance", getBranchAttendance);
@@ -71,9 +74,11 @@ router.post("/shifts/bulk", createBulkShifts);
 router.put("/shifts/:id", updateShift);
 router.delete("/shifts/:id", deleteShift);
 
+// Leave Management
 router.post("/leave-requests/submit", createLeaveRequest);
 router.get("/leave-requests", getApprovalRequests);           
 router.patch("/leave-requests/:id/status", updateRequestStatus); 
+router.get("/leave-requests/me", getMyLeaveRequests);
 
 // Report management
 router.get("/reports", getReports);

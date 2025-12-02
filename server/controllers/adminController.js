@@ -5,8 +5,7 @@ import Report from "../models/reportModel.js";
 
 // Utility function to get the Super Admin ID (Tenant Owner ID)
 const getTenantOwnerId = (user) => {
-    // Admin's owner ID is in super_admin_id field
-    return user.super_admin_id; 
+    return user.role === "super_admin" ? user._id : user.super_admin_id;
 };
 
 // GET ADMIN DASHBOARD STATS
@@ -644,6 +643,44 @@ export const getBranchShiftsCalendar = async (req, res) => {
     return res.status(500).json({ 
       success: false,
       message: err.message 
+    });
+  }
+};
+
+// DELETE EMPLOYEE
+export const deleteEmployee = async (req, res) => {
+  try {
+    const adminId = req.user._id;
+    const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
+    const { employeeId } = req.params;
+
+    // 1. Find the employee ensuring they belong to this branch and tenant
+    const employee = await User.findOne({
+      _id: employeeId,
+      branch_admin_id: adminId,
+      role: "employee",
+      super_admin_id: tenantOwnerId
+    });
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found in your branch"
+      });
+    }
+
+    // 2. Delete employee
+    await User.findByIdAndDelete(employeeId);
+    
+    return res.json({
+      success: true,
+      message: "Employee deleted successfully"
+    });
+  } catch (err) {
+    console.error("deleteEmployee error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message
     });
   }
 };
