@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { authService } from "../../api/services/authService";
-import { useLoading } from "../../contexts/LoaderContext";
+import { authService } from "../api/services/authService";
+import { useLoading } from "../contexts/LoaderContext";
 import { 
   User, Mail, Phone, Shield, Calendar, 
   Clock, Camera, Save
@@ -110,7 +110,7 @@ export default function Profile() {
                 <h1 className="text-3xl font-bold text-slate-900">{profile.name}</h1>
                 <div className="flex items-center gap-3 mt-2 text-sm text-slate-500 font-medium">
                   <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                    <Shield size={14} /> Super Admin
+                    <Shield size={14} /> {profile.role.replace("_", " ").toUpperCase()}
                   </span>
                   <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Active

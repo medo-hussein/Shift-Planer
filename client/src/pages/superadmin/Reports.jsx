@@ -1,31 +1,59 @@
 import React, { useEffect, useState } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
 import { useLoading } from "../../contexts/LoaderContext";
-import { FileText, Calendar, Filter, User, Building, Eye, BarChart2, Clock, CheckCircle } from "lucide-react";
+import { 
+  FileText, Calendar, Filter, User, Building, Eye, BarChart2, Clock, 
+  ChevronLeft, ChevronRight 
+} from "lucide-react";
 
-// هنضيف المودال ده في نفس الملف تحت أو في ملف منفصل
+// تأكد من المسار الصحيح للمودال
 import ReportDetailsModal from "./ReportDetailsModal"; 
 
 export default function SystemReports() {
   const [reports, setReports] = useState([]);
   const [filterType, setFilterType] = useState("");
-  const [selectedReport, setSelectedReport] = useState(null); // للتقرير المختار
+  const [selectedReport, setSelectedReport] = useState(null);
+  
+  // ✅ إضافة States للـ Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 6; 
+
   const { show, hide } = useLoading();
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        show();
-        const params = filterType ? { type: filterType } : {};
-        const res = await superAdminService.getSystemReports(params);
-        setReports(res.data.data || []);
-      } catch (err) {
-        console.error("Failed to fetch reports", err);
-      } finally {
-        hide();
+  const fetchReports = async () => {
+    try {
+      show();
+      // ✅ إرسال page و limit مع الفلاتر
+      const params = { 
+        page, 
+        limit,
+        ...(filterType && { type: filterType }) 
+      };
+      
+      const res = await superAdminService.getSystemReports(params);
+      
+      setReports(res.data.data || []);
+      
+      // ✅ تحديث إجمالي الصفحات من رد السيرفر
+      if (res.data.pagination) {
+        setTotalPages(res.data.pagination.total_pages);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch reports", err);
+    } finally {
+      hide();
+    }
+  };
+
+  // ✅ إعادة الجلب عند تغيير الصفحة أو نوع الفلتر
+  useEffect(() => {
     fetchReports();
+  }, [page, filterType]);
+
+  // ✅ تصفير الصفحة عند تغيير الفلتر
+  useEffect(() => {
+    setPage(1);
   }, [filterType]);
 
   const getStatusColor = (type) => {
@@ -110,52 +138,85 @@ export default function SystemReports() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {reports.map((report) => (
-          <div key={report._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition flex flex-col h-full">
-            
-            {/* Header */}
-            <div className="flex justify-between items-start mb-3">
-              <div className={`p-2 rounded-lg ${getStatusColor(report.type)}`}>
-                {report.type === 'attendance' ? <Clock size={20} /> : 
-                 report.type === 'performance' ? <BarChart2 size={20} /> : 
-                 <Calendar size={20} />}
+      {reports.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {reports.map((report) => (
+              <div key={report._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition flex flex-col h-full">
+                
+                {/* Header */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className={`p-2 rounded-lg ${getStatusColor(report.type)}`}>
+                    {report.type === 'attendance' ? <Clock size={20} /> : 
+                     report.type === 'performance' ? <BarChart2 size={20} /> : 
+                     <Calendar size={20} />}
+                  </div>
+                  <button 
+                    onClick={() => setSelectedReport(report)}
+                    className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md text-xs font-medium transition flex items-center gap-1"
+                  >
+                    <Eye size={14} /> View Details
+                  </button>
+                </div>
+
+                {/* Content */}
+                <h3 className="font-bold text-slate-800 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
+                <p className="text-xs text-slate-500 mb-2">
+                  Generated on {new Date(report.createdAt).toLocaleDateString()}
+                </p>
+
+                {/* Quick Stats */}
+                <div className="bg-slate-50 rounded-xl p-3 mb-4">
+                  {renderQuickStats(report)}
+                </div>
+
+                {/* Footer Info */}
+                <div className="mt-auto pt-4 border-t border-slate-50 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Building size={14} className="text-slate-400" />
+                    <span className="truncate text-xs">{report.generated_by_admin_id?.branch_name || "Unknown Branch"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span className="text-xs">
+                      {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button 
-                onClick={() => setSelectedReport(report)}
-                className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md text-xs font-medium transition flex items-center gap-1"
+            ))}
+          </div>
+
+          {/* ✅ Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-8 pb-4">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                <Eye size={14} /> View Details
+                <ChevronLeft size={20} />
+              </button>
+              
+              <span className="text-sm font-medium text-slate-600">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight size={20} />
               </button>
             </div>
-
-            {/* Content */}
-            <h3 className="font-bold text-slate-800 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
-            <p className="text-xs text-slate-500 mb-2">
-              Generated on {new Date(report.createdAt).toLocaleDateString()}
-            </p>
-
-            {/* Quick Stats (The new part) */}
-            <div className="bg-slate-50 rounded-xl p-3 mb-4">
-              {renderQuickStats(report)}
-            </div>
-
-            {/* Footer Info */}
-            <div className="mt-auto pt-4 border-t border-slate-50 space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-slate-600">
-                <Building size={14} className="text-slate-400" />
-                <span className="truncate text-xs">{report.generated_by_admin_id?.branch_name || "Unknown Branch"}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Calendar size={14} className="text-slate-400" />
-                <span className="text-xs">
-                  {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-500">
+          No reports found matching your filters.
+        </div>
+      )}
 
       {/* Modal View */}
       {selectedReport && (

@@ -20,6 +20,7 @@ const createTransporter = () => {
     });
 };
 
+
 // Send reset password email
 export const sendResetPasswordEmail = async (email, resetUrl) => {
     try {

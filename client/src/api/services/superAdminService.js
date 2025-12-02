@@ -7,7 +7,7 @@ export const superAdminService = {
   // 2. Branch Management
   getAllBranches: (params) => apiClient.get("/api/super-admin/branches", { params }),
   createBranchAdmin: (data) => apiClient.post("/api/auth/create-admin", data),
-    updateBranch: (id, data) => apiClient.put(`/api/super-admin/branches/${id}`, data),
+  updateBranch: (id, data) => apiClient.put(`/api/super-admin/branches/${id}`, data),
   deleteBranch: (id) => apiClient.delete(`/api/users/${id}`),
 
   // 3. Employee Management
@@ -17,5 +17,13 @@ export const superAdminService = {
 
   // 4. Reports
   getSystemReports: (params) => apiClient.get("/api/super-admin/reports/system", { params }),
-  
+
+  // 5. Leave Management (Time Off) - New Updates
+  getLeaveRequests: (status, page = 1, limit = 10) => 
+    apiClient.get("/api/super-admin/leave-requests", { params: { status, page, limit } }),
+  updateLeaveStatus: (requestId, status, adminNotes) => 
+    apiClient.patch(`/api/super-admin/leave-requests/${requestId}/status`, { 
+      status, 
+      admin_notes: adminNotes 
+    }),
 };
