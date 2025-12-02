@@ -17,7 +17,7 @@ import {
   getMyReports
 } from "../controllers/employeeController.js";
 
-// استيراد getTodayShifts من shiftController
+import { createLeaveRequest, getMyLeaveRequests } from "../controllers/leaveRequestController.js"; 
 import { getTodayShifts } from "../controllers/shiftController.js";
 
 const router = express.Router();
@@ -42,9 +42,12 @@ router.post("/attendance/break/end", endBreak);
 
 // Shifts
 router.get("/shifts", getMyShifts);
-router.get("/shifts/today", getTodayShifts); // ✅ من shiftController
+router.get("/shifts/today", getTodayShifts);
 
 // Reports
 router.get("/reports", getMyReports);
+
+router.post("/leave-requests", createLeaveRequest); 
+router.get("/leave-requests/me", getMyLeaveRequests);
 
 export default router;

@@ -3,7 +3,7 @@ import Report from "../models/reportModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Shift from "../models/shiftModel.js";
 
-// GET SUPER ADMIN DASHBOARD STATS
+// GET SUPER ADMIN DASHBOARD STATS (يتم فلترتها الآن بناءً على المالك)
 export const getSuperAdminDashboard = async (req, res) => {
   try {
     const superAdminId = req.user._id;
@@ -203,7 +203,7 @@ export const getAllBranches = async (req, res) => {
 
     const total = await User.countDocuments(query);
 
-    // Get employee counts for each branch
+    // Get employee counts for each branch (للفروع المملوكة فقط)
     const branchesWithStats = await Promise.all(
       admins.map(async (admin) => {
         const employeeCount = await User.countDocuments({

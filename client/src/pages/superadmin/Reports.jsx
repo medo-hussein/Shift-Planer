@@ -37,7 +37,6 @@ export default function SystemReports() {
     }
   };
 
-  // دالة صغيرة لاستخراج أهم معلومة من كل تقرير لعرضها في الكارت
   const renderQuickStats = (report) => {
     const data = report.data || {};
     

@@ -1,7 +1,7 @@
 import React from "react";
 import { X, Calendar, FileSpreadsheet, FileText } from "lucide-react";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable from "jspdf-autotable"; // ✅ 1. التعديل هنا: استيراد الدالة
 import * as XLSX from "xlsx";
 
 export default function ReportDetailsModal({ report, onClose }) {
@@ -9,10 +9,13 @@ export default function ReportDetailsModal({ report, onClose }) {
 
   const { data, type, title } = report;
 
+  // --- دوال التصدير (Export Functions) ---
 
+  // 1. تصدير Excel
   const handleExportExcel = () => {
     let sheetData = [];
 
+    // تجهيز الداتا حسب نوع التقرير
     if (type === 'attendance' && data.by_employee) {
       sheetData = data.by_employee.map(emp => ({
         Employee: emp.employee?.name || "N/A",
@@ -38,16 +41,19 @@ export default function ReportDetailsModal({ report, onClose }) {
       ];
     }
 
+    // إنشاء ملف الإكسيل
     const worksheet = XLSX.utils.json_to_sheet(sheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
     XLSX.writeFile(workbook, `${(title || "Report").replace(/\s+/g, '_')}.xlsx`);
   };
 
+  // 2. تصدير PDF (النسخة المصححة)
   const handleExportPDF = () => {
     try {
       const doc = new jsPDF();
       
+      // العنوان
       doc.setFontSize(18);
       doc.text(title || "Report Details", 14, 22);
       doc.setFontSize(11);
@@ -57,6 +63,7 @@ export default function ReportDetailsModal({ report, onClose }) {
       let tableHead = [];
       let tableBody = [];
 
+      // تجهيز الجدول حسب النوع
       if (type === 'attendance' && data.by_employee) {
         tableHead = [['Employee', 'Hours', 'Overtime', 'Late', 'Rate']];
         tableBody = data.by_employee.map(emp => [
@@ -84,7 +91,9 @@ export default function ReportDetailsModal({ report, onClose }) {
         ];
       }
 
+      // رسم الجدول
       if (tableBody.length > 0) {
+        // ✅ 2. التعديل هنا: استخدام دالة autoTable وتمرير doc لها
         autoTable(doc, {
           head: tableHead,
           body: tableBody,
@@ -103,6 +112,8 @@ export default function ReportDetailsModal({ report, onClose }) {
       alert("Failed to generate PDF. Check console.");
     }
   };
+
+  // --- مكونات العرض (Render Components) ---
 
   const renderAttendanceDetails = () => (
     <div className="space-y-6">

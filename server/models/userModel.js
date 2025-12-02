@@ -76,7 +76,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    // Email verification fields
+    //ADDED: Email verification fields
     email_verified: { 
       type: Boolean, 
       default: false 
@@ -98,6 +98,32 @@ const userSchema = new mongoose.Schema(
     },
     phone_otp_expires: {
       type: Date
+    },
+    // Account status
+    isActive: { 
+      type: Boolean, 
+      default: true 
+    },
+
+    // Google OAuth fields
+    googleId: { 
+      type: String, 
+      unique: true, 
+      sparse: true 
+    },
+    authProvider: { 
+      type: String, 
+      enum: ['local', 'google'], 
+      default: 'local' 
+    },
+    googleProfilePicture: { 
+      type: String 
+    },
+    googleAccessToken: { 
+      type: String 
+    },
+    googleRefreshToken: { 
+      type: String 
     }
   },
   { timestamps: true }
@@ -247,7 +273,7 @@ userSchema.virtual('profile').get(function() {
     email_verified: this.email_verified,
     phone_verified: this.phone_verified,
     created_at: this.createdAt,
-    super_admin_id: this.super_admin_id
+    super_admin_id: this.super_admin_id // إضافة معرف المالك للملف الشخصي
   };
 
   // Add branch info for admin

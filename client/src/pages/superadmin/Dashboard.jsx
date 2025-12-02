@@ -195,7 +195,7 @@ export default function Dashboard() {
               </button>
 
               <button 
-                onClick={() => navigate('/time-off')}
+                onClick={() => navigate('/reports')}
                 className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition group text-left"
               >
                 <div className="bg-purple-100 text-purple-600 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition">

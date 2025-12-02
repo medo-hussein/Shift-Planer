@@ -687,6 +687,82 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "🌴 Leave Review (Admin Requests)",
+					"item": [
+						{
+							"name": "Get Pending Admin Leave Requests",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/leave-requests?status=pending",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"leave-requests"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "pending"
+										}
+									]
+								},
+								"description": "Get all leave requests submitted by Admins (Super Admin review)."
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Admin Leave",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"approved\",\n  \"admin_notes\": \"Approved for system stability.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/super-admin/leave-requests/{{requestId}}/status",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"super-admin",
+										"leave-requests",
+										"{{requestId}}",
+										"status"
+									]
+								},
+								"description": "Update status of an Admin's leave request (Super Admin action). Requires {{requestId}} variable."
+							},
+							"response": []
+						}
+					]
 				}
 			],
 			"description": "Super Admin endpoints - Full system access"
@@ -1101,6 +1177,111 @@
 					]
 				},
 				{
+					"name": "🌴 Leave Management (Review & Submit)",
+					"item": [
+						{
+							"name": "Admin Submit Own Leave",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"leave_type\": \"personal\",\n  \"start_date\": \"2026-02-01\",\n  \"end_date\": \"2026-02-03\",\n  \"reason\": \"Admin requesting time off from Super Admin.\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/admin/leave-requests/submit",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"leave-requests",
+										"submit"
+									]
+								},
+								"description": "Admin submits a leave request (to Super Admin for approval)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Employee Leave Requests",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/admin/leave-requests?status=pending",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"leave-requests"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "pending"
+										}
+									]
+								},
+								"description": "Get all leave requests submitted by employees in this branch (Admin review)."
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Employee Leave",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"approved\",\n  \"admin_notes\": \"Approved based on coverage plan.\"\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/admin/leave-requests/{{requestId}}/status",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"leave-requests",
+										"{{requestId}}",
+										"status"
+									]
+								},
+								"description": "Update status of an employee's leave request (Admin action). Requires {{requestId}} variable."
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "🕒 Attendance Management",
 					"item": [
 						{
@@ -1455,6 +1636,82 @@
 									]
 								},
 								"description": "Update my profile information"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "🌴 My Leave Requests",
+					"item": [
+						{
+							"name": "Submit Leave Request (Employee)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"leave_type\": \"vacation\",\n  \"start_date\": \"2026-01-05\",\n  \"end_date\": \"2026-01-10\",\n  \"reason\": \"Annual vacation\",\n  \"is_half_day\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/employee/leave-requests",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"leave-requests"
+									]
+								},
+								"description": "Submit a new leave request (Employee submits to Admin for approval)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Leave History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/employee/leave-requests/me?status=pending",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"employee",
+										"leave-requests",
+										"me"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "pending",
+											"description": "Filter by status: pending, approved, rejected, cancelled"
+										}
+									]
+								},
+								"description": "Get all submitted leave requests by the current user (Employee)."
 							},
 							"response": []
 						}

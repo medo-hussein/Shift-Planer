@@ -38,6 +38,12 @@ import {
 
 import { createEmployee } from "../controllers/userController.js";
 
+import { 
+    createLeaveRequest, 
+    getApprovalRequests, 
+    updateRequestStatus 
+} from "../controllers/leaveRequestController.js";
+
 const router = express.Router();
 
 // All routes require admin authentication
@@ -64,6 +70,10 @@ router.post("/shifts", createShift);
 router.post("/shifts/bulk", createBulkShifts);
 router.put("/shifts/:id", updateShift);
 router.delete("/shifts/:id", deleteShift);
+
+router.post("/leave-requests/submit", createLeaveRequest);
+router.get("/leave-requests", getApprovalRequests);           
+router.patch("/leave-requests/:id/status", updateRequestStatus); 
 
 // Report management
 router.get("/reports", getReports);
