@@ -61,15 +61,21 @@ const Employees = () => {
       };
       
       const response = await employeesService.getEmployees(params);
+      const rawData = response.data.data || [];
       
-      const employeesData = response.data.data || [];
-      setEmployees(employeesData);
-      setFilteredEmployees(employeesData); // Initialize filtered employees
+      // ✅ Data Normalization: Create 'isActive' from whatever the backend sends
+      const normalizedData = rawData.map(emp => ({
+        ...emp,
+        // Priority: isActive -> is_active -> true (default)
+        isActive: emp.isActive !== undefined ? emp.isActive : (emp.is_active !== undefined ? emp.is_active : true)
+      }));
+
+      setEmployees(normalizedData);
+      setFilteredEmployees(normalizedData);
       setTotalPages(response.data.pagination?.total_pages || 1);
       setCurrentPage(response.data.pagination?.page || 1);
       
-      // Extract unique positions
-      const uniquePositions = [...new Set(employeesData.map(emp => emp.position))];
+      const uniquePositions = [...new Set(normalizedData.map(emp => emp.position))];
       setPositions(uniquePositions);
       
     } catch (error) {
@@ -89,7 +95,7 @@ const Employees = () => {
   const applyFilters = useCallback(() => {
     let filtered = [...employees];
 
-    // Apply search filter
+    // Search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(emp => 
@@ -100,22 +106,25 @@ const Employees = () => {
       );
     }
 
-    // Apply position filter
+    // Position Filter
     if (filterPosition !== "all") {
       filtered = filtered.filter(emp => emp.position === filterPosition);
     }
 
-    // Apply status filter
+    // Status Filter (✅ Uses normalized 'isActive')
     if (filterStatus !== "all") {
       switch (filterStatus) {
         case "active":
-          filtered = filtered.filter(emp => emp.is_active || emp.isActive);
+          filtered = filtered.filter(emp => emp.isActive === true);
           break;
         case "inactive":
-          filtered = filtered.filter(emp => !(emp.is_active || emp.isActive));
+          filtered = filtered.filter(emp => emp.isActive === false);
           break;
         case "present":
           filtered = filtered.filter(emp => emp.stats?.today_status === "present");
+          break;
+        case "late":
+          filtered = filtered.filter(emp => emp.stats?.today_status === "late");
           break;
         case "absent":
           filtered = filtered.filter(emp => emp.stats?.today_status === "absent");
@@ -128,7 +137,6 @@ const Employees = () => {
     setFilteredEmployees(filtered);
   }, [employees, searchTerm, filterPosition, filterStatus]);
 
-  // Apply filters whenever dependencies change
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
@@ -188,10 +196,9 @@ const Employees = () => {
       });
       
       setShowCreateModal(false);
-      fetchEmployees(); // Refresh the list
+      fetchEmployees(); 
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Failed to create employee";
-      
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -202,7 +209,6 @@ const Employees = () => {
         timer: 4000,
         timerProgressBar: true,
       });
-      
       console.error("Create error:", error);
     } finally {
       hideLoader();
@@ -229,10 +235,9 @@ const Employees = () => {
       setShowCreateModal(false);
       setIsEditMode(false);
       setSelectedEmployee(null);
-      fetchEmployees(currentPage); // Refresh the list
+      fetchEmployees(currentPage); 
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Failed to update employee";
-      
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -243,18 +248,16 @@ const Employees = () => {
         timer: 4000,
         timerProgressBar: true,
       });
-      
       console.error("Update error:", error);
     } finally {
       hideLoader();
     }
   };
 
-  // Handle status toggle with SweetAlert confirmation
+  // Handle status toggle
   const handleToggleStatus = async (employeeId, currentStatus, employeeName) => {
     const newStatus = !currentStatus;
     
-    // Show SweetAlert confirmation dialog
     const result = await Swal.fire({
       title: 'Change Status',
       text: `Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} ${employeeName}?`,
@@ -271,28 +274,27 @@ const Employees = () => {
       try {
         showLoader();
         
-        // ACTUAL API CALL TO TOGGLE STATUS
+        // ✅ Send 'is_active' to backend (keep backend happy)
         await employeesService.toggleEmployeeStatus(employeeId, { is_active: newStatus });
         
-        // Update local state immediately for better UX
+        // ✅ Update local 'isActive' immediately (keep frontend happy)
         setEmployees(prev => prev.map(emp => 
           emp._id === employeeId 
             ? { 
                 ...emp, 
-                is_active: newStatus, 
-                isActive: newStatus,
+                isActive: newStatus, // UI uses this
+                is_active: newStatus, // Sync backup
                 stats: {
                   ...emp.stats,
-                  today_status: newStatus ? "absent" : "absent" // Update today_status based on new status
+                  // If inactive, set status to absent, otherwise keep or reset
+                  today_status: newStatus ? (emp.stats?.today_status || "absent") : "absent"
                 }
               }
             : emp
         ));
         
-        // Re-apply filters after status change
         applyFilters();
         
-        // Show success toast
         Swal.fire({
           icon: 'success',
           title: 'Success!',
@@ -323,67 +325,61 @@ const Employees = () => {
     }
   };
 
-// Handle delete employee with SweetAlert confirmation
-const handleDeleteEmployee = async (employeeId, employeeName) => {
-  // Show SweetAlert confirmation dialog
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: `You are about to delete "${employeeName}". This action cannot be undone!`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, delete it!',
-    cancelButtonText: 'Cancel',
-    reverseButtons: true,
-  });
-  
-  if (result.isConfirmed) {
-    try {
-      showLoader();
-      
-      // ACTUAL DELETE API CALL - UNCOMMENT THIS
-      await employeesService.deleteEmployee(employeeId);
-      
-      // Update local state
-      setEmployees(prev => prev.filter(emp => emp._id !== employeeId));
-      
-      // Show success toast
-      Swal.fire({
-        icon: 'success',
-        title: 'Deleted!',
-        text: `Employee "${employeeName}" has been deleted successfully`,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
-      
-      // Re-apply filters after deletion
-      applyFilters();
-      
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.response?.data?.message || 'Failed to delete employee',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 4000,
-        timerProgressBar: true,
-      });
-      console.error("Delete error:", error);
-    } finally {
-      hideLoader();
+  // Handle delete employee
+  const handleDeleteEmployee = async (employeeId, employeeName) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `You are about to delete "${employeeName}". This action cannot be undone!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+    
+    if (result.isConfirmed) {
+      try {
+        showLoader();
+        await employeesService.deleteEmployee(employeeId);
+        
+        setEmployees(prev => prev.filter(emp => emp._id !== employeeId));
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: `Employee "${employeeName}" has been deleted successfully`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        
+        applyFilters();
+        
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.response?.data?.message || 'Failed to delete employee',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 4000,
+          timerProgressBar: true,
+        });
+        console.error("Delete error:", error);
+      } finally {
+        hideLoader();
+      }
     }
-  }
-  
-  setShowActionsMenu(null);
-};
+    
+    setShowActionsMenu(null);
+  };
 
-  // Handle edit
+  // Helpers & Modal Handlers
   const handleEdit = (employee) => {
     setSelectedEmployee(employee);
     setIsEditMode(true);
@@ -391,21 +387,18 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
     setShowActionsMenu(null);
   };
 
-  // Handle view details
   const handleViewDetails = (employee) => {
     setSelectedEmployee(employee);
     setShowDetailsModal(true);
     setShowActionsMenu(null);
   };
 
-  // Handle view attendance
   const handleViewAttendance = (employee) => {
     setSelectedEmployee(employee);
     setShowAttendanceModal(true);
     setShowActionsMenu(null);
   };
 
-  // Handle pagination
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
@@ -413,10 +406,10 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
     }
   };
 
-  // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "Not Available";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid Date";
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -424,9 +417,9 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
     });
   };
 
-  // Get status badge
+  // ✅ Get Status Badge (Uses normalized 'isActive')
   const getStatusBadge = (employee) => {
-    const isActive = employee.is_active || employee.isActive;
+    const isActive = employee.isActive; 
     const todayStatus = employee.stats?.today_status;
     
     if (!isActive) {
@@ -444,6 +437,13 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
           text: "Present",
           color: "bg-emerald-50 text-emerald-700 border-emerald-200",
           icon: <CheckCircle size={14} />,
+          active: true
+        };
+      case "late":
+        return {
+          text: "Late",
+          color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+          icon: <Clock size={14} />,
           active: true
         };
       case "absent":
@@ -505,7 +505,7 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
               <div>
                 <p className="text-xs text-gray-600">Present Today</p>
                 <p className="text-xl font-bold text-gray-900 mt-1">
-                  {filteredEmployees.filter(e => e.stats?.today_status === "present").length}
+                  {filteredEmployees.filter(e => e.stats?.today_status === "present" || e.stats?.today_status === "late").length}
                 </p>
               </div>
               <div className="p-2 bg-emerald-50 rounded-lg">
@@ -587,6 +587,7 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="present">Present Today</option>
+                <option value="late">Late Today</option>
                 <option value="absent">Absent Today</option>
               </select>
               <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
@@ -632,6 +633,7 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredEmployees.map((employee) => {
+                    // ✅ Uses normalized isActive
                     const status = getStatusBadge(employee);
                     return (
                       <tr key={employee._id} className="hover:bg-gray-50 transition-colors">
@@ -735,13 +737,13 @@ const handleDeleteEmployee = async (employeeId, employeeName) => {
                                 <button
                                   onClick={() => handleToggleStatus(
                                     employee._id, 
-                                    employee.is_active || employee.isActive,
+                                    employee.isActive, // ✅ Correctly uses normalized status
                                     employee.name
                                   )}
                                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                                 >
                                   <UserCog size={14} />
-                                  {employee.is_active || employee.isActive ? "Deactivate" : "Activate"}
+                                  {employee.isActive ? "Deactivate" : "Activate"}
                                 </button>
                                 
                                 <div className="border-t border-gray-200">

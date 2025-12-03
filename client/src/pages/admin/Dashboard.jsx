@@ -209,16 +209,27 @@ export default function AdminDashboard() {
 
             <div className="space-y-4">
               {recent_employees?.slice(0, 5).map((employee) => (
-                <div key={employee.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                <div key={employee._id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="font-semibold text-blue-600">
-                        {employee.name.charAt(0)}
-                      </span>
+                    
+                    {/* ✅ Image Handling */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-blue-50 flex items-center justify-center border border-slate-100">
+                      {employee.avatar ? (
+                        <img 
+                          src={employee.avatar} 
+                          alt={employee.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="font-bold text-blue-600 text-sm">
+                          {employee.name?.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                     </div>
+
                     <div>
                       <p className="font-medium text-slate-800">{employee.name}</p>
-                      <p className="text-sm text-slate-500">{employee.position}</p>
+                      <p className="text-sm text-slate-500">{employee.position || "Employee"}</p>
                     </div>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -293,7 +304,7 @@ export default function AdminDashboard() {
               </button>
               
               <button 
-                onClick={() => navigate('/shifts')}
+                onClick={() => navigate('/schedule')}
                 className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors text-left"
               >
                 <CalendarClock size={20} className="text-orange-600" />

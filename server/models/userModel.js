@@ -57,7 +57,6 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
 
-    // ✅ الإضافة الجديدة: حقل الصورة
     avatar: {
       type: String,
       default: ""
@@ -68,10 +67,13 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    // ✅ الاعتماد الوحيد في قاعدة البيانات (Snake Case)
     is_active: { 
       type: Boolean, 
       default: true 
     },
+    
+    // ❌ تم حذف isActive من هنا لمنع الازدواجية وتضارب البيانات
 
     lastLogin: {
       type: Date,
@@ -82,7 +84,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    //ADDED: Email verification fields
+    // Email verification fields
     email_verified: { 
       type: Boolean, 
       default: false 
@@ -104,11 +106,6 @@ const userSchema = new mongoose.Schema(
     },
     phone_otp_expires: {
       type: Date
-    },
-    // Account status
-    isActive: { 
-      type: Boolean, 
-      default: true 
     },
 
     // Google OAuth fields
@@ -132,7 +129,7 @@ const userSchema = new mongoose.Schema(
       type: String 
     }
   },
-  { timestamps: true }
+  { timestamps: true } // ✅ This automatically adds createdAt and updatedAt
 );
 
 // Hash password
@@ -272,14 +269,14 @@ userSchema.virtual('profile').get(function() {
     email: this.email,
     role: this.role,
     phone: this.phone,
-    avatar: this.avatar, // ✅ إضافة الـ Avatar هنا كمان عشان يرجع في البروفايل
+    avatar: this.avatar,
     position: this.position,
-    is_active: this.is_active,
+    is_active: this.is_active, // مصدر الحقيقة
     lastLogin: this.lastLogin,
     email_verified: this.email_verified,
     phone_verified: this.phone_verified,
-    created_at: this.createdAt,
-    super_admin_id: this.super_admin_id // إضافة معرف المالك للملف الشخصي
+    createdAt: this.createdAt, // ✅ تأكيد إرسال createdAt
+    super_admin_id: this.super_admin_id
   };
 
   // Add branch info for admin
@@ -297,5 +294,6 @@ userSchema.virtual('profile').get(function() {
 
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 export default mongoose.model("User", userSchema);

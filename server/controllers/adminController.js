@@ -64,8 +64,8 @@ export const getAdminDashboard = async (req, res) => {
         role: "employee",
         super_admin_id: tenantOwnerId // ISOLATION
       })
-      .select('name email position is_active created_at')
-      .sort({ created_at: -1 })
+      .select('name email position is_active createdAt avatar') // ✅ تمت إضافة avatar هنا
+      .sort({ createdAt: -1 })
       .limit(5)
     ]);
 
@@ -155,7 +155,7 @@ export const getBranchEmployees = async (req, res) => {
 
     const employees = await User.find(query)
       .select('-password -resetPasswordToken -resetPasswordExpire')
-      .sort({ created_at: -1 })
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
