@@ -9,9 +9,8 @@ import {
   FingerprintPattern,
 } from "lucide-react";
 
-
 // Shared Pages
-import SA_Profile from "../shared/Profile";
+import SharedProfile from "../shared/Profile";
 
 // Super Admin Pages
 import SA_Dashboard from "../pages/superadmin/Dashboard";
@@ -29,9 +28,11 @@ import A_TimeOff from "../pages/admin/TimeOff";
 import A_Reports from "../pages/admin/Reports";
 
 // Employee Pages
+import E_Dashboard from "../pages/employee/Dashboard"; //  الصفحة الجديدة
 import E_Schedule from "../pages/employee/MySchedule";
 import E_TimeTracking from "../pages/employee/TimeTracking";
 import E_TimeOff from "../pages/employee/TimeOffRequests";
+import E_Reports from "../pages/employee/MyReports";   //  الصفحة الجديدة
 
 const routes = {
 
@@ -41,7 +42,7 @@ const routes = {
       { path: "/employees", element: SA_Employees, label: "Employees", icon: UserCog },
       { path: "/time-off", element: SA_TimeOffRequests, label: "Leave Requests", icon: Plane },
       { path: "/reports", element: SA_Reports, label: "Reports", icon: BarChart3 },
-      { path: "/profile", element: SA_Profile, label: "Profile", icon: FingerprintPattern },
+      { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ],
 
   admin: [
@@ -51,15 +52,16 @@ const routes = {
     { path: "/time-tracking", element: A_TimeTracking, label: "Time Tracking", icon: Clock },
     { path: "/time-off", element: A_TimeOff, label: "Time Off", icon: Plane },
     { path: "/reports", element: A_Reports, label: "Reports", icon: BarChart3 },
-    { path: "/profile", element: SA_Profile, label: "Profile", icon: FingerprintPattern },
+    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ],
 
   employee: [
-      { path: "/dashboard", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
+      { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard }, // ✅ الداشبورد الحقيقية
+      { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },   // ✅ الجدول
       { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
       { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
-      { path: "/profile", element: SA_Profile, label: "Profile", icon: FingerprintPattern },
-
+      { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },         // ✅ التقارير
+      { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ]
 };
 

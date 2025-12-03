@@ -34,7 +34,9 @@ router.delete("/:id", superAdminOnly, deleteUser);
 
 // Admin routes (branch management)
 router.get("/branch/employees", adminOrAbove, getBranchEmployees); 
-router.post("/employees", adminOnly, createEmployee);
+
+router.post("/employees", adminOrAbove, createEmployee);
+
 router.get("/employees/:employeeId", adminOnly, checkEmployeeAccess, getUserById);
 router.put("/employees/:employeeId", adminOnly, checkEmployeeAccess, updateUser);
 router.patch("/employees/:id/status", adminOnly, checkEmployeeAccess, toggleUserStatus);

@@ -35,8 +35,9 @@ const TimeOffRequests = () => {
       });
 
       setRequests(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching leave requests:', error);
+    } catch (err) {
+      console.error('Error fetching leave requests:', err);
+      // Optional: error('Failed to fetch requests');
     } finally {
       setLoading(false);
     }
@@ -45,6 +46,28 @@ const TimeOffRequests = () => {
   useEffect(() => {
     fetchRequests();
   }, [filter, fetchRequests]);
+
+  // Handle Cancel Request
+  const handleCancelRequest = async (requestId) => {
+    if (!window.confirm("Are you sure you want to cancel this leave request?")) return;
+
+    try {
+      showGlobalLoading();
+      // استدعاء الـ API لإلغاء الطلب (تأكد من وجود هذا المسار في الـ Backend)
+      const response = await apiClient.patch(`/api/employee/leave-requests/${requestId}/cancel`);
+
+      if (response.data.success) {
+        success('Leave request cancelled successfully');
+        // تحديث القائمة لإظهار الحالة الجديدة
+        await fetchRequests();
+      }
+    } catch (err) {
+      console.error('Error cancelling request:', err);
+      error(err.response?.data?.message || 'Failed to cancel request');
+    } finally {
+      hideGlobalLoading();
+    }
+  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -76,9 +99,9 @@ const TimeOffRequests = () => {
         await fetchRequests();
         success('Leave request submitted successfully!');
       }
-    } catch (error) {
-      console.error('Error submitting leave request:', error);
-      error(error.response?.data?.message || 'Failed to submit leave request');
+    } catch (err) {
+      console.error('Error submitting leave request:', err);
+      error(err.response?.data?.message || 'Failed to submit leave request');
     } finally {
       hideGlobalLoading();
     }
@@ -317,11 +340,13 @@ const TimeOffRequests = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 ml-4">
+                    {/* ✅ تم تفعيل زر الإلغاء هنا */}
                     {request.status === 'pending' && (
                       <Button 
                         variant="outline"
                         size="sm"
-                        onClick={() => {/* TODO: Cancel request */}}
+                        onClick={() => handleCancelRequest(request._id)}
+                        className="text-red-600 border-red-200 hover:bg-red-50"
                       >
                         Cancel
                       </Button>

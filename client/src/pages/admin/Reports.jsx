@@ -3,11 +3,11 @@ import { reportService } from "../../api/services/admin/reportService";
 import { useLoading } from "../../contexts/LoaderContext";
 import apiClient from "../../api/apiClient";
 import { 
-  FileText, Calendar, Plus, Trash2, Eye, 
-  BarChart2, Clock, Filter, X, ChevronLeft, ChevronRight, Building
+  FileText, Calendar, Plus, Trash2, Eye, Share2, // ✅ تم إضافة Share2
+  BarChart2, Clock, Filter, X, ChevronLeft, ChevronRight, Check
 } from "lucide-react";
 
-// تأكد إن المسار ده صحيح، أو انسخ ملف المودال لمكان مشترك
+// تم تصحيح مسار الاستيراد
 import ReportDetailsModal from "../superadmin/ReportDetailsModal"; 
 
 export default function Reports() {
@@ -16,10 +16,12 @@ export default function Reports() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   
-  // ✅ Pagination States
+  // ✅ State لمودال المشاركة
+  const [reportToShare, setReportToShare] = useState(null);
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 6; // عدد التقارير في الصفحة الواحدة
+  const limit = 6; 
 
   const { show, hide } = useLoading();
 
@@ -33,7 +35,6 @@ export default function Reports() {
       };
 
       const res = await reportService.getAll(params);
-      
       setReports(res.data.data.reports || []);
       
       if (res.data.data.pagination) {
@@ -46,12 +47,10 @@ export default function Reports() {
     }
   };
 
-  // إعادة الجلب عند تغيير الصفحة أو الفلتر
   useEffect(() => {
     fetchData();
   }, [page, filterType]);
 
-  // تصفير الصفحة عند تغيير الفلتر
   useEffect(() => {
     setPage(1);
   }, [filterType]);
@@ -69,7 +68,6 @@ export default function Reports() {
     }
   };
 
-  // دالة لعرض ألوان مختلفة حسب نوع التقرير
   const getReportStyle = (type) => {
     switch (type) {
       case 'attendance': return { icon: Clock, bg: 'bg-blue-50', text: 'text-blue-600' };
@@ -113,7 +111,6 @@ export default function Reports() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
       
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reports & Analytics</h1>
@@ -143,7 +140,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Reports Grid */}
       {reports.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {reports.map((report) => {
@@ -158,8 +154,16 @@ export default function Reports() {
                     <Icon size={20} />
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600"><Eye size={16}/></button>
-                    <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600"><Trash2 size={16}/></button>
+                    <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
+                        <Eye size={16}/>
+                    </button>
+                    {/* ✅ زر المشاركة */}
+                    <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
+                        <Share2 size={16}/>
+                    </button>
+                    <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600" title="Delete">
+                        <Trash2 size={16}/>
+                    </button>
                   </div>
                 </div>
 
@@ -171,7 +175,7 @@ export default function Reports() {
                 </div>
 
                 {renderQuickStats(report)}
-
+                
                 <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
                    <span>Created: {new Date(report.created_at).toLocaleDateString()}</span>
                    <span className="capitalize bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{report.type}</span>
@@ -182,168 +186,177 @@ export default function Reports() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-slate-200 text-center">
-          <div className="p-4 bg-slate-50 rounded-full mb-4"><FileText size={32} className="text-slate-300" /></div>
-          <h3 className="text-lg font-bold text-slate-700">No Reports Found</h3>
-          <p className="text-slate-500 text-sm mt-1 max-w-xs">Generate a new report to analyze attendance, shifts, or employee performance.</p>
-          <button 
-            onClick={() => setIsGenerateModalOpen(true)}
-            className="mt-6 px-5 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition shadow-sm"
-          >
-            Generate First Report
-          </button>
+            <p className="text-slate-500">No reports found.</p>
         </div>
       )}
 
-      {/* ✅ Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-10 pb-4">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          
-          <span className="text-sm font-semibold text-slate-700 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-            Page {page} of {totalPages}
-          </span>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
-          >
-            <ChevronRight size={20} />
-          </button>
+            <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p-1))} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"><ChevronLeft size={20}/></button>
+            <span className="text-sm font-semibold text-slate-700 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">{page} of {totalPages}</span>
+            <button disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"><ChevronRight size={20}/></button>
         </div>
       )}
 
-      {/* Generate Modal */}
       {isGenerateModalOpen && (
         <GenerateReportModal 
           onClose={() => setIsGenerateModalOpen(false)} 
-          onSuccess={() => {
-            setIsGenerateModalOpen(false);
-            setPage(1); // ارجع للصفحة الأولى عشان تشوف الجديد
-            fetchData();
-          }}
+          onSuccess={() => { setIsGenerateModalOpen(false); setPage(1); fetchData(); }}
           loadingUtils={{ show, hide }}
         />
       )}
 
-      {/* View Details Modal */}
       {selectedReport && (
-        <ReportDetailsModal 
-          report={selectedReport} 
-          onClose={() => setSelectedReport(null)} 
+        <ReportDetailsModal report={selectedReport} onClose={() => setSelectedReport(null)} />
+      )}
+
+      {/* ✅ مودال المشاركة */}
+      {reportToShare && (
+        <ShareReportModal 
+            report={reportToShare} 
+            onClose={() => setReportToShare(null)} 
+            loadingUtils={{ show, hide }}
         />
       )}
+
     </div>
   );
 }
 
-// --- Generate Modal Component ---
+// --- Generate Report Modal ---
 function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
-  const [type, setType] = useState("attendance");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
-  const [employees, setEmployees] = useState([]);
+    const [type, setType] = useState("attendance");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [employeeId, setEmployeeId] = useState("");
+    const [employees, setEmployees] = useState([]);
 
-  useEffect(() => {
-    const loadEmps = async () => {
-      try {
-        const res = await apiClient.get("/api/admin/employees");
-        setEmployees(res.data.data || []);
-      } catch(err) { console.error(err); }
+    useEffect(() => {
+        apiClient.get("/api/admin/employees").then(res => setEmployees(res.data.data || []));
+    }, []);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        loadingUtils.show();
+        try {
+            const payload = { start_date: startDate, end_date: endDate, employee_id: employeeId || null };
+            if (type === "attendance") await reportService.generateAttendance(payload);
+            else if (type === "shift") await reportService.generateShift(payload);
+            else if (type === "performance") await reportService.generatePerformance(payload);
+            alert("Report generated!");
+            onSuccess();
+        } catch (err) { alert(err.response?.data?.message || "Failed"); } 
+        finally { loadingUtils.hide(); }
     };
-    loadEmps();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    loadingUtils.show();
-    try {
-      const payload = { 
-        start_date: startDate, 
-        end_date: endDate, 
-        employee_id: employeeId || null 
-      };
-
-      if (type === "attendance") await reportService.generateAttendance(payload);
-      else if (type === "shift") await reportService.generateShift(payload);
-      else if (type === "performance") await reportService.generatePerformance(payload);
-
-      alert("Report generated successfully!");
-      onSuccess();
-    } catch (err) {
-      alert(err.response?.data?.message || "Generation failed");
-    } finally {
-      loadingUtils.hide();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-fadeIn overflow-hidden scale-100">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800">Generate Report</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200 transition"><X size={20} className="text-slate-400" /></button>
+    
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6">
+                <div className="flex justify-between mb-4"><h3 className="font-bold">Generate Report</h3><button onClick={onClose}><X size={20}/></button></div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <select className="w-full border p-2 rounded" value={type} onChange={e => setType(e.target.value)}>
+                        <option value="attendance">Attendance</option><option value="shift">Shift</option><option value="performance">Performance</option>
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                        <input type="date" required className="border p-2 rounded" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                        <input type="date" required className="border p-2 rounded" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                    </div>
+                    <select className="w-full border p-2 rounded" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
+                        <option value="">All Employees</option>
+                        {employees.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
+                    </select>
+                    <button type="submit" className="w-full bg-blue-900 text-white p-2 rounded">Generate</button>
+                </form>
+            </div>
         </div>
+    );
+}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Report Type</label>
-            <div className="relative">
-              <select 
-                className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#3F72AF] bg-white appearance-none"
-                value={type} onChange={(e) => setType(e.target.value)}
-              >
-                <option value="attendance">Attendance Report</option>
-                <option value="shift">Shift Report</option>
-                <option value="performance">Performance Report</option>
-              </select>
-              <div className="absolute right-3 top-3.5 pointer-events-none text-slate-400">▼</div>
-            </div>
-          </div>
+function ShareReportModal({ report, onClose, loadingUtils }) {
+    const [employees, setEmployees] = useState([]);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
+    
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const res = await apiClient.get("/api/admin/employees");
+                setEmployees(res.data.data || []);
+                setSelectedEmployees(report.shared_with_users || []);
+            } catch (err) { console.error(err); }
+        };
+        loadData();
+    }, [report]);
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Start Date</label>
-              <input required type="date" className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#3F72AF]"
-                value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">End Date</label>
-              <input required type="date" className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#3F72AF]"
-                value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-          </div>
+    const toggleEmployee = (id) => {
+        if (selectedEmployees.includes(id)) {
+            setSelectedEmployees(prev => prev.filter(e => e !== id));
+        } else {
+            setSelectedEmployees(prev => [...prev, id]);
+        }
+    };
 
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Specific Employee (Optional)</label>
-            <div className="relative">
-              <select 
-                className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#3F72AF] bg-white appearance-none"
-                value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}
-              >
-                <option value="">All Employees</option>
-                {employees.map(emp => (
-                  <option key={emp._id} value={emp._id}>{emp.name}</option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-3.5 pointer-events-none text-slate-400">▼</div>
-            </div>
-          </div>
+    const handleShare = async () => {
+        loadingUtils.show();
+        try {
+            await reportService.share(report.id, selectedEmployees);
+            alert("Report shared successfully!");
+            onClose();
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to share report");
+        } finally {
+            loadingUtils.hide();
+        }
+    };
 
-          <div className="pt-2">
-            <button type="submit" className="w-full py-3 bg-[#112D4E] text-white rounded-xl hover:bg-[#274b74] font-bold transition shadow-lg shadow-blue-900/20 flex justify-center items-center gap-2">
-               <FileText size={18} /> Generate Report
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h3 className="font-bold text-slate-800">Share Report</h3>
+                        <p className="text-xs text-slate-500 truncate max-w-[250px]">{report.title}</p>
+                    </div>
+                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600"/></button>
+                </div>
+
+                <div className="p-4 overflow-y-auto">
+                    <p className="text-sm font-medium text-slate-700 mb-3">Select employees to share with:</p>
+                    <div className="space-y-2">
+                        {employees.map(emp => (
+                            <div 
+                                key={emp._id} 
+                                onClick={() => toggleEmployee(emp._id)}
+                                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                                    selectedEmployees.includes(emp._id) 
+                                    ? 'border-blue-500 bg-blue-50' 
+                                    : 'border-slate-100 hover:bg-slate-50'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${selectedEmployees.includes(emp._id) ? 'bg-blue-200 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                                        {emp.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-800">{emp.name}</p>
+                                        <p className="text-xs text-slate-500">{emp.position || 'Employee'}</p>
+                                    </div>
+                                </div>
+                                {selectedEmployees.includes(emp._id) && <Check size={18} className="text-blue-600" />}
+                            </div>
+                        ))}
+                        {employees.length === 0 && <p className="text-center text-sm text-slate-400 py-4">No employees found.</p>}
+                    </div>
+                </div>
+
+                <div className="p-4 border-t border-slate-100 bg-slate-50">
+                    <button 
+                        onClick={handleShare} 
+                        className="w-full py-2.5 bg-[#112D4E] text-white rounded-xl font-medium hover:bg-[#274b74] transition shadow-md flex justify-center items-center gap-2"
+                    >
+                        <Share2 size={16} /> Share with {selectedEmployees.length} Employee(s)
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }

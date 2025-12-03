@@ -192,7 +192,6 @@ export const updateRequestStatus = async (req, res) => {
 
         await request.save();
 
-        // ✅ 3. إرسال إشعار للموظف (صاحب الطلب) بالنتيجة
         await createNotification({
             recipientId: request.employee_id,
             senderId: approverId,
@@ -211,5 +210,39 @@ export const updateRequestStatus = async (req, res) => {
     } catch (err) {
         console.error("updateRequestStatus error:", err);
         return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ✅ 5. Employee cancels their own pending request (NEW FUNCTION)
+export const cancelLeaveRequest = async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { id } = req.params;
+  
+      const request = await LeaveRequest.findOne({
+        _id: id,
+        employee_id: userId,
+        status: "pending"
+      });
+  
+      if (!request) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Request not found or cannot be cancelled (only pending requests can be cancelled)." 
+        });
+      }
+  
+      request.status = "cancelled";
+      await request.save();
+  
+      return res.json({
+        success: true,
+        message: "Leave request cancelled successfully.",
+        data: request
+      });
+  
+    } catch (err) {
+      console.error("cancelLeaveRequest error:", err);
+      return res.status(500).json({ success: false, message: err.message });
     }
 };

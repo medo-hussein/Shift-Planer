@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, LogOut, Play, Pause, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
+import { Clock, Coffee, LogOut, Play, Pause, Calendar, TrendingUp } from 'lucide-react';
 import Button from '../../utils/Button';
 import apiClient from '../../api/apiClient';
 import { useLoading } from '../../contexts/LoaderContext';
 import { useToast } from '../../hooks/useToast';
 
 const TimeTracking = () => {
+  // --- States ---
   const [todayStatus, setTodayStatus] = useState(null);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
+  const [summaryStats, setSummaryStats] = useState(null); // ✅ حالة جديدة للإحصائيات من السيرفر
   const [currentBreak, setCurrentBreak] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
-  const { success, error: showError } = useToast();
+  
+  // --- Inputs ---
   const [notes, setNotes] = useState('');
   const [location, setLocation] = useState('Office');
 
-  // Fetch today's status
+  // --- Hooks ---
+  const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
+  const { success, error: showError } = useToast();
+
+  // --- Fetch Functions ---
+
+  // 1. جلب حالة اليوم (مسجل دخول/خروج؟)
   const fetchTodayStatus = async () => {
     try {
       const response = await apiClient.get('/api/employee/attendance/today-status');
@@ -25,10 +33,9 @@ const TimeTracking = () => {
     }
   };
 
-  // Fetch attendance history
+  // 2. جلب سجل الحضور (آخر 30 يوم)
   const fetchAttendanceHistory = async () => {
     try {
-      setLoading(true);
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       
@@ -43,67 +50,78 @@ const TimeTracking = () => {
       setAttendanceHistory(response.data.data?.records || []);
     } catch (error) {
       console.error('Error fetching attendance history:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
+  // 3. ✅ جلب ملخص الإحصائيات من السيرفر مباشرة
+  const fetchSummaryStats = async () => {
+    try {
+      // نستخدم هذا المسار الموجود في attendanceRoutes
+      const response = await apiClient.get('/api/attendance/my-summary');
+      setSummaryStats(response.data);
+    } catch (error) {
+      console.error('Error fetching summary stats:', error);
+    }
+  };
+
+  // --- Initial Load ---
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
-        await fetchTodayStatus();
-        await fetchAttendanceHistory();
+        await Promise.all([
+          fetchTodayStatus(),
+          fetchAttendanceHistory(),
+          fetchSummaryStats() // ✅ تحميل الإحصائيات عند الفتح
+        ]);
       } catch (error) {
         console.error('Error loading initial data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
     loadData();
   }, []);
 
-  // Clock In
+  // --- Action Handlers ---
+
   const handleClockIn = async () => {
-    console.log('🟢 Clock In started');
     try {
-      console.log('🟢 Show loading');
       showGlobalLoading();
-      
-      const response = await apiClient.post('/api/employee/attendance/clock-in', {
+      const response = await apiClient.post('/api/attendance/clock-in', {
         location,
         notes
       });
       
-      console.log('🟢 Response received:', response);
-
-      if (response.data.success) {
-        await fetchTodayStatus();
+      if (response.data.success || response.status === 201) {
+        await fetchTodayStatus(); // تحديث الحالة فقط
         setNotes('');
-        // Show success message
         success('Clocked in successfully!');
       }
     } catch (error) {
-      console.error('🔴 Error clocking in:', error);
+      console.error('Error clocking in:', error);
       showError(error.response?.data?.message || 'Failed to clock in');
     } finally {
-      console.log('🟢 Hide loading');
       hideGlobalLoading();
     }
   };
 
-  // Clock Out
   const handleClockOut = async () => {
     try {
-      console.log('🔴 Clock Out started');
       showGlobalLoading();
-      const response = await apiClient.post('/api/employee/attendance/clock-out', {
+      const response = await apiClient.post('/api/attendance/clock-out', {
         notes
       });
 
-      if (response.data.success) {
-        await fetchTodayStatus();
-        await fetchAttendanceHistory();
+      if (response.data.success || response.status === 200) {
+        // ✅ تحديث كل البيانات لأن الخروج يغير الساعات والإحصائيات
+        await Promise.all([
+          fetchTodayStatus(),
+          fetchAttendanceHistory(),
+          fetchSummaryStats()
+        ]);
         setNotes('');
-        // Show success message
         success('Clocked out successfully!');
       }
     } catch (error) {
@@ -114,11 +132,10 @@ const TimeTracking = () => {
     }
   };
 
-  // Start Break
   const handleStartBreak = async () => {
     try {
       showGlobalLoading();
-      const response = await apiClient.post('/api/employee/attendance/break/start', {
+      const response = await apiClient.post('/api/attendance/break/start', {
         notes
       });
 
@@ -136,11 +153,10 @@ const TimeTracking = () => {
     }
   };
 
-  // End Break
   const handleEndBreak = async () => {
     try {
       showGlobalLoading();
-      const response = await apiClient.post('/api/employee/attendance/break/end', {
+      const response = await apiClient.post('/api/attendance/break/end', {
         notes
       });
 
@@ -158,59 +174,35 @@ const TimeTracking = () => {
     }
   };
 
-  // Format time
+  // --- Helpers ---
+
   const formatTime = (timeString) => {
+    if (!timeString) return '--:--';
     const time = new Date(timeString);
     return time.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: false 
+      hour12: true 
     });
   };
 
-  // Calculate duration
-  const calculateDuration = (startTime, endTime) => {
+  const calculateDuration = (startTime) => {
     if (!startTime) return '0h 0m';
-    
     const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
+    const end = new Date();
     const diffMs = end - start;
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
     return `${hours}h ${minutes}m`;
   };
 
-  // Calculate weekly stats
-  const calculateWeeklyStats = () => {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
-    const weekAttendance = attendanceHistory.filter(record => 
-      new Date(record.date) >= oneWeekAgo
-    );
-
-    const totalHours = weekAttendance.reduce((sum, record) => 
-      sum + (record.total_hours || 0), 0
-    );
-    
-    const totalOvertime = weekAttendance.reduce((sum, record) => 
-      sum + (record.overtime || 0), 0
-    );
-
-    const presentDays = weekAttendance.filter(record => 
-      record.status === 'present' || record.status === 'late'
-    ).length;
-
-    return {
-      totalHours: totalHours.toFixed(1),
-      totalOvertime: totalOvertime.toFixed(1),
-      presentDays,
-      totalDays: weekAttendance.length
-    };
+  // ✅ تحضير بيانات الإحصائيات من السيرفر
+  const stats = {
+    totalHours: summaryStats?.this_week?.total_hours?.toFixed(1) || "0.0",
+    totalOvertime: summaryStats?.this_week?.total_overtime?.toFixed(1) || "0.0",
+    presentDays: summaryStats?.this_week?.present_days || 0,
+    totalDays: summaryStats?.this_week?.total_days || 0
   };
-
-  const weeklyStats = calculateWeeklyStats();
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -227,7 +219,7 @@ const TimeTracking = () => {
             {new Date().toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
-              hour12: false 
+              hour12: true 
             })}
           </p>
         </div>
@@ -236,15 +228,16 @@ const TimeTracking = () => {
       {/* Main Time Card */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
           {/* Left Side - Clock In/Out */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Time Tracking</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Attendance Status</h2>
             
             {todayStatus ? (
               <div className="space-y-4">
-                {/* Current Status */}
-                <div className={`p-4 rounded-lg ${
-                  todayStatus.clocked_in ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+                {/* Current Status Indicator */}
+                <div className={`p-4 rounded-lg border ${
+                  todayStatus.clocked_in ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
                 }`}>
                   <div className="flex items-center justify-between">
                     <div>
@@ -263,20 +256,20 @@ const TimeTracking = () => {
                   </div>
                 </div>
 
-                {/* Time Details */}
+                {/* Time Details Grid */}
                 {todayStatus.check_in_time && (
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-600">Check In</p>
-                      <p className="font-semibold text-blue-600">
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <p className="text-sm text-blue-600 font-medium">Check In</p>
+                      <p className="text-xl font-bold text-blue-700">
                         {formatTime(todayStatus.check_in_time)}
                       </p>
                     </div>
                     
                     {todayStatus.check_out_time && (
-                      <div className="bg-orange-50 p-3 rounded-lg">
-                        <p className="text-sm text-gray-600">Check Out</p>
-                        <p className="font-semibold text-orange-600">
+                      <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                        <p className="text-sm text-orange-600 font-medium">Check Out</p>
+                        <p className="text-xl font-bold text-orange-700">
                           {formatTime(todayStatus.check_out_time)}
                         </p>
                       </div>
@@ -284,241 +277,175 @@ const TimeTracking = () => {
                   </div>
                 )}
 
-                {/* Current Shift */}
+                {/* Current Shift Info */}
                 {todayStatus.current_shift && (
-                  <div className="bg-sky-50 p-4 rounded-lg border border-sky-200">
-                    <p className="text-sm font-medium text-gray-600 mb-2">Current Shift</p>
-                    <div className="flex items-center gap-2">
-                      <Clock size={16} className="text-sky-600" />
-                      <span className="font-medium text-sky-900">
+                  <div className="bg-sky-50 p-4 rounded-lg border border-sky-200 mt-2">
+                    <p className="text-xs font-bold text-sky-600 uppercase mb-1">Scheduled Shift</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sky-900">
+                         {todayStatus.current_shift.title || "Regular Shift"}
+                      </span>
+                      <span className="text-sm font-medium text-sky-700">
                         {formatTime(todayStatus.current_shift.start_date_time)} - 
                         {formatTime(todayStatus.current_shift.end_date_time)}
                       </span>
                     </div>
-                    {todayStatus.current_shift.title && (
-                      <p className="text-sm text-gray-700 mt-1">{todayStatus.current_shift.title}</p>
-                    )}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Clock size={48} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No attendance data for today</p>
+              <div className="text-center py-8 text-gray-400">
+                Loading status...
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="mt-6 space-y-3">
+            {/* Clock In/Out Actions */}
+            <div className="mt-6">
               {!todayStatus?.clocked_in ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                   <div className="grid grid-cols-2 gap-3">
                     <input
                       type="text"
-                      placeholder="Location"
+                      placeholder="Location (e.g. Office)"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
                     />
                     <input
                       type="text"
-                      placeholder="Notes (optional)"
+                      placeholder="Note (Optional)"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
                     />
                   </div>
-                  <Button 
-                    variant="primary"
-                    className="w-full"
-                    onClick={handleClockIn}
-                    disabled={loading}
-                  >
-                    <Play size={16} />
-                    Clock In
+                  <Button variant="primary" className="w-full py-3 text-lg" onClick={handleClockIn} disabled={loading}>
+                    <Play size={20} className="mr-2" /> Clock In
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Notes for clock out (optional)"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                  <Button 
-                    variant="secondary"
-                    className="w-full"
-                    onClick={handleClockOut}
-                    disabled={loading}
-                  >
-                    <LogOut size={16} />
-                    Clock Out
-                  </Button>
-                </div>
+                 !todayStatus?.check_out_time && ( 
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="End of shift note..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
+                    />
+                    <Button variant="secondary" className="w-full py-3 text-lg bg-slate-800 hover:bg-slate-900" onClick={handleClockOut} disabled={loading}>
+                      <LogOut size={20} className="mr-2" /> Clock Out
+                    </Button>
+                  </div>
+                 )
               )}
             </div>
           </div>
 
           {/* Right Side - Break Management */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Break Management</h2>
-            
-            {todayStatus?.clocked_in ? (
-              <div className="space-y-4">
-                {!currentBreak ? (
-                  <div className="text-center py-6">
-                    <Coffee size={48} className="mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-500 mb-4">No active break</p>
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Break notes (optional)"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      />
-                      <Button 
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleStartBreak}
-                        disabled={loading}
-                      >
-                        <Coffee size={16} />
-                        Start Break
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Break Started</p>
-                        <p className="font-semibold text-yellow-600">
-                          {formatTime(currentBreak.start)}
-                        </p>
+          <div className="flex flex-col justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Break Management</h2>
+              
+              {todayStatus?.clocked_in && !todayStatus?.check_out_time ? (
+                <div className="space-y-4">
+                  {/* Break Status */}
+                  {!currentBreak ? ( 
+                    <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 text-center">
+                      <Coffee size={40} className="mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-500 mb-4">Need a break?</p>
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          placeholder="Break Reason"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
+                        />
+                        <Button variant="outline" className="w-full" onClick={handleStartBreak} disabled={loading}>
+                          Start Break
+                        </Button>
                       </div>
-                      <Coffee size={24} className="text-yellow-600" />
                     </div>
-                    
-                    <div className="text-center mb-3">
-                      <p className="text-2xl font-bold text-yellow-700">
+                  ) : (
+                    <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200 text-center">
+                      <div className="animate-pulse mb-3 inline-block p-3 bg-yellow-100 rounded-full">
+                         <Coffee size={32} className="text-yellow-600" />
+                      </div>
+                      <p className="text-lg font-bold text-yellow-800 mb-1">You are on Break</p>
+                      <p className="text-yellow-600 font-mono text-xl mb-4">
                         {calculateDuration(currentBreak.start)}
                       </p>
-                      <p className="text-sm text-gray-600">Break Duration</p>
+                      
+                      <Button variant="primary" className="w-full bg-yellow-600 hover:bg-yellow-700 border-transparent" onClick={handleEndBreak} disabled={loading}>
+                        <Pause size={18} className="mr-2" /> End Break
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      variant="primary"
-                      className="w-full"
-                      onClick={handleEndBreak}
-                      disabled={loading}
-                    >
-                      <Pause size={16} />
-                      End Break
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Coffee size={48} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">Clock in first to manage breaks</p>
-              </div>
-            )}
+                  )}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg border border-gray-100">
+                  <Coffee size={48} className="text-gray-300 mb-3" />
+                  <p className="text-gray-400">Clock in to manage breaks</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Weekly Stats */}
+      {/* ✅ Weekly Stats (Powered by Backend) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Hours</p>
-              <p className="text-2xl font-bold text-blue-600">{weeklyStats.totalHours}h</p>
-            </div>
-            <Clock size={24} className="text-blue-600" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Overtime</p>
-              <p className="text-2xl font-bold text-orange-600">{weeklyStats.totalOvertime}h</p>
-            </div>
-            <TrendingUp size={24} className="text-orange-600" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Present Days</p>
-              <p className="text-2xl font-bold text-green-600">{weeklyStats.presentDays}</p>
-            </div>
-            <Calendar size={24} className="text-green-600" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">This Week</p>
-              <p className="text-2xl font-bold text-gray-600">{weeklyStats.totalDays}</p>
-            </div>
-            <Calendar size={24} className="text-gray-600" />
-          </div>
-        </div>
+        <StatBox title="Total Hours" value={`${stats.totalHours}h`} icon={<Clock className="text-blue-600"/>} />
+        <StatBox title="Overtime" value={`${stats.totalOvertime}h`} icon={<TrendingUp className="text-orange-600"/>} />
+        <StatBox title="Present Days" value={stats.presentDays} icon={<Calendar className="text-green-600"/>} />
+        <StatBox title="Total Days" value={stats.totalDays} icon={<Calendar className="text-gray-600"/>} />
       </div>
 
-      {/* Attendance History */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Attendance History</h2>
+      {/* Attendance History Table */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-200 bg-gray-50">
+           <h2 className="font-semibold text-gray-800">Attendance History (Last 30 Days)</h2>
+        </div>
         
         {attendanceHistory.length === 0 ? (
           <div className="text-center py-8">
-            <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500">No attendance records found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Check In</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Check Out</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Total Hours</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+            <table className="w-full text-sm text-left">
+              <thead className="bg-white text-gray-500 border-b">
+                <tr>
+                  <th className="py-3 px-4 font-medium">Date</th>
+                  <th className="py-3 px-4 font-medium">Check In</th>
+                  <th className="py-3 px-4 font-medium">Check Out</th>
+                  <th className="py-3 px-4 font-medium">Hours</th>
+                  <th className="py-3 px-4 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {attendanceHistory.map((record) => (
-                  <tr key={record._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
+                  <tr key={record._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-gray-700">
                       {new Date(record.date).toLocaleDateString('en-US', { 
-                        weekday: 'short',
-                        month: 'short', 
-                        day: 'numeric' 
+                        weekday: 'short', month: 'short', day: 'numeric' 
                       })}
                     </td>
-                    <td className="py-3 px-4">
-                      {record.check_in ? formatTime(record.check_in) : '-'}
+                    <td className="py-3 px-4 font-mono text-gray-600">
+                      {formatTime(record.check_in)}
                     </td>
-                    <td className="py-3 px-4">
-                      {record.check_out ? formatTime(record.check_out) : '-'}
+                    <td className="py-3 px-4 font-mono text-gray-600">
+                      {formatTime(record.check_out)}
                     </td>
-                    <td className="py-3 px-4 font-medium">
+                    <td className="py-3 px-4 font-bold text-slate-700">
                       {record.total_hours ? `${record.total_hours}h` : '-'}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record.status === 'present' ? 'bg-green-100 text-green-800' :
-                        record.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
+                        record.status === 'present' ? 'bg-green-100 text-green-700' :
+                        record.status === 'late' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-600'
                       }`}>
                         {record.status}
                       </span>
@@ -533,5 +460,16 @@ const TimeTracking = () => {
     </div>
   );
 };
+
+// Helper Component for Stats
+const StatBox = ({ title, value, icon }) => (
+  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+    <div>
+      <p className="text-xs font-bold text-gray-500 uppercase">{title}</p>
+      <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
+    </div>
+    <div className="p-3 bg-gray-50 rounded-full">{icon}</div>
+  </div>
+);
 
 export default TimeTracking;

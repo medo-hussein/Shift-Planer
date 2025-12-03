@@ -17,7 +17,8 @@ import {
   getMyReports
 } from "../controllers/employeeController.js";
 
-import { createLeaveRequest, getMyLeaveRequests } from "../controllers/leaveRequestController.js"; 
+// ✅ 1. تم إضافة cancelLeaveRequest لقائمة الاستيراد
+import { createLeaveRequest, getMyLeaveRequests, cancelLeaveRequest } from "../controllers/leaveRequestController.js"; 
 import { getTodayShifts } from "../controllers/shiftController.js";
 
 const router = express.Router();
@@ -47,7 +48,9 @@ router.get("/shifts/today", getTodayShifts);
 // Reports
 router.get("/reports", getMyReports);
 
+// Leave Requests
 router.post("/leave-requests", createLeaveRequest); 
 router.get("/leave-requests/me", getMyLeaveRequests);
+router.patch("/leave-requests/:id/cancel", cancelLeaveRequest);
 
 export default router;
