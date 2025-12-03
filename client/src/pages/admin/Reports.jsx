@@ -3,11 +3,11 @@ import { reportService } from "../../api/services/admin/reportService";
 import { useLoading } from "../../contexts/LoaderContext";
 import apiClient from "../../api/apiClient";
 import { 
-  FileText, Calendar, Plus, Trash2, Eye, Share2, // ✅ تم إضافة Share2
+  FileText, Calendar, Plus, Trash2, Eye, Share2, 
   BarChart2, Clock, Filter, X, ChevronLeft, ChevronRight, Check
 } from "lucide-react";
 
-// تم تصحيح مسار الاستيراد
+// استيراد المودال
 import ReportDetailsModal from "../superadmin/ReportDetailsModal"; 
 
 export default function Reports() {
@@ -16,7 +16,7 @@ export default function Reports() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   
-  // ✅ State لمودال المشاركة
+  // State لمودال المشاركة
   const [reportToShare, setReportToShare] = useState(null);
 
   const [page, setPage] = useState(1);
@@ -157,7 +157,7 @@ export default function Reports() {
                     <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
                         <Eye size={16}/>
                     </button>
-                    {/* ✅ زر المشاركة */}
+                    {/* زر المشاركة */}
                     <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
                         <Share2 size={16}/>
                     </button>
@@ -210,7 +210,7 @@ export default function Reports() {
         <ReportDetailsModal report={selectedReport} onClose={() => setSelectedReport(null)} />
       )}
 
-      {/* ✅ مودال المشاركة */}
+      {/* مودال المشاركة */}
       {reportToShare && (
         <ShareReportModal 
             report={reportToShare} 
@@ -296,6 +296,8 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
     };
 
     const handleShare = async () => {
+        if (selectedEmployees.length === 0) return;
+
         loadingUtils.show();
         try {
             await reportService.share(report.id, selectedEmployees);
@@ -351,7 +353,12 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
                 <div className="p-4 border-t border-slate-100 bg-slate-50">
                     <button 
                         onClick={handleShare} 
-                        className="w-full py-2.5 bg-[#112D4E] text-white rounded-xl font-medium hover:bg-[#274b74] transition shadow-md flex justify-center items-center gap-2"
+                        disabled={selectedEmployees.length === 0}
+                        className={`w-full py-2.5 rounded-xl font-medium transition shadow-md flex justify-center items-center gap-2 ${
+                            selectedEmployees.length === 0 
+                            ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
+                            : "bg-[#112D4E] text-white hover:bg-[#274b74]"
+                        }`}
                     >
                         <Share2 size={16} /> Share with {selectedEmployees.length} Employee(s)
                     </button>

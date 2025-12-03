@@ -1,8 +1,9 @@
 import React from "react";
 import { X, Calendar, FileSpreadsheet, FileText } from "lucide-react";
-// import jsPDF from "jspdf";
-// import autoTable from "jspdf-autotable"; // ✅ 1. التعديل هنا: استيراد الدالة
-// import * as XLSX from "xlsx";
+// ✅ استيراد المكتبات بطريقة تتناسب مع بيئة ES Module (Vite/React)
+import { jsPDF } from "jspdf"; 
+import autoTable from 'jspdf-autotable'; // يجب أن يتم استيرادها لتفعيل دالة autoTable على الـ doc
+import * as XLSX from "xlsx";
 
 export default function ReportDetailsModal({ report, onClose }) {
   if (!report) return null;
@@ -51,6 +52,7 @@ export default function ReportDetailsModal({ report, onClose }) {
   // 2. تصدير PDF (النسخة المصححة)
   const handleExportPDF = () => {
     try {
+      // ✅ الآن jsPDF مُعرفة
       const doc = new jsPDF();
       
       // العنوان
@@ -93,7 +95,7 @@ export default function ReportDetailsModal({ report, onClose }) {
 
       // رسم الجدول
       if (tableBody.length > 0) {
-        // ✅ 2. التعديل هنا: استخدام دالة autoTable وتمرير doc لها
+        // ✅ استخدام دالة autoTable
         autoTable(doc, {
           head: tableHead,
           body: tableBody,
