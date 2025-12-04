@@ -28,11 +28,11 @@ import A_TimeOff from "../pages/admin/TimeOff";
 import A_Reports from "../pages/admin/Reports";
 
 // Employee Pages
-import E_Dashboard from "../pages/employee/Dashboard"; //  الصفحة الجديدة
+import E_Dashboard from "../pages/employee/Dashboard";
 import E_Schedule from "../pages/employee/MySchedule";
 import E_TimeTracking from "../pages/employee/TimeTracking";
 import E_TimeOff from "../pages/employee/TimeOffRequests";
-import E_Reports from "../pages/employee/MyReports";   //  الصفحة الجديدة
+import E_Reports from "../pages/employee/MyReports";
 
 const routes = {
 
@@ -56,11 +56,11 @@ const routes = {
   ],
 
   employee: [
-      { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard }, // ✅ الداشبورد الحقيقية
-      { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },   // ✅ الجدول
+      { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard }, 
+      { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
       { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
       { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
-      { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },         // ✅ التقارير
+      { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },
       { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ]
 };

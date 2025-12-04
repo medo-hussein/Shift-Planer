@@ -1,13 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import GoogleSignInButton from "../../components/GoogleSignInButton.jsx";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Load Google SDK
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      if (window.google) return;
+
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log('Google SDK loaded');
+      };
+      document.head.appendChild(script);
+    };
+
+    loadGoogleScript();
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,6 +47,22 @@ export default function Login() {
     }
 
     setLoading(false);
+  };
+
+  const handleGoogleSignInSuccess = async () => {
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      // The authentication was successful and token/user data is handled by AuthContext
+      navigate("/dashboard");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleSignInError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -98,11 +134,32 @@ export default function Login() {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-[#19283a] hover:bg-[#274b74] transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3F72AF] disabled:opacity-50"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <div>
+            <GoogleSignInButton
+              onSuccess={handleGoogleSignInSuccess}
+              onError={handleGoogleSignInError}
+              buttonId="google-signin-button"
+              className="w-full"
+              disabled={loading || googleLoading}
+            />
           </div>
 
           {/* Footer */}

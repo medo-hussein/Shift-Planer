@@ -2,7 +2,7 @@ import { OAuth2Client } from 'google-auth-library';
 import dotenv from "dotenv";
 dotenv.config();
 import User from '../models/userModel.js';
-// import Company from '../models/companyModel.js';
+import Company from '../models/companyModel.js';
 console.log('Client ID:', process.env.GOOGLE_CLIENT_ID);
 console.log('Client Secret:', process.env.GOOGLE_CLIENT_SECRET);
 console.log('Redirect URI:', process.env.GOOGLE_REDIRECT_URI);

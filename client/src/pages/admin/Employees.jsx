@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLoading } from "../../contexts/LoaderContext";
 import { employeesService } from "../../api/services/admin/employeesService";
 import {
@@ -9,7 +9,6 @@ import {
   Edit2,
   Trash2,
   Eye,
-  Calendar,
   Clock,
   CheckCircle,
   XCircle,
@@ -29,6 +28,7 @@ import EmployeeDetailsModal from "../../components/admin/EmployeeDetailsModal";
 import AttendanceModal from "../../components/admin/AttendanceModal";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
+import {Alert} from "../../utils/alertService.js" ;
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -59,14 +59,11 @@ const Employees = () => {
         page,
         limit: 10
       };
-      
       const response = await employeesService.getEmployees(params);
       const rawData = response.data.data || [];
       
-      // ✅ Data Normalization: Create 'isActive' from whatever the backend sends
       const normalizedData = rawData.map(emp => ({
         ...emp,
-        // Priority: isActive -> is_active -> true (default)
         isActive: emp.isActive !== undefined ? emp.isActive : (emp.is_active !== undefined ? emp.is_active : true)
       }));
 
@@ -79,8 +76,7 @@ const Employees = () => {
       setPositions(uniquePositions);
       
     } catch (error) {
-      console.error("API Error:", error);
-      toast.error("Failed to fetch employees");
+      Alert.error("Failed to fetch employees");
     } finally {
       setLoading(false);
       hideLoader();
@@ -91,11 +87,9 @@ const Employees = () => {
     fetchEmployees();
   }, []);
 
-  // Apply filters and search
   const applyFilters = useCallback(() => {
     let filtered = [...employees];
 
-    // Search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(emp => 
@@ -111,7 +105,6 @@ const Employees = () => {
       filtered = filtered.filter(emp => emp.position === filterPosition);
     }
 
-    // Status Filter (✅ Uses normalized 'isActive')
     if (filterStatus !== "all") {
       switch (filterStatus) {
         case "active":
@@ -183,32 +176,12 @@ const Employees = () => {
     try {
       showLoader();
       await employeesService.createEmployee(employeeData);
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Employee created successfully',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
-      
+      Alert.success("Employee created successfully");
       setShowCreateModal(false);
       fetchEmployees(); 
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Failed to create employee";
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: errorMsg,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 4000,
-        timerProgressBar: true,
-      });
+      Alert.error(errorMsg);
       console.error("Create error:", error);
     } finally {
       hideLoader();
@@ -220,34 +193,14 @@ const Employees = () => {
     try {
       showLoader();
       await employeesService.updateEmployee(employeeId, data);
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Employee updated successfully',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
-      
+      Alert.success("Employee updated successfully");
       setShowCreateModal(false);
       setIsEditMode(false);
       setSelectedEmployee(null);
       fetchEmployees(currentPage); 
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Failed to update employee";
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: errorMsg,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 4000,
-        timerProgressBar: true,
-      });
+      Alert.error(errorMsg);
       console.error("Update error:", error);
     } finally {
       hideLoader();
@@ -274,10 +227,8 @@ const Employees = () => {
       try {
         showLoader();
         
-        // ✅ Send 'is_active' to backend (keep backend happy)
         await employeesService.toggleEmployeeStatus(employeeId, { is_active: newStatus });
         
-        // ✅ Update local 'isActive' immediately (keep frontend happy)
         setEmployees(prev => prev.map(emp => 
           emp._id === employeeId 
             ? { 
@@ -286,7 +237,6 @@ const Employees = () => {
                 is_active: newStatus, // Sync backup
                 stats: {
                   ...emp.stats,
-                  // If inactive, set status to absent, otherwise keep or reset
                   today_status: newStatus ? (emp.stats?.today_status || "absent") : "absent"
                 }
               }
@@ -294,30 +244,11 @@ const Employees = () => {
         ));
         
         applyFilters();
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: `Employee "${employeeName}" ${newStatus ? 'activated' : 'deactivated'} successfully`,
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-        });
+        Alert.success(`Employee "${employeeName}" ${newStatus ? 'activated' : 'deactivated'} successfully`);
         
         setShowActionsMenu(null);
       } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'Failed to update employee status',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 4000,
-          timerProgressBar: true,
-        });
+        Alert.error(error.response?.data?.message || 'Failed to update employee status');
         console.error("Toggle status error:", error);
       } finally {
         hideLoader();
@@ -327,55 +258,22 @@ const Employees = () => {
 
   // Handle delete employee
   const handleDeleteEmployee = async (employeeId, employeeName) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `You are about to delete "${employeeName}". This action cannot be undone!`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true,
-    });
+    const result = await Alert.confirm(`You are about to delete "${employeeName}". This action cannot be undone!`);
     
     if (result.isConfirmed) {
       try {
         showLoader();
         await employeesService.deleteEmployee(employeeId);
-        
         setEmployees(prev => prev.filter(emp => emp._id !== employeeId));
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: `Employee "${employeeName}" has been deleted successfully`,
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-        });
-        
+        Alert.success(`Employee "${employeeName}" has been deleted successfully`);
         applyFilters();
         
       } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'Failed to delete employee',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 4000,
-          timerProgressBar: true,
-        });
-        console.error("Delete error:", error);
+        Alert.error(error.response?.data?.message || 'Failed to delete employee');
       } finally {
         hideLoader();
       }
     }
-    
     setShowActionsMenu(null);
   };
 
@@ -417,7 +315,6 @@ const Employees = () => {
     });
   };
 
-  // ✅ Get Status Badge (Uses normalized 'isActive')
   const getStatusBadge = (employee) => {
     const isActive = employee.isActive; 
     const todayStatus = employee.stats?.today_status;

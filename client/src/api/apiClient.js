@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
 
           // Fetch fresh user data & notify AuthProvider
           try {
-            const me = await axios.get(`${BASE_URL}/api/users/me`, {
+            const me = await axios.get(`${BASE_URL}/api/auth/profile`, {
               headers: { Authorization: `Bearer ${newToken}` },
               withCredentials: true,
             });

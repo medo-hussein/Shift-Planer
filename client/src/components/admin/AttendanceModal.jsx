@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLoading } from "../../contexts/LoaderContext";
 import { employeesService } from "../../api/services/admin/employeesService";
 import {
   X,
   Clock,
-  Calendar,
   TrendingUp,
-  ChevronLeft,
-  ChevronRight
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -47,12 +44,14 @@ const AttendanceModal = ({ employee, onClose }) => {
 
   const formatTime = (timeString) => {
     if (!timeString) return "N/A";
-    const [hours, minutes] = timeString.split(':');
-    const date = new Date();
-    date.setHours(hours, minutes);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
+
+    const date = new Date(timeString);
+
+    if (isNaN(date.getTime())) return "N/A";
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -104,7 +103,7 @@ const AttendanceModal = ({ employee, onClose }) => {
                 <Clock className="text-blue-600" size={18} />
               </div>
             </div>
-            
+
             <div className="bg-emerald-50 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
@@ -114,7 +113,7 @@ const AttendanceModal = ({ employee, onClose }) => {
                 <TrendingUp className="text-emerald-600" size={18} />
               </div>
             </div>
-            
+
             <div className="bg-orange-50 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
@@ -150,12 +149,12 @@ const AttendanceModal = ({ employee, onClose }) => {
                         </td>
                         <td className="py-2 px-3">
                           <div className="text-sm text-gray-900">
-                            {formatTime(record.clock_in)}
+                            {formatTime(record.check_in)}
                           </div>
                         </td>
                         <td className="py-2 px-3">
                           <div className="text-sm text-gray-900">
-                            {formatTime(record.clock_out)}
+                            {formatTime(record.check_out)}
                           </div>
                         </td>
                         <td className="py-2 px-3">
@@ -164,16 +163,15 @@ const AttendanceModal = ({ employee, onClose }) => {
                           </div>
                         </td>
                         <td className="py-2 px-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                            record.status === 'present' 
-                              ? 'bg-emerald-50 text-emerald-700' 
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${record.status === 'present'
+                              ? 'bg-emerald-50 text-emerald-700'
                               : record.status === 'late'
-                              ? 'bg-yellow-50 text-yellow-700'
-                              : 'bg-red-50 text-red-700'
-                          }`}>
-                            {record.status === 'present' ? 'On Time' : 
-                             record.status === 'late' ? 'Late' : 
-                             record.status === 'absent' ? 'Absent' : 'N/A'}
+                                ? 'bg-yellow-50 text-yellow-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                            {record.status === 'present' ? 'On Time' :
+                              record.status === 'late' ? 'Late' :
+                                record.status === 'absent' ? 'Absent' : 'N/A'}
                           </span>
                         </td>
                       </tr>

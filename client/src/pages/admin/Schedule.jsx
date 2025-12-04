@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { useLoading } from "../../contexts/LoaderContext";
 import shiftService from "../../api/services/admin/shiftService";
 import apiClient from "../../api/apiClient";
-import { Plus, X, Clock, MapPin, FileText, Users, Trash2, Save, AlertCircle, Lock } from "lucide-react";
+import { Plus, X, Clock, MapPin, FileText, Users, Trash2, Save, AlertCircle, Lock, CheckSquare, Square, Info } from "lucide-react";
 
 export default function Schedule() {
   const [events, setEvents] = useState([]);
@@ -33,7 +33,7 @@ export default function Schedule() {
     try {
       show();
       const [shiftsRes, employeesRes] = await Promise.all([
-        // ✅ طلب 1000 شيفت لتجاوز الـ Pagination الافتراضي وضمان ظهور كافة البيانات
+        // ✅ طلب 1000 شيفت لتجاوز الـ Pagination الافتراضي (50)
         shiftService.getBranchShifts({ limit: 1000 }), 
         apiClient.get("/api/admin/employees")
       ]);
@@ -66,7 +66,7 @@ export default function Schedule() {
     let color = getShiftColor(s.shift_type); 
     let borderColor = color;
 
-    // Override color based on Status & Time (The "Automatic" Logic)
+    // Override color based on Status & Time
     if (s.status === 'completed') {
       color = '#9ca3af'; // Gray (Archived/Done)
       borderColor = '#d1d5db';
@@ -92,8 +92,8 @@ export default function Schedule() {
         type: s.shift_type,
         location: s.location,
         notes: s.notes,
-        status: s.status, // ✅ نحتاج الحالة
-        isPast: isPast    // ✅ نحتاج نعرف لو ماضي
+        status: s.status,
+        isPast: isPast
       },
     };
   };
@@ -156,6 +156,34 @@ export default function Schedule() {
     });
   };
 
+  // ✅ Toggle Employee Selection Logic (Checkboxes)
+  const toggleEmployee = (empId) => {
+    if (isReadOnly) return;
+
+    setFormData(prev => {
+        const currentIds = prev.employee_ids;
+        // Edit Mode: Allow only one selection (Radio behavior)
+        if (selectedShiftId) {
+            return { ...prev, employee_ids: [empId] }; 
+        }
+        // Create Mode: Toggle selection
+        if (currentIds.includes(empId)) {
+            return { ...prev, employee_ids: currentIds.filter(id => id !== empId) };
+        } else {
+            return { ...prev, employee_ids: [...currentIds, empId] };
+        }
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedShiftId || isReadOnly) return;
+    if (formData.employee_ids.length === employees.length) {
+        setFormData({ ...formData, employee_ids: [] });
+    } else {
+        setFormData({ ...formData, employee_ids: employees.map(e => e._id) });
+    }
+  };
+
   // 4. Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -203,7 +231,7 @@ export default function Schedule() {
       }
 
       handleCloseModal();
-      fetchData(); // ✅ إعادة تحميل البيانات لتظهر الشيفتات الجديدة
+      fetchData(); // ✅ إعادة تحميل البيانات لتظهر التغييرات
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Operation failed");
@@ -240,7 +268,6 @@ export default function Schedule() {
           <p className="text-slate-500 text-sm">Plan and manage employee shifts.</p>
         </div>
         
-        {/* مفتاح الألوان (Legend) */}
         <div className="hidden md:flex gap-3 text-xs">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Scheduled</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Active</span>
@@ -268,10 +295,15 @@ export default function Schedule() {
           }}
           events={events}
           height="auto"
-          slotMinTime="00:00:00" // ✅ بداية اليوم من منتصف الليل لرؤية كل الشيفتات
+          slotMinTime="00:00:00" // ✅ بداية اليوم من منتصف الليل
           slotMaxTime="24:00:00"
           allDaySlot={false}
           eventClick={handleEventClick}
+          slotLabelFormat={{
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          }}
         />
       </div>
 
@@ -303,37 +335,48 @@ export default function Schedule() {
                   </div>
               )}
 
-              {/* Employees */}
+              {/* ✅ New Checkbox Employee Selection */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                  Assign To <span className="text-red-500">*</span>
-                  {!selectedShiftId && !isReadOnly && (
-                    <span className="ml-2 text-[10px] normal-case font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                      Hold Ctrl to select multiple
-                    </span>
-                  )}
-                </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-3 text-slate-400" size={18} />
-                  <select 
-                    disabled={isReadOnly} // 🔒 تعطيل
-                    multiple={!selectedShiftId}
-                    required
-                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 h-32 ${isReadOnly ? 'bg-gray-50 text-gray-500' : 'bg-white'}`}
-                    value={formData.employee_ids}
-                    onChange={(e) => {
-                      const options = Array.from(e.target.selectedOptions, option => option.value);
-                      if (selectedShiftId && options.length > 1) return;
-                      setFormData({ ...formData, employee_ids: options });
-                    }}
-                  >
-                    {employees.map(emp => (
-                      <option key={emp._id} value={emp._id}>
-                        {emp.name} ({emp.position})
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase">
+                      Assign To <span className="text-red-500">*</span>
+                    </label>
+                    {!selectedShiftId && !isReadOnly && (
+                        <button 
+                            type="button" 
+                            onClick={toggleSelectAll}
+                            className="text-xs text-blue-600 hover:underline font-medium"
+                        >
+                            {formData.employee_ids.length === employees.length ? "Deselect All" : "Select All"}
+                        </button>
+                    )}
                 </div>
+                
+                <div className={`border border-slate-200 rounded-xl overflow-hidden h-40 overflow-y-auto ${isReadOnly ? 'bg-gray-50' : 'bg-white'}`}>
+                    {employees.length > 0 ? employees.map(emp => {
+                        const isSelected = formData.employee_ids.includes(emp._id);
+                        return (
+                            <div 
+                                key={emp._id} 
+                                onClick={() => toggleEmployee(emp._id)}
+                                className={`flex items-center gap-3 p-2.5 border-b border-slate-50 cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-blue-50/50' : ''} ${isReadOnly ? 'pointer-events-none opacity-60' : ''}`}
+                            >
+                                <div className={`text-slate-400 ${isSelected ? 'text-blue-600' : ''}`}>
+                                    {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
+                                </div>
+                                <div>
+                                    <p className={`text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>{emp.name}</p>
+                                    <p className="text-xs text-slate-400">{emp.position || "Employee"}</p>
+                                </div>
+                            </div>
+                        );
+                    }) : (
+                        <p className="p-4 text-center text-sm text-slate-400">No employees found.</p>
+                    )}
+                </div>
+                <p className="text-xs text-slate-400 mt-1.5 text-right">
+                    {formData.employee_ids.length} employee(s) selected
+                </p>
               </div>
 
               {/* Title & Type */}
@@ -363,6 +406,15 @@ export default function Schedule() {
                     <option value="weekend">Weekend</option>
                     <option value="emergency">Emergency</option>
                   </select>
+                  
+                  {/* ✅ UI Hint: التعديل للتوافق مع منطق الباك إند */}
+                  {['overtime', 'holiday', 'weekend', 'emergency'].includes(formData.shift_type) && !isReadOnly && (
+                     <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-amber-600 font-medium bg-amber-50 p-1.5 rounded-lg">
+                        <Info size={12} />
+                        All hours in this shift will be counted as Overtime.
+                     </div>
+                  )}
+
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import apiClient from "../api/apiClient";
+import { googleAuthService } from "../api/services/googleAuthService";
 
 const AuthContext = createContext();
 
@@ -156,6 +157,106 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Google Sign-In
+  const loginWithGoogle = async (idToken) => {
+    try {
+      const { data } = await googleAuthService.signInWithGoogle(idToken);
+
+      if (data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        setAccessToken(data.accessToken);
+        apiClient.defaults.headers.Authorization = `Bearer ${data.accessToken}`;
+        setUser(data.user);
+        setStatus("authenticated");
+
+        return { success: true, message: data.message };
+      }
+
+      return { success: false, error: data.message || "Google login failed" };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.message || "Google login failed",
+      };
+    }
+  };
+
+  // Link Google account
+  const linkGoogleAccount = async (idToken) => {
+    try {
+      const { data } = await googleAuthService.linkGoogleAccount(idToken);
+      
+      // Update user data with Google info
+      setUser(prevUser => ({
+        ...prevUser,
+        authProvider: 'google',
+        googleProfilePicture: data.user?.googleProfilePicture,
+        emailVerified: true
+      }));
+
+      return { success: true, message: data.message };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.message || "Failed to link Google account",
+      };
+    }
+  };
+
+  // Unlink Google account
+  const unlinkGoogleAccount = async () => {
+    try {
+      const { data } = await googleAuthService.unlinkGoogleAccount();
+      
+      // Update user data
+      setUser(prevUser => ({
+        ...prevUser,
+        authProvider: 'local',
+        googleProfilePicture: null
+      }));
+
+      return { success: true, message: data.message };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.message || "Failed to unlink Google account",
+      };
+    }
+  };
+
+  // Set token from OAuth callback
+  const setTokenFromCallback = (token) => {
+    localStorage.setItem('accessToken', token);
+    setAccessToken(token);
+    apiClient.defaults.headers.Authorization = `Bearer ${token}`;
+    
+    // Fetch user profile to update state
+    apiClient
+      .get("/api/auth/profile")
+      .then(({ data }) => {
+        setUser(data);
+        setStatus("authenticated");
+      })
+      .catch(() => {
+        localStorage.removeItem("accessToken");
+        setStatus("unauthenticated");
+        setUser(null);
+      });
+  };
+
+  // Get Google status
+  const getGoogleStatus = async () => {
+    try {
+      const { data } = await googleAuthService.getGoogleStatus();
+      return { success: true, data: data.data };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.message || "Failed to get Google status",
+      };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setAccessToken(null);
@@ -174,6 +275,11 @@ export function AuthProvider({ children }) {
         verifyOtp,
         resendOtp,
         login,
+        loginWithGoogle,
+        linkGoogleAccount,
+        unlinkGoogleAccount,
+        getGoogleStatus,
+        setTokenFromCallback,
         logout,
         loading,
         isAuthenticated: status === "authenticated",

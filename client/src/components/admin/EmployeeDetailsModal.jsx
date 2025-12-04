@@ -202,22 +202,6 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
                 <p className="text-xs font-medium text-gray-600 mb-1">Last Login</p>
                 <p className="text-sm text-gray-900">{formatDate(profile?.lastLogin)}</p>
               </div>
-              
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-medium text-gray-600">Email Verified</p>
-                  <div className={`w-2 h-2 rounded-full ${profile?.email_verified ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                </div>
-                <p className="text-sm text-gray-900">{profile?.email_verified ? 'Verified' : 'Not Verified'}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-medium text-gray-600">Phone Verified</p>
-                  <div className={`w-2 h-2 rounded-full ${profile?.phone_verified ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                </div>
-                <p className="text-sm text-gray-900">{profile?.phone_verified ? 'Verified' : 'Not Verified'}</p>
-              </div>
             </div>
           </div>
 

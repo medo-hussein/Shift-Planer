@@ -4,7 +4,7 @@ import { useLoading } from "../../contexts/LoaderContext";
 import apiClient from "../../api/apiClient";
 import { 
   FileText, Calendar, Plus, Trash2, Eye, Share2, 
-  BarChart2, Clock, Filter, X, ChevronLeft, ChevronRight, Check
+  Clock, Filter, X, ChevronLeft, ChevronRight, Check
 } from "lucide-react";
 
 // استيراد المودال
@@ -71,7 +71,6 @@ export default function Reports() {
   const getReportStyle = (type) => {
     switch (type) {
       case 'attendance': return { icon: Clock, bg: 'bg-blue-50', text: 'text-blue-600' };
-      case 'performance': return { icon: BarChart2, bg: 'bg-purple-50', text: 'text-purple-600' };
       case 'shift': return { icon: Calendar, bg: 'bg-orange-50', text: 'text-orange-600' };
       default: return { icon: FileText, bg: 'bg-slate-50', text: 'text-slate-600' };
     }
@@ -80,6 +79,7 @@ export default function Reports() {
   // دالة لعرض إحصائيات سريعة على الكارت
   const renderQuickStats = (report) => {
     const data = report.data || {};
+    
     if (report.type === 'attendance') {
       return (
         <div className="flex justify-between text-center mt-4 pt-4 border-t border-slate-50">
@@ -89,14 +89,7 @@ export default function Reports() {
         </div>
       );
     }
-    if (report.type === 'performance') {
-      return (
-        <div className="flex justify-between text-center mt-4 pt-4 border-t border-slate-50">
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Avg Score</p><p className="text-sm font-bold text-purple-600">{data.averages?.avg_performance || 0}%</p></div>
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Employees</p><p className="text-sm font-bold text-slate-700">{data.employees?.length || 0}</p></div>
-        </div>
-      );
-    }
+
     if (report.type === 'shift') {
       return (
         <div className="flex justify-between text-center mt-4 pt-4 border-t border-slate-50">
@@ -105,6 +98,7 @@ export default function Reports() {
         </div>
       );
     }
+
     return null;
   };
 
@@ -127,8 +121,7 @@ export default function Reports() {
             >
               <option value="">All Reports</option>
               <option value="attendance">Attendance</option>
-              <option value="shift">Shift</option>
-              <option value="performance">Performance</option>
+              <option value="shift">Shift Analysis</option>
             </select>
           </div>
           <button 
@@ -141,71 +134,83 @@ export default function Reports() {
       </div>
 
       {reports.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {reports.map((report) => {
-            const style = getReportStyle(report.type);
-            const Icon = style.icon;
-            
-            return (
-              <div key={report.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 flex flex-col h-full group">
-                
-                <div className="flex justify-between items-start mb-3">
-                  <div className={`p-2.5 rounded-xl ${style.bg} ${style.text}`}>
-                    <Icon size={20} />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {reports.map((report) => {
+              const style = getReportStyle(report.type);
+              const Icon = style.icon;
+              
+              return (
+                <div key={report.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 flex flex-col h-full group">
+                  
+                  <div className="flex justify-between items-start mb-3">
+                    <div className={`p-2.5 rounded-xl ${style.bg} ${style.text}`}>
+                      <Icon size={20} />
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
+                          <Eye size={16}/>
+                      </button>
+                      {/* زر المشاركة */}
+                      <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
+                          <Share2 size={16}/>
+                      </button>
+                      <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600" title="Delete">
+                          <Trash2 size={16}/>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
-                        <Eye size={16}/>
-                    </button>
-                    {/* زر المشاركة */}
-                    <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
-                        <Share2 size={16}/>
-                    </button>
-                    <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600" title="Delete">
-                        <Trash2 size={16}/>
-                    </button>
+
+                  <h3 className="font-bold text-slate-800 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
+                  
+                  <div className="text-xs text-slate-500 flex items-center gap-2 mb-auto">
+                    <Calendar size={12} />
+                    {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+                  </div>
+
+                  {renderQuickStats(report)}
+                  
+                  <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
+                     <span>Created: {new Date(report.created_at).toLocaleDateString()}</span>
+                     <span className="capitalize bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{report.type}</span>
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <h3 className="font-bold text-slate-800 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
-                
-                <div className="text-xs text-slate-500 flex items-center gap-2 mb-auto">
-                  <Calendar size={12} />
-                  {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
-                </div>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-8 pb-4">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              <span className="text-sm font-medium text-slate-600">
+                Page {page} of {totalPages}
+              </span>
 
-                {renderQuickStats(report)}
-                
-                <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
-                   <span>Created: {new Date(report.created_at).toLocaleDateString()}</span>
-                   <span className="capitalize bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{report.type}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+        </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-slate-200 text-center">
-            <p className="text-slate-500">No reports found.</p>
+        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-500">
+          No reports found matching your filters.
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-10 pb-4">
-            <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p-1))} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"><ChevronLeft size={20}/></button>
-            <span className="text-sm font-semibold text-slate-700 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">{page} of {totalPages}</span>
-            <button disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))} className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"><ChevronRight size={20}/></button>
-        </div>
-      )}
-
-      {isGenerateModalOpen && (
-        <GenerateReportModal 
-          onClose={() => setIsGenerateModalOpen(false)} 
-          onSuccess={() => { setIsGenerateModalOpen(false); setPage(1); fetchData(); }}
-          loadingUtils={{ show, hide }}
-        />
-      )}
-
+      {/* Modal View */}
       {selectedReport && (
         <ReportDetailsModal report={selectedReport} onClose={() => setSelectedReport(null)} />
       )}
@@ -219,11 +224,19 @@ export default function Reports() {
         />
       )}
 
+      {isGenerateModalOpen && (
+        <GenerateReportModal 
+          onClose={() => setIsGenerateModalOpen(false)} 
+          onSuccess={() => { setIsGenerateModalOpen(false); setPage(1); fetchData(); }}
+          loadingUtils={{ show, hide }}
+        />
+      )}
+
     </div>
   );
 }
 
-// --- Generate Report Modal ---
+// --- Generate Report Modal (Updated: Removed Performance) ---
 function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
     const [type, setType] = useState("attendance");
     const [startDate, setStartDate] = useState("");
@@ -242,7 +255,8 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
             const payload = { start_date: startDate, end_date: endDate, employee_id: employeeId || null };
             if (type === "attendance") await reportService.generateAttendance(payload);
             else if (type === "shift") await reportService.generateShift(payload);
-            else if (type === "performance") await reportService.generatePerformance(payload);
+            // تم إزالة خيار performance من هنا
+            
             alert("Report generated!");
             onSuccess();
         } catch (err) { alert(err.response?.data?.message || "Failed"); } 
@@ -255,7 +269,9 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
                 <div className="flex justify-between mb-4"><h3 className="font-bold">Generate Report</h3><button onClick={onClose}><X size={20}/></button></div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <select className="w-full border p-2 rounded" value={type} onChange={e => setType(e.target.value)}>
-                        <option value="attendance">Attendance</option><option value="shift">Shift</option><option value="performance">Performance</option>
+                        <option value="attendance">Attendance</option>
+                        <option value="shift">Shift</option>
+                        {/* Performance removed */}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
                         <input type="date" required className="border p-2 rounded" value={startDate} onChange={e => setStartDate(e.target.value)} />

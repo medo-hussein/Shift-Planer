@@ -10,6 +10,8 @@ import Register from "../pages/auth/register";
 import ForgetPassword from "../pages/auth/ForgetPassword.jsx";
 import ResetPassword from "../pages/auth/ResetPassword.jsx";
 import VerifyOtp from "../pages/auth/VerifyOtp.jsx";
+import AuthSuccess from "../pages/auth/AuthSuccess.jsx";
+import AuthError from "../pages/auth/AuthError.jsx";
 
 import OtpRoute from "./OtpRoute.jsx";
 import ResetPasswordRoute from "./ResetPasswordRoute.jsx";
@@ -118,6 +120,10 @@ function AppRoutes() {
         }
       />
 
+      {/* Google Auth Routes */}
+      <Route path="/auth/success" element={<AuthSuccess />} />
+      <Route path="/auth/error" element={<AuthError />} />
+
       {/* Unauthorized */}
       <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
 
@@ -139,7 +145,6 @@ function AppRoutes() {
 }
 
 function VerifiedRoute({ status }) {
-  // ... (المنطق سليم)
   if (status === "pending_verification") {
     return <Navigate to="/verify-otp" replace />;
   }
@@ -148,11 +153,10 @@ function VerifiedRoute({ status }) {
 }
 
 function MainAppLayout() {
-  // ... (المنطق سليم)
   const { userRole } = useAuth();
   const roleRoutes = routesConfig[userRole] || [];
 
-  if (!userRole) return null; // prevent navbar flicker
+  if (!userRole) return null; 
 
   return (
     <div>
@@ -168,7 +172,6 @@ function MainAppLayout() {
             />
           ))}
 
-          {/* Fallback for unknown protected routes */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>

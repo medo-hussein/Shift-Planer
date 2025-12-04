@@ -442,7 +442,7 @@ export const getReports = async (req, res) => {
           created_at: report.createdAt,
           access_level: report.access_level,
           is_public: report.is_public,
-          data: report.data // ✅ تم إضافة هذا السطر لضمان إرسال البيانات
+          data: report.data // ✅ Data included
         })),
         pagination: {
           page: parseInt(page),
@@ -639,7 +639,6 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
-    // ISOLATION KEY: Get the Super Admin ID for filtering
     const tenantOwnerId = getTenantOwnerId(req.user); 
 
     const today = new Date();
@@ -681,8 +680,9 @@ export const getDashboardStats = async (req, res) => {
         this_week: {
           total_days: weekAttendance.length,
           present_days: weekAttendance.filter(a => a.status === "present" || a.status === "late").length,
-          total_hours: weekAttendance.reduce((sum, a) => sum + a.total_hours, 0),
-          overtime: weekAttendance.reduce((sum, a) => sum + a.overtime, 0)
+          // ✅ FIX: Round the totals to 2 decimal places with parseFloat
+          total_hours: parseFloat(weekAttendance.reduce((sum, a) => sum + (a.total_hours || 0), 0).toFixed(2)),
+          overtime: parseFloat(weekAttendance.reduce((sum, a) => sum + (a.overtime || 0), 0).toFixed(2))
         },
         this_month: {
           total_shifts: totalShifts
@@ -719,23 +719,26 @@ export const getDashboardStats = async (req, res) => {
         Report.countDocuments({
           generated_by_admin_id: userId,
           super_admin_id: tenantOwnerId, // ISOLATION
-          created_at: { $gte: monthStart }
+          createdAt: { $gte: monthStart } // ✅ FIX: created_at -> createdAt
         })
       ]);
 
       const presentToday = todayAttendance.filter(a => a.status === "present" || a.status === "late").length;
+      const totalHours = weekAttendance.reduce((sum, a) => sum + (a.total_hours || 0), 0);
+      const totalOvertime = weekAttendance.reduce((sum, a) => sum + (a.overtime || 0), 0);
 
       stats = {
         branch: {
           total_employees: employees.length,
           present_today: presentToday,
           absent_today: employees.length - presentToday,
-          attendance_rate: (presentToday / employees.length * 100).toFixed(1)
+          attendance_rate: employees.length > 0 ? (presentToday / employees.length * 100).toFixed(1) : 0
         },
         this_week: {
-          total_hours: weekAttendance.reduce((sum, a) => sum + a.total_hours, 0),
-          total_overtime: weekAttendance.reduce((sum, a) => sum + a.overtime, 0),
-          average_hours: (weekAttendance.reduce((sum, a) => sum + a.total_hours, 0) / employees.length).toFixed(2)
+          // ✅ FIX: Round to 2 decimal places
+          total_hours: parseFloat(totalHours.toFixed(2)),
+          total_overtime: parseFloat(totalOvertime.toFixed(2)),
+          average_hours: employees.length > 0 ? (totalHours / employees.length).toFixed(2) : "0.00"
         },
         upcoming: {
           pending_shifts: pendingShifts
@@ -754,13 +757,9 @@ export const getDashboardStats = async (req, res) => {
       const ownedEmployeeIds = ownedEmployees.map(id => id._id);
 
       const [totalAdmins, totalEmployees, totalReports, systemAttendance] = await Promise.all([
-        // Only count admins owned by this SA
         User.countDocuments({ role: "admin", super_admin_id: userId }), 
-        // Only count employees owned by this SA
         User.countDocuments({ role: "employee", branch_admin_id: { $in: ownedAdminIds } }),
-        // Only count reports owned by this SA
-        Report.countDocuments({ generated_by_admin_id: { $in: ownedAdminIds }, super_admin_id: userId, created_at: { $gte: monthStart } }), 
-        // Only count attendance records owned by this SA
+        Report.countDocuments({ generated_by_admin_id: { $in: ownedAdminIds }, super_admin_id: userId, createdAt: { $gte: monthStart } }), // ✅ FIX: created_at -> createdAt
         Attendance.countDocuments({ user_id: { $in: ownedEmployeeIds }, super_admin_id: userId, date: { $gte: today } }) 
       ]);
 
@@ -775,12 +774,12 @@ export const getDashboardStats = async (req, res) => {
           new_branches: await User.countDocuments({ 
             role: "admin", 
             super_admin_id: userId, // ISOLATION
-            created_at: { $gte: monthStart } 
+            createdAt: { $gte: monthStart } // ✅ FIX: created_at -> createdAt
           }),
           new_employees: await User.countDocuments({ 
             role: "employee", 
             super_admin_id: userId, // ISOLATION
-            created_at: { $gte: monthStart } 
+            createdAt: { $gte: monthStart } // ✅ FIX: created_at -> createdAt
           })
         }
       };
@@ -801,238 +800,238 @@ export const getDashboardStats = async (req, res) => {
 
 // HELPER FUNCTIONS (No change in logic, only comments removed/translated)
 async function generateAttendanceSummary(records, start, end, employees) {
-  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-  const employeeIds = [...new Set(records.map(r => r.user_id._id.toString()))];
-  
-  const summary = {
-    period: { start, end, total_days: totalDays },
-    total_records: records.length,
-    total_employees: employees.length,
-    employees_with_records: employeeIds.length,
-    attendance_rate: 0,
-    total_worked_hours: 0,
-    total_overtime_hours: 0,
-    late_count: 0,
-    by_employee: [],
-    daily_summary: []
-  };
+  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  const employeeIds = [...new Set(records.map(r => r.user_id._id.toString()))];
+  
+  const summary = {
+    period: { start, end, total_days: totalDays },
+    total_records: records.length,
+    total_employees: employees.length,
+    employees_with_records: employeeIds.length,
+    attendance_rate: 0,
+    total_worked_hours: 0,
+    total_overtime_hours: 0,
+    late_count: 0,
+    by_employee: [],
+    daily_summary: []
+  };
 
-  // Calculate by employee
-  const employeeMap = new Map();
-  
-  records.forEach(record => {
-    const empId = record.user_id._id.toString();
-    if (!employeeMap.has(empId)) {
-      employeeMap.set(empId, {
-        employee: record.user_id,
-        records: [],
-        total_worked: 0,
-        overtime: 0,
-        late_count: 0
-      });
-    }
-    
-    const empData = employeeMap.get(empId);
-    empData.records.push(record);
-    empData.total_worked += record.total_hours || 0;
-    empData.overtime += record.overtime || 0;
-    if (record.status === "late") empData.late_count++;
-  });
+  // Calculate by employee
+  const employeeMap = new Map();
+  
+  records.forEach(record => {
+    const empId = record.user_id._id.toString();
+    if (!employeeMap.has(empId)) {
+      employeeMap.set(empId, {
+        employee: record.user_id,
+        records: [],
+        total_worked: 0,
+        overtime: 0,
+        late_count: 0
+      });
+    }
+    
+    const empData = employeeMap.get(empId);
+    empData.records.push(record);
+    empData.total_worked += record.total_hours || 0;
+    empData.overtime += record.overtime || 0;
+    if (record.status === "late") empData.late_count++;
+  });
 
-  summary.by_employee = Array.from(employeeMap.values()).map(emp => ({
-    employee: {
-      id: emp.employee._id,
-      name: emp.employee.name,
-      email: emp.employee.email,
-      position: emp.employee.position
-    },
-    total_worked_hours: emp.total_worked.toFixed(2),
-    overtime_hours: emp.overtime.toFixed(2),
-    late_count: emp.late_count,
-    attendance_rate: ((emp.records.length / totalDays) * 100).toFixed(2)
-  }));
+  summary.by_employee = Array.from(employeeMap.values()).map(emp => ({
+    employee: {
+      id: emp.employee._id,
+      name: emp.employee.name,
+      email: emp.employee.email,
+      position: emp.employee.position
+    },
+    total_worked_hours: emp.total_worked.toFixed(2),
+    overtime_hours: emp.overtime.toFixed(2),
+    late_count: emp.late_count,
+    attendance_rate: ((emp.records.length / totalDays) * 100).toFixed(2)
+  }));
 
-  // Calculate totals
-  summary.total_worked_hours = records.reduce((sum, r) => sum + (r.total_hours || 0), 0).toFixed(2);
-  summary.total_overtime_hours = records.reduce((sum, r) => sum + (r.overtime || 0), 0).toFixed(2);
-  summary.late_count = records.filter(r => r.status === "late").length;
-  summary.attendance_rate = employeeIds.length > 0 ? 
-    ((records.length / (employeeIds.length * totalDays)) * 100).toFixed(2) : 0;
+  // Calculate totals
+  summary.total_worked_hours = records.reduce((sum, r) => sum + (r.total_hours || 0), 0).toFixed(2);
+  summary.total_overtime_hours = records.reduce((sum, r) => sum + (r.overtime || 0), 0).toFixed(2);
+  summary.late_count = records.filter(r => r.status === "late").length;
+  summary.attendance_rate = employeeIds.length > 0 ? 
+    ((records.length / (employeeIds.length * totalDays)) * 100).toFixed(2) : 0;
 
-  return summary;
+  return summary;
 }
 
 async function generateDetailedAttendance(records, start, end) {
-  return {
-    period: { start, end },
-    records: records.map(record => ({
-      date: record.date,
-      employee: {
-        id: record.user_id._id,
-        name: record.user_id.name,
-        email: record.user_id.email
-      },
-      check_in: record.check_in,
-      check_out: record.check_out,
-      total_hours: record.total_hours,
-      overtime: record.overtime,
-      status: record.status,
-      breaks: record.breaks,
-      location: record.location,
-      notes: record.notes
-    }))
-  };
+  return {
+    period: { start, end },
+    records: records.map(record => ({
+      date: record.date,
+      employee: {
+        id: record.user_id._id,
+        name: record.user_id.name,
+        email: record.user_id.email
+      },
+      check_in: record.check_in,
+      check_out: record.check_out,
+      total_hours: record.total_hours,
+      overtime: record.overtime,
+      status: record.status,
+      breaks: record.breaks,
+      location: record.location,
+      notes: record.notes
+    }))
+  };
 }
 
 async function generateOvertimeReport(records, start, end) {
-  const overtimeRecords = records.filter(r => r.overtime > 0);
-  
-  return {
-    period: { start, end },
-    total_overtime_hours: overtimeRecords.reduce((sum, r) => sum + r.overtime, 0).toFixed(2),
-    employees: overtimeRecords.map(record => ({
-      employee: {
-        id: record.user_id._id,
-        name: record.user_id.name,
-        email: record.user_id.email
-      },
-      date: record.date,
-      overtime_hours: record.overtime.toFixed(2),
-      total_worked_hours: record.total_hours,
-      reason: record.notes
-    }))
-  };
+  const overtimeRecords = records.filter(r => r.overtime > 0);
+  
+  return {
+    period: { start, end },
+    total_overtime_hours: overtimeRecords.reduce((sum, r) => sum + r.overtime, 0).toFixed(2),
+    employees: overtimeRecords.map(record => ({
+      employee: {
+        id: record.user_id._id,
+        name: record.user_id.name,
+        email: record.user_id.email
+      },
+      date: record.date,
+      overtime_hours: record.overtime.toFixed(2),
+      total_worked_hours: record.total_hours,
+      reason: record.notes
+    }))
+  };
 }
 
 async function generateShiftAnalysis(shifts, start, end) {
-  const summary = {
-    period: { start, end },
-    total_shifts: shifts.length,
-    by_status: {
-      scheduled: shifts.filter(s => s.status === "scheduled").length,
-      in_progress: shifts.filter(s => s.status === "in_progress").length,
-      completed: shifts.filter(s => s.status === "completed").length,
-      cancelled: shifts.filter(s => s.status === "cancelled").length
-    },
-    by_type: {
-      regular: shifts.filter(s => s.shift_type === "regular").length,
-      overtime: shifts.filter(s => s.shift_type === "overtime").length,
-      holiday: shifts.filter(s => s.shift_type === "holiday").length,
-      weekend: shifts.filter(s => s.shift_type === "weekend").length,
-      emergency: shifts.filter(s => s.shift_type === "emergency").length
-    },
-    by_employee: [],
-    coverage_rate: 0
-  };
+  const summary = {
+    period: { start, end },
+    total_shifts: shifts.length,
+    by_status: {
+      scheduled: shifts.filter(s => s.status === "scheduled").length,
+      in_progress: shifts.filter(s => s.status === "in_progress").length,
+      completed: shifts.filter(s => s.status === "completed").length,
+      cancelled: shifts.filter(s => s.status === "cancelled").length
+    },
+    by_type: {
+      regular: shifts.filter(s => s.shift_type === "regular").length,
+      overtime: shifts.filter(s => s.shift_type === "overtime").length,
+      holiday: shifts.filter(s => s.shift_type === "holiday").length,
+      weekend: shifts.filter(s => s.shift_type === "weekend").length,
+      emergency: shifts.filter(s => s.shift_type === "emergency").length
+    },
+    by_employee: [],
+    coverage_rate: 0
+  };
 
-  // Calculate by employee
-  const employeeMap = new Map();
-  shifts.forEach(shift => {
-    const empId = shift.employee_id._id.toString();
-    if (!employeeMap.has(empId)) {
-      employeeMap.set(empId, {
-        employee: shift.employee_id,
-        shifts: [],
-        total_hours: 0
-      });
-    }
-    
-    const empData = employeeMap.get(empId);
-    empData.shifts.push(shift);
-    const shiftHours = shift.getScheduledDuration ? shift.getScheduledDuration() / 60 : 0;
-    empData.total_hours += shiftHours;
-  });
+  // Calculate by employee
+  const employeeMap = new Map();
+  shifts.forEach(shift => {
+    const empId = shift.employee_id._id.toString();
+    if (!employeeMap.has(empId)) {
+      employeeMap.set(empId, {
+        employee: shift.employee_id,
+        shifts: [],
+        total_hours: 0
+      });
+    }
+    
+    const empData = employeeMap.get(empId);
+    empData.shifts.push(shift);
+    const shiftHours = shift.getScheduledDuration ? shift.getScheduledDuration() / 60 : 0;
+    empData.total_hours += shiftHours;
+  });
 
-  summary.by_employee = Array.from(employeeMap.values()).map(emp => ({
-    employee: emp.employee,
-    total_shifts: emp.shifts.length,
-    total_hours: emp.total_hours.toFixed(2),
-    completed_shifts: emp.shifts.filter(s => s.status === "completed").length
-  }));
+  summary.by_employee = Array.from(employeeMap.values()).map(emp => ({
+    employee: emp.employee,
+    total_shifts: emp.shifts.length,
+    total_hours: emp.total_hours.toFixed(2),
+    completed_shifts: emp.shifts.filter(s => s.status === "completed").length
+  }));
 
-  return summary;
+  return summary;
 }
 
 async function generatePerformanceAnalysis(employees, attendanceRecords, shifts, start, end) {
-  const performanceData = [];
-  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  const performanceData = [];
+  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-  employees.forEach(employee => {
-    const empId = employee._id.toString();
-    
-    const empAttendance = attendanceRecords.filter(record => 
-      record.user_id.toString() === empId
-    );
-    
-    const empShifts = shifts.filter(shift => 
-      shift.employee_id.toString() === empId
-    );
+  employees.forEach(employee => {
+    const empId = employee._id.toString();
+    
+    const empAttendance = attendanceRecords.filter(record => 
+      record.user_id.toString() === empId
+    );
+    
+    const empShifts = shifts.filter(shift => 
+      shift.employee_id.toString() === empId
+    );
 
-    const totalWorkedHours = empAttendance.reduce((sum, record) => sum + (record.total_hours || 0), 0);
-    const totalOvertime = empAttendance.reduce((sum, record) => sum + (record.overtime || 0), 0);
-    const lateCount = empAttendance.filter(record => record.status === "late").length;
-    const completedShifts = empShifts.filter(shift => shift.status === "completed").length;
-    
-    const attendanceRate = totalDays > 0 ? (empAttendance.length / totalDays) * 100 : 0;
-    const shiftCompletionRate = empShifts.length > 0 ? (completedShifts / empShifts.length) * 100 : 0;
+    const totalWorkedHours = empAttendance.reduce((sum, record) => sum + (record.total_hours || 0), 0);
+    const totalOvertime = empAttendance.reduce((sum, record) => sum + (record.overtime || 0), 0);
+    const lateCount = empAttendance.filter(record => record.status === "late").length;
+    const completedShifts = empShifts.filter(shift => shift.status === "completed").length;
+    
+    const attendanceRate = totalDays > 0 ? (empAttendance.length / totalDays) * 100 : 0;
+    const shiftCompletionRate = empShifts.length > 0 ? (completedShifts / empShifts.length) * 100 : 0;
 
-    performanceData.push({
-      employee: {
-        id: employee._id,
-        name: employee.name,
-        email: employee.email,
-        position: employee.position
-      },
-      attendance: {
-        rate: attendanceRate.toFixed(2),
-        total_days: empAttendance.length,
-        late_count: lateCount
-      },
-      work: {
-        total_hours: totalWorkedHours.toFixed(2),
-        overtime_hours: totalOvertime.toFixed(2),
-        average_daily_hours: (totalWorkedHours / (empAttendance.length || 1)).toFixed(2)
-      },
-      shifts: {
-        total: empShifts.length,
-        completed: completedShifts,
-        completion_rate: shiftCompletionRate.toFixed(2)
-      },
-      performance_score: calculatePerformanceScore(
-        attendanceRate, 
-        shiftCompletionRate, 
-        lateCount, 
-        totalOvertime
-      )
-    });
-  });
+    performanceData.push({
+      employee: {
+        id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        position: employee.position
+      },
+      attendance: {
+        rate: attendanceRate.toFixed(2),
+        total_days: empAttendance.length,
+        late_count: lateCount
+      },
+      work: {
+        total_hours: totalWorkedHours.toFixed(2),
+        overtime_hours: totalOvertime.toFixed(2),
+        average_daily_hours: (totalWorkedHours / (empAttendance.length || 1)).toFixed(2)
+      },
+      shifts: {
+        total: empShifts.length,
+        completed: completedShifts,
+        completion_rate: shiftCompletionRate.toFixed(2)
+      },
+      performance_score: calculatePerformanceScore(
+        attendanceRate, 
+        shiftCompletionRate, 
+        lateCount, 
+        totalOvertime
+      )
+    });
+  });
 
-  return {
-    period: { start, end },
-    employees: performanceData,
-    averages: {
-      avg_attendance: (performanceData.reduce((sum, emp) => sum + parseFloat(emp.attendance.rate), 0) / performanceData.length).toFixed(2),
-      avg_performance: (performanceData.reduce((sum, emp) => sum + emp.performance_score, 0) / performanceData.length).toFixed(2)
-    }
-  };
+  return {
+    period: { start, end },
+    employees: performanceData,
+    averages: {
+      avg_attendance: (performanceData.reduce((sum, emp) => sum + parseFloat(emp.attendance.rate), 0) / performanceData.length).toFixed(2),
+      avg_performance: (performanceData.reduce((sum, emp) => sum + emp.performance_score, 0) / performanceData.length).toFixed(2)
+    }
+  };
 }
 
 function calculatePerformanceScore(attendanceRate, shiftCompletionRate, lateCount, overtime) {
-  let score = 0;
-  
-  // Attendance weight: 40%
-  score += (attendanceRate * 0.4);
-  
-  // Shift completion weight: 30%
-  score += (shiftCompletionRate * 0.3);
-  
-  // Punctuality weight: 20% (penalty for lateness)
-  const punctualityScore = Math.max(0, 100 - (lateCount * 5));
-  score += (punctualityScore * 0.2);
-  
-  // Overtime bonus: 10% (capped at 20 hours overtime)
-  const overtimeBonus = Math.min(overtime, 20) * 0.5;
-  score += overtimeBonus;
-  
-  return Math.min(score, 100).toFixed(2);
+  let score = 0;
+  
+  // Attendance weight: 40%
+  score += (attendanceRate * 0.4);
+  
+  // Shift completion weight: 30%
+  score += (shiftCompletionRate * 0.3);
+  
+  // Punctuality weight: 20% (penalty for lateness)
+  const punctualityScore = Math.max(0, 100 - (lateCount * 5));
+  score += (punctualityScore * 0.2);
+  
+  // Overtime bonus: 10% (capped at 20 hours overtime)
+  const overtimeBonus = Math.min(overtime, 20) * 0.5;
+  score += overtimeBonus;
+  
+  return Math.min(score, 100).toFixed(2);
 }

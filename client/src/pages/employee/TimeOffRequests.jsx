@@ -47,27 +47,7 @@ const TimeOffRequests = () => {
     fetchRequests();
   }, [filter, fetchRequests]);
 
-  // Handle Cancel Request
-  const handleCancelRequest = async (requestId) => {
-    if (!window.confirm("Are you sure you want to cancel this leave request?")) return;
 
-    try {
-      showGlobalLoading();
-      // استدعاء الـ API لإلغاء الطلب (تأكد من وجود هذا المسار في الـ Backend)
-      const response = await apiClient.patch(`/api/employee/leave-requests/${requestId}/cancel`);
-
-      if (response.data.success) {
-        success('Leave request cancelled successfully');
-        // تحديث القائمة لإظهار الحالة الجديدة
-        await fetchRequests();
-      }
-    } catch (err) {
-      console.error('Error cancelling request:', err);
-      error(err.response?.data?.message || 'Failed to cancel request');
-    } finally {
-      hideGlobalLoading();
-    }
-  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -114,6 +94,21 @@ const TimeOffRequests = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  // Handle cancel request
+  const handleCancelRequest = async (requestId) => {
+    try {
+      showGlobalLoading();
+      await apiClient.patch(`/api/employee/leave-requests/${requestId}/cancel`);
+      await fetchRequests();
+      success('Leave request cancelled successfully!');
+    } catch (error) {
+      console.error('Error cancelling leave request:', error);
+      error(error.response?.data?.message || 'Failed to cancel leave request');
+    } finally {
+      hideGlobalLoading();
+    }
   };
 
   // Calculate leave duration
@@ -183,9 +178,9 @@ const TimeOffRequests = () => {
   const stats = calculateStats();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Time Off Requests</h1>
           <p className="text-gray-600 mt-1">Manage your leave requests and time off</p>
@@ -201,7 +196,7 @@ const TimeOffRequests = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -245,10 +240,12 @@ const TimeOffRequests = () => {
 
       {/* Filter */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center gap-4">
-          <Filter size={20} className="text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter by status:</span>
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter size={20} className="text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {['all', 'pending', 'approved', 'rejected', 'cancelled'].map(status => (
               <button
                 key={status}
@@ -346,7 +343,6 @@ const TimeOffRequests = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCancelRequest(request._id)}
-                        className="text-red-600 border-red-200 hover:bg-red-50"
                       >
                         Cancel
                       </Button>

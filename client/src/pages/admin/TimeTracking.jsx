@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { User, Download, Funnel, Eye, Clock, Calendar, X, Timer, Coffee } from "lucide-react";
 import { attendanceService } from "../../api/services/admin/attendanceService";
 import { useLoading } from "../../contexts/LoaderContext";
@@ -6,20 +6,18 @@ import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
 
 export default function TimeTracking() {
-  // --- States ---
+
   const [isLive, setIsLive] = useState(true);
   const [records, setRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   
-  // ✅ حالة لإظهار/إخفاء الفلاتر
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { show, hide } = useLoading();
 
-  // --- 1. Fetch Data ---
   const fetchData = async () => {
     try {
       show();
@@ -37,19 +35,16 @@ export default function TimeTracking() {
     fetchData();
   }, [selectedDate]);
 
-  // --- 2. Filter Logic ---
   const filteredRecords = records.filter(record => {
     if (filterStatus !== "all" && record.status !== filterStatus) return false;
     
     if (isLive) {
-      // Live: Shows currently working (checked in but NOT checked out)
       return record.check_in && !record.check_out;
     }
-    // Time Cards: Shows everyone (or filtered by status)
     return true;
   });
 
-  // --- 3. Helper Functions ---
+  // Helper Functions
   const formatTime = (dateStr) => {
     if (!dateStr) return "--:--";
     return new Date(dateStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -74,7 +69,7 @@ export default function TimeTracking() {
     return { text: "Working", bg: "bg-blue-100", color: "text-blue-700", icon: <Timer size={14}/> };
   };
 
-  // --- 4. Actions ---
+  // Actions 
   const handleExport = () => {
     if (filteredRecords.length === 0) return toast.error("No data to export");
     try {
@@ -107,7 +102,7 @@ export default function TimeTracking() {
         {/* --- HEADER --- */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-800">Time Tracking</h1>
+            <h1 className="text-2xl font-extrabold text-gray-800">Time Tracking</h1>
             <p className="text-gray-600">Monitor employee clock in/out and manage time cards</p>
           </div>
 
@@ -123,7 +118,6 @@ export default function TimeTracking() {
               <Download className="w-4" /> Export
             </button>
             
-            {/* ✅ زر الفلتر الآن يقوم بتبديل حالة الظهور */}
             <button 
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-3 py-1.5 rounded-md border flex items-center gap-1 shadow-sm transition ${
@@ -158,7 +152,6 @@ export default function TimeTracking() {
         </div>
 
         {/* --- FILTERS SECTION (Collapsible) --- */}
-        {/* ✅ يظهر فقط عند الضغط على زر Filters */}
         {showFilters && (
           <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm animate-fadeIn">
              <div className="flex flex-wrap gap-4 items-center">
@@ -224,7 +217,6 @@ export default function TimeTracking() {
                         </p>
                       </div>
 
-                      {/* ✅ تم استبدال الزر بمؤشر حالة واضح */}
                       <div className={`px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm ${
                           status.text === "On Break" 
                           ? "bg-yellow-50 text-yellow-700 border border-yellow-200" 
@@ -268,7 +260,7 @@ export default function TimeTracking() {
                                    <Calendar size={14} /> {new Date(record.date).toLocaleDateString()} 
                                    <span className="mx-1">•</span> 
                                    <Clock size={14} /> {formatTime(record.check_in)} - {record.check_out ? formatTime(record.check_out) : "Active"}
-                                   <span className="font-bold ml-1">({record.total_hours || calculateDuration(record.check_in, record.check_out)})</span>
+                                   <span className="font-bold ml-1">( {record.total_hours || calculateDuration(record.check_in, record.check_out) } H )</span>
                                 </p>
                             </div>
 

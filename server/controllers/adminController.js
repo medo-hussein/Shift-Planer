@@ -26,8 +26,12 @@ export const getAdminDashboard = async (req, res) => {
     const totalEmployees = ownedEmployees.length;
     const activeEmployees = ownedEmployees.filter(emp => emp.is_active).length;
 
-    // Get today's start
-    const startOfDay = new Date().setHours(0, 0, 0, 0);
+    // Get today's start and end
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
     // Get dashboard data in parallel for owned employees/shifts/attendance
     const [
@@ -37,11 +41,14 @@ export const getAdminDashboard = async (req, res) => {
       recentEmployees
     ] = await Promise.all([
       
-      // Today's shifts
+      // Today's shifts (Fixed: Limit to end of day)
       Shift.countDocuments({
         employee_id: { $in: employeeIds },
         super_admin_id: tenantOwnerId, // ISOLATION
-        start_date_time: { $gte: startOfDay }
+        start_date_time: { 
+            $gte: startOfDay,
+            $lte: endOfDay 
+        }
       }),
       
       // Today's attendance
@@ -64,8 +71,8 @@ export const getAdminDashboard = async (req, res) => {
         role: "employee",
         super_admin_id: tenantOwnerId // ISOLATION
       })
-      .select('name email position is_active createdAt avatar') // ✅ تمت إضافة avatar هنا
-      .sort({ createdAt: -1 })
+      .select('name email position is_active createdAt avatar') // ✅ Added avatar & Fixed createdAt
+      .sort({ createdAt: -1 }) // ✅ Fixed sort field
       .limit(5)
     ]);
 
@@ -155,7 +162,7 @@ export const getBranchEmployees = async (req, res) => {
 
     const employees = await User.find(query)
       .select('-password -resetPasswordToken -resetPasswordExpire')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 }) // ✅ Fixed sort field
       .limit(limit * 1)
       .skip((page - 1) * limit);
 

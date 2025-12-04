@@ -3,11 +3,14 @@ import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, Plus } from '
 import Button from '../../utils/Button';
 import apiClient from '../../api/apiClient';
 import { useLoading } from '../../contexts/LoaderContext';
+import CalendarModal from '../../components/CalendarModal';
 
 const MySchedule = () => {
   const [shifts, setShifts] = useState([]);
   const [todayStatus, setTodayStatus] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [showCalendarView, setShowCalendarView] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
 
   // Fetch shifts for current week
@@ -81,10 +84,13 @@ const MySchedule = () => {
 
   // Get shifts for specific date
   const getShiftsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return shifts.filter(shift => 
-      shift.start_date_time.split('T')[0] === dateStr
-    );
+    // Use local date instead of UTC to avoid timezone issues
+    const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    return shifts.filter(shift => {
+      const shiftDate = new Date(shift.start_date_time);
+      const shiftDateStr = shiftDate.toLocaleDateString('en-CA');
+      return shiftDateStr === dateStr;
+    });
   };
 
   // Format time
@@ -111,16 +117,17 @@ const MySchedule = () => {
   const weekDates = getWeekDates();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Schedule</h1>
           <p className="text-gray-600 mt-1">Manage your work shifts and schedule</p>
         </div>
         
         {todayStatus && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="text-right">
               <p className="text-sm text-gray-500">Today's Status</p>
               <p className={`font-semibold ${
@@ -142,20 +149,22 @@ const MySchedule = () => {
       </div>
 
       {/* Week Navigation */}
-      <div className="flex items-center justify-between mb-6 bg-white rounded-lg shadow-sm p-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-sm p-4 gap-4">
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => navigateWeek('prev')}
+          className="order-1 sm:order-none"
         >
           <ChevronLeft size={16} />
-          Previous Week
+          <span className="hidden sm:inline">Previous Week</span>
+          <span className="sm:hidden">Prev</span>
         </Button>
         
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {weekDates[0].toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - 
-            {weekDates[6].toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        <div className="text-center order-2 sm:order-1">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+            {weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
+            {weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </h2>
         </div>
         
@@ -163,14 +172,16 @@ const MySchedule = () => {
           variant="outline" 
           size="sm"
           onClick={() => navigateWeek('next')}
+          className="order-3 sm:order-0"
         >
-          Next Week
+          <span className="hidden sm:inline">Next Week</span>
+          <span className="sm:hidden">Next</span>
           <ChevronRight size={16} />
         </Button>
       </div>
 
       {/* Week View */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
         {weekDates.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
           const isToday = date.toDateString() === new Date().toDateString();
@@ -265,7 +276,7 @@ const MySchedule = () => {
       {/* Quick Actions */}
       <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button 
             variant="outline"
             className="w-full justify-start"
@@ -287,7 +298,7 @@ const MySchedule = () => {
           <Button 
             variant="outline"
             className="w-full justify-start"
-            onClick={() => {/* TODO: Open calendar view */}}
+            onClick={() => setShowCalendarView(true)}
           >
             <Calendar size={16} />
             Calendar View
@@ -333,7 +344,17 @@ const MySchedule = () => {
         </div>
       )}
     </div>
-  );
-};
 
+      <CalendarModal 
+        showCalendarView={showCalendarView}
+        setShowCalendarView={setShowCalendarView}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        getShiftsForDate={getShiftsForDate}
+        formatTime={formatTime}
+        getStatusColor={getStatusColor}
+      />
+</>
+  );
+}
 export default MySchedule;
