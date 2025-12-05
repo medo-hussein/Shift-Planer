@@ -2,7 +2,7 @@ import express from "express";
 import { 
   protect, 
   employeeOnly, 
-  adminOnly,
+  adminOnly, 
   adminOrAbove,
   superAdminOnly 
 } from "../middleware/authMiddleware.js";
@@ -14,7 +14,8 @@ import {
   getReportById,
   shareReport,
   deleteReport,
-  getDashboardStats
+  getDashboardStats,
+  generateAIAnalysis // ✅ Added import for AI analysis
 } from "../controllers/reportController.js";
 
 const router = express.Router();
@@ -26,6 +27,9 @@ router.use(protect);
 router.post("/attendance", adminOrAbove, generateAttendanceReport);
 router.post("/shift", adminOrAbove, generateShiftReport);
 router.post("/performance", adminOrAbove, generatePerformanceReport);
+
+// ✅ New Route: Generate AI Analysis for a report
+router.post("/:id/analyze", generateAIAnalysis);
 
 // Report sharing and management (Admin and Super Admin only)
 router.post("/:id/share", adminOrAbove, shareReport);

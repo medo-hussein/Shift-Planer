@@ -11,7 +11,7 @@ import {
   getBranchAttendanceReport,
   updateEmployeeProfile,
   getBranchShiftsCalendar,
-  deleteEmployee //  تم إضافة فانكشن الحذف
+  deleteEmployee 
 } from "../controllers/adminController.js";
 
 import {
@@ -34,7 +34,8 @@ import {
   getReports,
   shareReport,
   deleteReport,
-  getDashboardStats
+  getDashboardStats,
+  generateAIAnalysis // ✅ 1. تم إضافة استيراد الدالة هنا
 } from "../controllers/reportController.js";
 
 import { createEmployee } from "../controllers/userController.js";
@@ -59,7 +60,7 @@ router.get("/employees", getBranchEmployees);
 router.post("/employees", createEmployee);
 router.get("/employees/:employeeId", getEmployeeDetails);
 router.put("/employees/:employeeId", updateEmployeeProfile);
-router.delete("/employees/:employeeId", deleteEmployee); // تم إضافة مسار الحذف هنا
+router.delete("/employees/:employeeId", deleteEmployee);
 
 // Attendance management
 router.get("/attendance", getBranchAttendance);
@@ -88,5 +89,7 @@ router.post("/reports/shift", generateShiftReport);
 router.post("/reports/performance", generatePerformanceReport);
 router.post("/reports/:id/share", shareReport);
 router.delete("/reports/:id", deleteReport);
+
+router.post("/reports/:id/analyze", generateAIAnalysis);
 
 export default router;

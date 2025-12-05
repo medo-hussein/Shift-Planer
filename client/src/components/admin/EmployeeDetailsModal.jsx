@@ -56,7 +56,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
         </div>
       </div>
@@ -67,30 +67,30 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-xl w-full max-w-2xl my-4 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-2xl my-4 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 rounded-t-xl flex-shrink-0">
+        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4 rounded-t-xl flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                 {profile?.avatar ? (
                   <img src={profile.avatar} alt={profile.name} className="w-12 h-12 rounded-full" />
                 ) : (
-                  <span className="text-lg font-bold text-blue-600">
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {profile?.name?.charAt(0)}
                   </span>
                 )}
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-bold text-gray-900 truncate">{profile?.name}</h2>
-                <p className="text-sm text-gray-600 truncate">{profile?.email}</p>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100 truncate">{profile?.name}</h2>
+                <p className="text-sm text-gray-600 dark:text-slate-400 truncate">{profile?.email}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
             >
-              <X size={18} className="text-gray-500" />
+              <X size={18} className="text-gray-500 dark:text-slate-400" />
             </button>
           </div>
 
@@ -98,88 +98,88 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
           <div className="flex flex-wrap gap-2">
             <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
               profile?.is_active 
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                : 'bg-gray-100 text-gray-700 border border-gray-200'
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50' 
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
             }`}>
               {profile?.is_active ? <CheckCircle size={12} /> : <XCircle size={12} />}
               {profile?.is_active ? 'Active' : 'Inactive'}
             </div>
             
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
+            <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 rounded-full text-xs font-medium">
               <Briefcase size={12} />
               {profile?.position}
             </div>
           </div>
         </div>
 
-        <div className="p-4 space-y-6 overflow-y-auto flex-1">
+        <div className="p-4 space-y-6 overflow-y-auto flex-1 dark:bg-slate-800">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <User size={14} />
               Basic Information
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <Mail size={12} className="text-gray-400" />
-                  <p className="text-xs font-medium text-gray-600">Email</p>
+                  <Mail size={12} className="text-gray-400 dark:text-slate-500" />
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Email</p>
                 </div>
-                <p className="text-sm text-gray-900">{profile?.email}</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.email}</p>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <Phone size={12} className="text-gray-400" />
-                  <p className="text-xs font-medium text-gray-600">Phone</p>
+                  <Phone size={12} className="text-gray-400 dark:text-slate-500" />
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Phone</p>
                 </div>
-                <p className="text-sm text-gray-900">{profile?.phone || 'Not provided'}</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.phone || 'Not provided'}</p>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <Briefcase size={12} className="text-gray-400" />
-                  <p className="text-xs font-medium text-gray-600">Position</p>
+                  <Briefcase size={12} className="text-gray-400 dark:text-slate-500" />
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Position</p>
                 </div>
-                <p className="text-sm text-gray-900">{profile?.position}</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.position}</p>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <Building size={12} className="text-gray-400" />
-                  <p className="text-xs font-medium text-gray-600">Branch ID</p>
+                  <Building size={12} className="text-gray-400 dark:text-slate-500" />
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Branch ID</p>
                 </div>
-                <p className="text-sm text-gray-900 truncate">{employee.branch_admin_id}</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100 truncate">{employee.branch_admin_id}</p>
               </div>
             </div>
           </div>
 
           {/* Statistics */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <BarChart3 size={14} />
               Statistics
             </h3>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+              <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/20 to-blue-100 dark:to-blue-900/10 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-blue-700 mb-1">Total Shifts</p>
-                    <p className="text-lg font-bold text-blue-900">{statistics?.total_shifts || 0}</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-1">Total Shifts</p>
+                    <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{statistics?.total_shifts || 0}</p>
                   </div>
-                  <Clock size={16} className="text-blue-600" />
+                  <Clock size={16} className="text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-lg">
+              <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/20 to-emerald-100 dark:to-emerald-900/10 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-emerald-700 mb-1">Upcoming Shifts</p>
-                    <p className="text-lg font-bold text-emerald-900">{upcoming_shifts?.length || 0}</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mb-1">Upcoming Shifts</p>
+                    <p className="text-lg font-bold text-emerald-900 dark:text-emerald-300">{upcoming_shifts?.length || 0}</p>
                   </div>
-                  <Calendar size={16} className="text-emerald-600" />
+                  <Calendar size={16} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
             </div>
@@ -187,20 +187,20 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
 
           {/* Account Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <Shield size={14} />
               Account Information
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs font-medium text-gray-600 mb-1">Member Since</p>
-                <p className="text-sm text-gray-900">{formatDate(profile?.createdAt)}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Member Since</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">{formatDate(profile?.createdAt)}</p>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs font-medium text-gray-600 mb-1">Last Login</p>
-                <p className="text-sm text-gray-900">{formatDate(profile?.lastLogin)}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Last Login</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">{formatDate(profile?.lastLogin)}</p>
               </div>
             </div>
           </div>
@@ -208,36 +208,36 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
           {/* Recent Attendance */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                 <Clock size={14} />
                 Recent Attendance
               </h3>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-slate-400">
                 {attendance_history?.length || 0} records
               </span>
             </div>
             
             {attendance_history?.length > 0 ? (
-              <div className="bg-gray-50 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 dark:bg-slate-700 rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="bg-gray-100">
-                        <th className="py-2 px-3 text-left font-medium text-gray-600">Date</th>
-                        <th className="py-2 px-3 text-left font-medium text-gray-600">Status</th>
+                      <tr className="bg-gray-100 dark:bg-slate-600">
+                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">Date</th>
+                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {attendance_history.slice(0, 5).map((record, index) => (
-                        <tr key={index} className="border-t border-gray-200">
+                        <tr key={index} className="border-t border-gray-200 dark:border-slate-600">
                           <td className="py-2 px-3">
                             {formatDate(record.date)}
                           </td>
                           <td className="py-2 px-3">
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                               record.status === 'present' 
-                                ? 'bg-emerald-50 text-emerald-700' 
-                                : 'bg-red-50 text-red-700'
+                                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                                : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                             }`}>
                               {record.status === 'present' ? 'Present' : 'Absent'}
                             </span>
@@ -249,20 +249,20 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6 bg-gray-50 rounded-lg">
-                <Clock size={24} className="text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">No attendance records found</p>
+              <div className="text-center py-6 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                <Clock size={24} className="text-gray-400 dark:text-slate-500 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 dark:text-slate-400">No attendance records found</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-slate-700 p-4 flex-shrink-0 dark:bg-slate-800">
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors text-sm"
             >
               Close
             </button>

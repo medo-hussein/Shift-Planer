@@ -62,7 +62,7 @@ export default function Reports() {
       await reportService.delete(id);
       fetchData(); 
     } catch (err) {
-      alert("Failed to delete report");
+      alert("Failed to delete report", err);
     } finally {
       hide();
     }
@@ -103,19 +103,19 @@ export default function Reports() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
+    <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen font-sans dark:text-slate-100">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports & Analytics</h1>
-          <p className="text-slate-500 text-sm mt-1">Generate, view, and analyze your branch reports.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Reports & Analytics</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Generate, view, and analyze your branch reports.</p>
         </div>
         
         <div className="flex gap-3">
           <div className="relative">
-            <Filter className="absolute left-3 top-2.5 text-slate-400" size={16} />
+            <Filter className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" size={16} />
             <select 
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#3F72AF] cursor-pointer shadow-sm"
+              className="pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#3F72AF] cursor-pointer shadow-sm dark:text-slate-100"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
             >
@@ -265,8 +265,8 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
     
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6">
-                <div className="flex justify-between mb-4"><h3 className="font-bold">Generate Report</h3><button onClick={onClose}><X size={20}/></button></div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 dark:text-slate-100">
+                <div className="flex justify-between mb-4"><h3 className="font-bold dark:text-slate-100">Generate Report</h3><button onClick={onClose}><X size={20}/></button></div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <select className="w-full border p-2 rounded" value={type} onChange={e => setType(e.target.value)}>
                         <option value="attendance">Attendance</option>
@@ -274,14 +274,14 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
                         {/* Performance removed */}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
-                        <input type="date" required className="border p-2 rounded" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                        <input type="date" required className="border p-2 rounded" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                        <input type="date" required className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                        <input type="date" required className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={endDate} onChange={e => setEndDate(e.target.value)} />
                     </div>
-                    <select className="w-full border p-2 rounded" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
+                    <select className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
                         <option value="">All Employees</option>
                         {employees.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
                     </select>
-                    <button type="submit" className="w-full bg-blue-900 text-white p-2 rounded">Generate</button>
+                    <button type="submit" className="w-full bg-blue-900 dark:bg-blue-700 text-white p-2 rounded hover:bg-blue-800 dark:hover:bg-blue-600">Generate</button>
                 </form>
             </div>
         </div>
@@ -328,17 +328,17 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh] dark:text-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-100 dark:border-slate-600 flex justify-between items-center">
                     <div>
-                        <h3 className="font-bold text-slate-800">Share Report</h3>
-                        <p className="text-xs text-slate-500 truncate max-w-[250px]">{report.title}</p>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100">Share Report</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]">{report.title}</p>
                     </div>
-                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600"/></button>
+                    <button onClick={onClose}><X size={20} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"/></button>
                 </div>
 
                 <div className="p-4 overflow-y-auto">
-                    <p className="text-sm font-medium text-slate-700 mb-3">Select employees to share with:</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Select employees to share with:</p>
                     <div className="space-y-2">
                         {employees.map(emp => (
                             <div 
@@ -346,34 +346,34 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
                                 onClick={() => toggleEmployee(emp._id)}
                                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
                                     selectedEmployees.includes(emp._id) 
-                                    ? 'border-blue-500 bg-blue-50' 
-                                    : 'border-slate-100 hover:bg-slate-50'
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-600' 
+                                    : 'border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${selectedEmployees.includes(emp._id) ? 'bg-blue-200 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${selectedEmployees.includes(emp._id) ? 'bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200' : 'bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400'}`}>
                                         {emp.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-slate-800">{emp.name}</p>
-                                        <p className="text-xs text-slate-500">{emp.position || 'Employee'}</p>
+                                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{emp.name}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{emp.position || 'Employee'}</p>
                                     </div>
                                 </div>
-                                {selectedEmployees.includes(emp._id) && <Check size={18} className="text-blue-600" />}
+                                {selectedEmployees.includes(emp._id) && <Check size={18} className="text-blue-600 dark:text-blue-400" />}
                             </div>
                         ))}
-                        {employees.length === 0 && <p className="text-center text-sm text-slate-400 py-4">No employees found.</p>}
+                        {employees.length === 0 && <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-4">No employees found.</p>}
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-slate-100 bg-slate-50">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700">
                     <button 
                         onClick={handleShare} 
                         disabled={selectedEmployees.length === 0}
                         className={`w-full py-2.5 rounded-xl font-medium transition shadow-md flex justify-center items-center gap-2 ${
                             selectedEmployees.length === 0 
-                            ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
-                            : "bg-[#112D4E] text-white hover:bg-[#274b74]"
+                            ? "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed" 
+                            : "bg-[#112D4E] dark:bg-[#1e3a5f] text-white hover:bg-[#274b74] dark:hover:bg-[#2d5080]"
                         }`}
                     >
                         <Share2 size={16} /> Share with {selectedEmployees.length} Employee(s)

@@ -259,13 +259,80 @@ export default function Schedule() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen dark:text-slate-100">
+      <style>{`
+        .dark .fc {
+          --fc-bg-event-opacity: 1;
+          --fc-text-muted: rgb(148, 163, 184);
+          --fc-border-color: rgb(51, 65, 85);
+        }
+        .dark .fc-button-primary {
+          background-color: rgb(30, 58, 95);
+          border-color: rgb(30, 58, 95);
+          color: white;
+        }
+        .dark .fc-button-primary:hover {
+          background-color: rgb(45, 80, 128);
+        }
+        .dark .fc-button-primary.fc-button-active {
+          background-color: rgb(45, 80, 128);
+          border-color: rgb(45, 80, 128);
+        }
+        .dark .fc-button-primary:not(:disabled).fc-button-active:focus {
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .dark .fc-daygrid-day {
+          background-color: rgb(30, 41, 59);
+        }
+        .dark .fc-daygrid-day:hover {
+          background-color: rgb(51, 65, 85);
+        }
+        .dark .fc-daygrid-day.fc-other-month {
+          background-color: rgb(15, 23, 42);
+        }
+        .dark .fc-col-header-cell {
+          background-color: rgb(30, 41, 59);
+          color: rgb(226, 232, 240);
+          border-color: rgb(51, 65, 85);
+        }
+        .dark .fc-timegrid-slot {
+          height: 3em;
+          border-color: rgb(51, 65, 85);
+        }
+        .dark .fc-timegrid-slot:first-child {
+          border-color: rgb(51, 65, 85);
+        }
+        .dark .fc-timegrid-cell {
+          border-color: rgb(51, 65, 85);
+          background-color: rgb(30, 41, 59);
+        }
+        .dark .fc-timegrid-cell:hover {
+          background-color: rgb(45, 65, 95);
+        }
+        .dark .fc-daygrid-day-number {
+          color: rgb(226, 232, 240);
+        }
+        .dark .fc-daygrid-day-frame {
+          background-color: rgb(30, 41, 59);
+        }
+        .dark .fc-button-group {
+          gap: 0.2rem;
+        }
+        .dark .fc-toolbar {
+          color: rgb(226, 232, 240);
+        }
+        .dark .fc-toolbar-title {
+          font-size: 1.5rem;
+          color: rgb(226, 232, 240);
+          font-weight: 600;
+        }
+      `}</style>
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div className="flex justify-between items-center mb-6 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Schedule Management</h1>
-          <p className="text-slate-500 text-sm">Plan and manage employee shifts.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Schedule Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Plan and manage employee shifts.</p>
         </div>
         
         <div className="hidden md:flex gap-3 text-xs">
@@ -284,14 +351,14 @@ export default function Schedule() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
+            right: "timeGridDay,timeGridWeek,dayGridMonth",
           }}
           events={events}
           height="auto"
@@ -310,17 +377,17 @@ export default function Schedule() {
       {/* Add/Edit Shift Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-fadeIn overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-2xl animate-fadeIn overflow-hidden flex flex-col max-h-[90vh] dark:text-slate-100">
             
             {/* Modal Header */}
-            <div className={`px-6 py-4 border-b border-slate-100 flex justify-between items-center ${isReadOnly ? 'bg-gray-100' : 'bg-slate-50'}`}>
+            <div className={`px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center ${isReadOnly ? 'bg-gray-100 dark:bg-slate-700' : 'bg-slate-50 dark:bg-slate-700'}`}>
               <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100">
                     {selectedShiftId ? (isReadOnly ? "View Completed Shift" : "Edit Shift") : "Add New Shift"}
                   </h3>
-                  {isReadOnly && <span className="bg-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1"><Lock size={10}/> Read Only</span>}
+                  {isReadOnly && <span className="bg-gray-200 dark:bg-slate-600 text-gray-600 dark:text-slate-300 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1"><Lock size={10}/> Read Only</span>}
               </div>
-              <button onClick={handleCloseModal} className="p-1 hover:bg-slate-200 rounded-full text-slate-500 transition">
+              <button onClick={handleCloseModal} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full text-slate-500 dark:text-slate-400 transition">
                 <X size={20} />
               </button>
             </div>
@@ -329,7 +396,7 @@ export default function Schedule() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
               
               {isReadOnly && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2 text-sm text-yellow-800">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 flex items-start gap-2 text-sm text-yellow-800 dark:text-yellow-300">
                       <AlertCircle size={16} className="mt-0.5" />
                       <p>This shift is completed and cannot be edited to preserve historical records.</p>
                   </div>
@@ -382,21 +449,21 @@ export default function Schedule() {
               {/* Title & Type */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Shift Title</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Shift Title</label>
                   <input 
                     disabled={isReadOnly}
                     type="text" 
                     placeholder="e.g. Morning Shift"
-                    className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50' : ''}`}
+                    className={`w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'dark:bg-slate-700 dark:text-slate-100'}`}
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Type</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Type</label>
                   <select 
                     disabled={isReadOnly}
-                    className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50' : 'bg-white'}`}
+                    className={`w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'bg-white dark:bg-slate-700 dark:text-slate-100'}`}
                     value={formData.shift_type}
                     onChange={(e) => setFormData({...formData, shift_type: e.target.value})}
                   >
@@ -421,28 +488,28 @@ export default function Schedule() {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Start Time <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Start Time <span className="text-red-500">*</span></label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-3 text-slate-400" size={18} />
+                    <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-500" size={18} />
                     <input 
                       disabled={isReadOnly}
                       required
                       type="datetime-local"
-                      className={`w-full pl-10 pr-2 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isReadOnly ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-2 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'dark:bg-slate-700 dark:text-slate-100'}`}
                       value={formData.start_date_time}
                       onChange={(e) => setFormData({...formData, start_date_time: e.target.value})}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">End Time <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">End Time <span className="text-red-500">*</span></label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-3 text-slate-400" size={18} />
+                    <Clock className="absolute left-3 top-3 text-slate-400 dark:text-slate-500" size={18} />
                     <input 
                       disabled={isReadOnly}
                       required
                       type="datetime-local"
-                      className={`w-full pl-10 pr-2 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isReadOnly ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-2 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'dark:bg-slate-700 dark:text-slate-100'}`}
                       value={formData.end_date_time}
                       onChange={(e) => setFormData({...formData, end_date_time: e.target.value})}
                     />
@@ -452,14 +519,14 @@ export default function Schedule() {
 
               {/* Location */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Location</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
+                  <MapPin className="absolute left-3 top-3 text-slate-400 dark:text-slate-500" size={18} />
                   <input 
                     disabled={isReadOnly}
                     type="text" 
                     placeholder="e.g. Main Branch, Remote..."
-                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50' : ''}`}
+                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'dark:bg-slate-700 dark:text-slate-100'}`}
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
                   />
@@ -468,14 +535,14 @@ export default function Schedule() {
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Notes</label>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-3 text-slate-400" size={18} />
+                  <FileText className="absolute left-3 top-3 text-slate-400 dark:text-slate-500" size={18} />
                   <textarea 
                     disabled={isReadOnly}
                     rows="2"
                     placeholder="Add optional notes..."
-                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 resize-none ${isReadOnly ? 'bg-gray-50' : ''}`}
+                    className={`w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 resize-none ${isReadOnly ? 'bg-gray-50 dark:bg-slate-700' : 'dark:bg-slate-700 dark:text-slate-100'}`}
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   ></textarea>
@@ -489,20 +556,20 @@ export default function Schedule() {
                   <button 
                     type="button" 
                     onClick={handleDelete}
-                    className="px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 font-medium transition flex items-center justify-center"
+                    className="px-4 py-2.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-700 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 font-medium transition flex items-center justify-center"
                     title="Delete Shift"
                   >
                     <Trash2 size={20} />
                   </button>
                 )}
                 
-                <button type="button" onClick={handleCloseModal} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition">
+                <button type="button" onClick={handleCloseModal} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition">
                   {isReadOnly ? "Close" : "Cancel"}
                 </button>
                 
                 {/* زر الحفظ يختفي لو الشيفت مكتمل */}
                 {!isReadOnly && (
-                  <button type="submit" className="flex-1 py-2.5 bg-[#112D4E] text-white rounded-xl hover:bg-[#274b74] font-medium transition shadow-md flex items-center justify-center gap-2">
+                  <button type="submit" className="flex-1 py-2.5 bg-[#112D4E] dark:bg-[#1e3a5f] text-white rounded-xl hover:bg-[#274b74] dark:hover:bg-[#2d5080] font-medium transition shadow-md flex items-center justify-center gap-2">
                     {selectedShiftId ? <><Save size={18} /> Update Shift</> : "Create Shift"}
                   </button>
                 )}

@@ -9,6 +9,8 @@ export const reportService = {
   generateShift: (data) => apiClient.post("/api/admin/reports/shift", data),
   generatePerformance: (data) => apiClient.post("/api/admin/reports/performance", data),
   
+  generateAIAnalysis: (id, language = 'ar') => apiClient.post(`/api/reports/${id}/analyze`, { language }),
+  
   delete: (id) => apiClient.delete(`/api/admin/reports/${id}`),
   
   share: (id, userIds) => apiClient.post(`/api/admin/reports/${id}/share`, { user_ids: userIds })

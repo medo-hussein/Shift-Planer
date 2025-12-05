@@ -64,25 +64,30 @@ export default function Navbar({ role }) {
   };
 
   return (
-    <div className="w-full shadow bg-white sticky top-0 z-50">
+    <div className="w-full shadow bg-white dark:bg-slate-900 sticky top-0 z-50">
       {/* Top Bar */}
-      <div className="w-full flex items-center justify-between px-4 md:px-10 py-3 border-b">
+      <div className="w-full flex items-center justify-between px-4 md:px-10 py-3 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
           <button
-            className="md:hidden p-2"
+            className="md:hidden p-2 dark:text-white"
             onClick={() => setOpenMobileMenu(!openMobileMenu)}
           >
             {openMobileMenu ? <X size={22} /> : <Menu size={22} />}
           </button>
-          <img src="/logo.png" alt="Logo" className="lg:w-30 w-20" />
+          {
+            theme === "light" ? (
+          <img src="/icons/lightLogo.png" alt="Logo" className="lg:w-30 w-20" />
+            ) : (
+          <img src="/icons/darkLogo.png" alt="Logo" className="lg:w-30 w-20" />
+            )
+          }
         </div>
 
         {/* Right Side Icons */}
         <div className="flex items-center gap-3 md:gap-5 relative">
-
           <button
             onClick={toggleTheme}
-            className="p-2 hover:bg-gray-100 rounded-full text-slate-600 hover:text-[#112D4E] transition relative group"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
           >
             {theme === "light" ? (
               <Moon className="w-6 h-6" />
@@ -94,7 +99,7 @@ export default function Navbar({ role }) {
           {["super_admin", "admin"].includes(userRole) && (
             <button
               onClick={() => setShowAnnouncementModal(true)}
-              className="p-2 hover:bg-gray-100 rounded-full text-slate-600 hover:text-[#112D4E] transition relative group"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
               title="Broadcast Message"
             >
               <Megaphone size={22} />
@@ -108,11 +113,11 @@ export default function Navbar({ role }) {
                 setOpenNotificationMenu(!openNotificationMenu);
                 setOpenProfileMenu(false);
               }}
-              className="relative p-2 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
             >
               <Bell
                 size={22}
-                className={unreadCount > 0 ? "text-slate-800" : "text-gray-500"}
+                className={unreadCount > 0 ? "text-slate-600" : "text-gray-500"}
               />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
@@ -120,15 +125,15 @@ export default function Navbar({ role }) {
             </button>
 
             {openNotificationMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white shadow-xl rounded-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn">
-                <div className="p-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                  <h3 className="font-semibold text-gray-700 text-sm">
+              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeIn">
+                <div className="p-3 border-b border-gray-50 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-700/50">
+                  <h3 className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
                     Notifications
                   </h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={handleMarkAllRead}
-                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
                     >
                       <Check size={12} /> Mark all read
                     </button>
@@ -141,8 +146,10 @@ export default function Navbar({ role }) {
                       <div
                         key={notif._id}
                         onClick={() => handleNotificationClick(notif)}
-                        className={`p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition flex gap-3 ${
-                          !notif.is_read ? "bg-blue-50/30" : ""
+                        className={`p-3 border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition flex gap-3 ${
+                          !notif.is_read
+                            ? "bg-blue-50/30 dark:bg-blue-900/30"
+                            : ""
                         }`}
                       >
                         <div
@@ -154,23 +161,23 @@ export default function Navbar({ role }) {
                           <p
                             className={`text-sm ${
                               !notif.is_read
-                                ? "font-semibold text-gray-800"
-                                : "text-gray-600"
+                                ? "font-semibold text-gray-800 dark:text-slate-100"
+                                : "text-gray-600 dark:text-slate-400"
                             }`}
                           >
                             {notif.title}
                           </p>
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                             {notif.message}
                           </p>
-                          <p className="text-[10px] text-gray-400 mt-1">
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
                             {new Date(notif.createdAt).toLocaleString()}
                           </p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-8 text-center text-gray-400">
+                    <div className="p-8 text-center text-gray-400 dark:text-slate-500">
                       <Bell size={32} className="mx-auto mb-2 opacity-20" />
                       <p className="text-sm">No notifications yet</p>
                     </div>
@@ -183,7 +190,7 @@ export default function Navbar({ role }) {
           {/* Profile Menu */}
           <div className="relative">
             <button
-              className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-full"
+              className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full dark:text-slate-300"
               onClick={() => {
                 setOpenProfileMenu(!openProfileMenu);
                 setOpenNotificationMenu(false);
@@ -195,12 +202,12 @@ export default function Navbar({ role }) {
               </span>
             </button>
             {openProfileMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 shadow-lg rounded-lg z-50">
                 <ul className="flex flex-col">
-                  <li className="px-4 py-2 text-gray-800 font-semibold">
+                  <li className="px-4 py-2 text-gray-800 dark:text-slate-200 font-semibold">
                     {userRole}
                   </li>
-                  <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600">
+                  <li className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-red-600 dark:text-red-400">
                     <button onClick={logout}>Logout</button>
                   </li>
                 </ul>
@@ -211,7 +218,7 @@ export default function Navbar({ role }) {
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="hidden md:block w-full bg-[#1d2931] text-white md:px-7">
+      <nav className="hidden md:block w-full bg-[#1d2931] dark:bg-black text-white md:px-7">
         <ul className="flex items-center gap-10 px-6 py-3">
           {items.map((item) => {
             const Icon = item.icon;
@@ -235,7 +242,7 @@ export default function Navbar({ role }) {
 
       {/* Mobile Navigation */}
       {openMobileMenu && (
-        <div className="md:hidden bg-[#1d2931] text-white px-6 py-3">
+        <div className="md:hidden bg-[#1d2931] dark:bg-slate-900 text-white px-6 py-3">
           <ul className="flex flex-col gap-4">
             {items.map((item) => {
               const Icon = item.icon;

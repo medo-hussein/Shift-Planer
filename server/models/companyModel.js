@@ -119,7 +119,6 @@ const companySchema = new mongoose.Schema(
 );
 
 // Index for better performance
-companySchema.index({ name: 1 });
 companySchema.index({ isActive: 1 });
 companySchema.index({ "subscription.status": 1 });
 

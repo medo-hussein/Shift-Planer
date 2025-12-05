@@ -49,15 +49,15 @@ const reportSchema = new mongoose.Schema({
   },
   
   super_admin_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "User", 
     required: true,
     index: true
   },
 
   // Employee ID if this is an employee-specific report
   employee_id: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, 
     ref: "User"
   },
   
@@ -79,6 +79,12 @@ const reportSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+
+  // ✅ New field to store the AI-generated text summary
+  ai_summary: {
+    type: String,
+    default: ""
+  },
   
   // Report visibility and sharing
   is_public: {
@@ -95,7 +101,7 @@ const reportSchema = new mongoose.Schema({
   
   // Specific users this report is shared with
   shared_with_users: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, 
     ref: "User"
   }],
   

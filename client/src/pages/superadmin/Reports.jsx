@@ -6,7 +6,6 @@ import {
   ChevronLeft, ChevronRight 
 } from "lucide-react";
 
-// تأكد من المسار الصحيح للمودال
 import ReportDetailsModal from "./ReportDetailsModal"; 
 
 export default function SystemReports() {
@@ -14,7 +13,6 @@ export default function SystemReports() {
   const [filterType, setFilterType] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
   
-  // ✅ إضافة States للـ Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6; 
@@ -24,7 +22,6 @@ export default function SystemReports() {
   const fetchReports = async () => {
     try {
       show();
-      // ✅ إرسال page و limit مع الفلاتر
       const params = { 
         page, 
         limit,
@@ -35,7 +32,6 @@ export default function SystemReports() {
       
       setReports(res.data.data || []);
       
-      // ✅ تحديث إجمالي الصفحات من رد السيرفر
       if (res.data.pagination) {
         setTotalPages(res.data.pagination.total_pages);
       }
@@ -46,12 +42,10 @@ export default function SystemReports() {
     }
   };
 
-  // ✅ إعادة الجلب عند تغيير الصفحة أو نوع الفلتر
   useEffect(() => {
     fetchReports();
   }, [page, filterType]);
 
-  // ✅ تصفير الصفحة عند تغيير الفلتر
   useEffect(() => {
     setPage(1);
   }, [filterType]);
@@ -116,23 +110,22 @@ export default function SystemReports() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">System Reports</h1>
-          <p className="text-slate-500 text-sm">Detailed analytics from all branches.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">System Reports</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Detailed analytics from all branches.</p>
         </div>
         
         <div className="relative">
-          <Filter className="absolute left-3 top-2.5 text-slate-400" size={16} />
+          <Filter className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" size={16} />
           <select 
-            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#3F72AF] cursor-pointer bg-white"
+            className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#3F72AF] cursor-pointer bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
           >
             <option value="">All Report Types</option>
             <option value="attendance">Attendance</option>
-            <option value="performance">Performance</option>
             <option value="shift">Shift Analysis</option>
           </select>
         </div>
@@ -142,7 +135,7 @@ export default function SystemReports() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {reports.map((report) => (
-              <div key={report._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition flex flex-col h-full">
+              <div key={report._id} className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition flex flex-col h-full">
                 
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
@@ -153,31 +146,31 @@ export default function SystemReports() {
                   </div>
                   <button 
                     onClick={() => setSelectedReport(report)}
-                    className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md text-xs font-medium transition flex items-center gap-1"
+                    className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1 rounded-md text-xs font-medium transition flex items-center gap-1"
                   >
                     <Eye size={14} /> View Details
                   </button>
                 </div>
 
                 {/* Content */}
-                <h3 className="font-bold text-slate-800 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
-                <p className="text-xs text-slate-500 mb-2">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1 line-clamp-1" title={report.title}>{report.title}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                   Generated on {new Date(report.createdAt).toLocaleDateString()}
                 </p>
 
                 {/* Quick Stats */}
-                <div className="bg-slate-50 rounded-xl p-3 mb-4">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 mb-4">
                   {renderQuickStats(report)}
                 </div>
 
                 {/* Footer Info */}
-                <div className="mt-auto pt-4 border-t border-slate-50 space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Building size={14} className="text-slate-400" />
+                <div className="mt-auto pt-4 border-t border-slate-50 dark:border-slate-700 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Building size={14} className="text-slate-400 dark:text-slate-500" />
                     <span className="truncate text-xs">{report.generated_by_admin_id?.branch_name || "Unknown Branch"}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Calendar size={14} className="text-slate-400" />
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
                     <span className="text-xs">
                       {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
                     </span>
@@ -193,19 +186,19 @@ export default function SystemReports() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <ChevronLeft size={20} />
               </button>
               
-              <span className="text-sm font-medium text-slate-600">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 Page {page} of {totalPages}
               </span>
 
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <ChevronRight size={20} />
               </button>
@@ -213,7 +206,7 @@ export default function SystemReports() {
           )}
         </>
       ) : (
-        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-500">
+        <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
           No reports found matching your filters.
         </div>
       )}

@@ -47,6 +47,13 @@ export const clockIn = async (req, res) => {
       }
     });
 
+    // 🛑 CHECK: Prevent clock in if no shift exists
+    if (!shift) {
+      return res.status(400).json({
+        message: "Cannot clock in: No shift scheduled for today.",
+      });
+    }
+
     // Calculate late minutes if shift exists
     let late_minutes = 0;
     const now = new Date();
@@ -172,8 +179,6 @@ export const clockOut = async (req, res) => {
         notes: req.body.notes || attendance.notes,
         total_hours: totalHours,
         overtime: overtime,
-        // If shift type needs to be stored in attendance for reporting, add it here:
-        // shift_type: shift ? shift.shift_type : 'regular'
     });
 
     // 6. Complete the Shift

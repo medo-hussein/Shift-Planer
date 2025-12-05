@@ -9,6 +9,7 @@ import shiftRoutes from "./routes/shiftRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import otpRoutes from "./routes/otpRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 // Add to routes
 // Import the new routes
@@ -22,6 +23,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -43,6 +45,9 @@ app.use("/api/notifications", notificationRoutes);
 app.get("/", (req, res) => {
   res.send("ShiftMind API Running - Smart Workforce Management System");
 });
+
+// payment routes
+app.use("/api", paymentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

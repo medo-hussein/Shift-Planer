@@ -43,7 +43,6 @@ const attendanceSchema = new mongoose.Schema({
     type: Number, 
     default: 0 
   },
-  // ✅ إضافة حقل نوع الشيفت ليتم استخدامه في الحسابات
   shift_type: { 
     type: String, 
     enum: ["regular", "overtime", "holiday", "weekend", "emergency"],
@@ -119,7 +118,7 @@ attendanceSchema.pre("save", function(next) {
     const checkInHour = this.check_in.getHours();
     const checkInMinute = this.check_in.getMinutes();
     
-    // Late rule: After 9:15 AM (يمكن تعديلها لاحقاً لتعتمد على بداية الشيفت الفعلي)
+    // Late rule: After 9:15 AM)
     if (checkInHour > 9 || (checkInHour === 9 && checkInMinute > 15)) {
       this.status = "late";
       this.late_minutes = (checkInHour - 9) * 60 + (checkInMinute - 15);

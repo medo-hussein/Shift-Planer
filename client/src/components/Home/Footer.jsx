@@ -15,7 +15,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-950 text-white py-14 px-6 md:px-12">
+    <footer className="bg-slate-900 text-white py-14 px-6 md:px-12">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-start gap-12">
         {/* LOGO & DESCRIPTION */}
         <div className="flex flex-col items-start gap-4 md:w-1/3">

@@ -9,7 +9,18 @@ export default function TimeTracking() {
 
   const [isLive, setIsLive] = useState(true);
   const [records, setRecords] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // ✅ FIX: Use local date instead of UTC to avoid timezone issues
+  const getLocalDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getLocalDate());
+  
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   
@@ -21,7 +32,9 @@ export default function TimeTracking() {
   const fetchData = async () => {
     try {
       show();
+      console.log("Fetching for date:", selectedDate); // Debugging
       const res = await attendanceService.getBranchAttendance(selectedDate);
+      console.log("Records found:", res.data.records.length); // Debugging
       setRecords(res.data.records || []);
     } catch (err) {
       console.error(err);
@@ -39,11 +52,14 @@ export default function TimeTracking() {
     if (filterStatus !== "all" && record.status !== filterStatus) return false;
     
     if (isLive) {
+      // Check active employees (Have Check-In AND No Check-Out)
       return record.check_in && !record.check_out;
     }
     return true;
   });
 
+  // ... (باقي الكود كما هو بدون تغيير) ...
+  
   // Helper Functions
   const formatTime = (dateStr) => {
     if (!dateStr) return "--:--";
@@ -97,13 +113,13 @@ export default function TimeTracking() {
     <>
       <Toaster position="top-center" />
 
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 dark:text-slate-100">
         
         {/* --- HEADER --- */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-800">Time Tracking</h1>
-            <p className="text-gray-600">Monitor employee clock in/out and manage time cards</p>
+            <h1 className="text-2xl font-extrabold text-gray-800 dark:text-slate-100">Time Tracking</h1>
+            <p className="text-gray-600 dark:text-slate-400">Monitor employee clock in/out and manage time cards</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -111,10 +127,10 @@ export default function TimeTracking() {
               type="date" 
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-100 bg-white dark:bg-slate-800 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
             
-            <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 flex items-center gap-1 shadow-sm transition">
+            <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 flex items-center gap-1 shadow-sm transition">
               <Download className="w-4" /> Export
             </button>
             
@@ -122,8 +138,8 @@ export default function TimeTracking() {
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-3 py-1.5 rounded-md border flex items-center gap-1 shadow-sm transition ${
                     showFilters 
-                    ? "bg-blue-50 text-blue-700 border-blue-200" 
-                    : "text-gray-700 bg-white hover:bg-gray-100 border-gray-200"
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700" 
+                    : "text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
                 }`}
             >
               <Funnel className="w-4" /> Filters
@@ -132,10 +148,10 @@ export default function TimeTracking() {
         </div>
 
         {/* --- TABS --- */}
-        <div className="flex w-full mb-6 bg-gray-200 p-1 rounded-lg max-w-md">
+        <div className="flex w-full mb-6 bg-gray-200 dark:bg-slate-800 p-1 rounded-lg max-w-md">
           <button
             className={`flex-1 py-2 rounded-md font-medium transition-all ${
-              isLive ? "bg-white text-blue-700 shadow-sm" : "text-gray-600 hover:text-gray-800"
+              isLive ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-300"
             }`}
             onClick={() => setIsLive(true)}
           >
@@ -143,7 +159,7 @@ export default function TimeTracking() {
           </button>
           <button
             className={`flex-1 py-2 rounded-md font-medium transition-all ${
-              !isLive ? "bg-white text-blue-700 shadow-sm" : "text-gray-600 hover:text-gray-800"
+              !isLive ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-sm" : "text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-300"
             }`}
             onClick={() => setIsLive(false)}
           >
@@ -153,9 +169,9 @@ export default function TimeTracking() {
 
         {/* --- FILTERS SECTION (Collapsible) --- */}
         {showFilters && (
-          <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm animate-fadeIn">
+          <div className="mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm animate-fadeIn">
              <div className="flex flex-wrap gap-4 items-center">
-                <span className="text-sm font-medium text-gray-600">Filter By Status:</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Filter By Status:</span>
                 <div className="flex gap-2">
                     {['all', 'present', 'late', 'absent'].map((status) => (
                         <button
@@ -163,8 +179,8 @@ export default function TimeTracking() {
                             onClick={() => setFilterStatus(status)}
                             className={`px-4 py-1.5 rounded-full text-xs font-medium capitalize transition ${
                                 filterStatus === status
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                ? "bg-blue-600 dark:bg-blue-700 text-white shadow-md"
+                                : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                             }`}
                         >
                             {status}
@@ -177,10 +193,10 @@ export default function TimeTracking() {
 
         {/* --- CONTENT: LIVE VIEW --- */}
         {isLive ? (
-          <div className="bg-white shadow-sm rounded-lg p-6 min-h-[400px]">
+          <div className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-6 min-h-[400px]">
             <div className="flex items-center gap-2 mb-6">
-              <User className="text-gray-400" />
-              <h2 className="text-xl font-semibold text-gray-800">
+              <User className="text-gray-400 dark:text-slate-500" />
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-slate-100">
                 Currently Working ({filteredRecords.length})
               </h2>
             </div>
@@ -189,38 +205,38 @@ export default function TimeTracking() {
               {filteredRecords.length > 0 ? filteredRecords.map((record) => {
                 const status = getStatusInfo(record);
                 return (
-                  <div key={record._id} className="card border border-sky-100 shadow-sm rounded-lg p-4 flex flex-col md:flex-row items-center justify-between hover:bg-blue-50 transition">
+                  <div key={record._id} className="card border border-sky-100 dark:border-slate-700 shadow-sm rounded-lg p-4 flex flex-col md:flex-row items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-700 transition dark:bg-slate-700">
                     
                     {/* Employee Details */}
                     <div className="flex items-center gap-3 w-full md:w-auto mb-3 md:mb-0">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-700 text-lg">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-600 flex items-center justify-center font-bold text-gray-700 dark:text-slate-200 text-lg">
                         {record.user_id?.name?.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800">{record.user_id?.name}</p>
-                        <p className="text-gray-500 text-sm">{record.user_id?.position || "Employee"}</p>
-                        <p className="text-gray-400 text-xs">{record.user_id?.email}</p>
+                        <p className="font-semibold text-gray-800 dark:text-slate-100">{record.user_id?.name}</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-sm">{record.user_id?.position || "Employee"}</p>
+                        <p className="text-gray-400 dark:text-slate-500 text-xs">{record.user_id?.email}</p>
                       </div>
                     </div>
 
                     {/* Timing & Status */}
                     <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
                       <div className="flex flex-col text-center md:text-left">
-                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Start Time</p>
-                        <p className="font-semibold text-gray-800">{formatTime(record.check_in)}</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">Start Time</p>
+                        <p className="font-semibold text-gray-800 dark:text-slate-100">{formatTime(record.check_in)}</p>
                       </div>
 
                       <div className="text-center md:text-right">
-                        <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Duration</p>
-                        <p className="font-semibold text-gray-800">
+                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">Duration</p>
+                        <p className="font-semibold text-gray-800 dark:text-slate-100">
                           {calculateDuration(record.check_in, null)}
                         </p>
                       </div>
 
                       <div className={`px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm ${
                           status.text === "On Break" 
-                          ? "bg-yellow-50 text-yellow-700 border border-yellow-200" 
-                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                          ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-700" 
+                          : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
                       }`}>
                          {status.icon}
                          {status.text === "On Break" ? "Paused (Break)" : "Tracking..."}
@@ -230,7 +246,7 @@ export default function TimeTracking() {
                   </div>
                 );
               }) : (
-                <div className="text-center py-10 text-gray-400">
+                <div className="text-center py-10 text-gray-400 dark:text-slate-500">
                     <p>No active employees found right now.</p>
                 </div>
               )}
@@ -238,25 +254,25 @@ export default function TimeTracking() {
           </div>
         ) : (
         // --- CONTENT: TIME CARDS VIEW ---
-          <div className="bg-white shadow-sm rounded-lg p-6 min-h-[400px]">
-            <div className="bg-white p-1 rounded-xl">
+          <div className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-6 min-h-[400px]">
+            <div className="bg-white dark:bg-slate-800 p-1 rounded-xl">
               <div className="flex justify-between items-center mb-6">
-                 <h2 className="text-xl font-semibold text-gray-900">Time Card Management</h2>
+                 <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Time Card Management</h2>
               </div>
 
               <div className="space-y-4">
                 {filteredRecords.length > 0 ? filteredRecords.map((record) => {
                     const status = getStatusInfo(record);
                     return (
-                        <div key={record._id} className="card border border-sky-100 shadow-sm rounded-lg p-4 flex flex-col md:flex-row items-center justify-between hover:bg-blue-50 transition">
+                        <div key={record._id} className="card border border-sky-100 dark:border-slate-700 shadow-sm rounded-lg p-4 flex flex-col md:flex-row items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-700 transition dark:bg-slate-700">
                             <div className="flex-1 w-full">
                                 <div className="flex gap-3 items-center mb-1">
-                                    <h3 className="font-semibold text-gray-800">{record.user_id?.name}</h3>
+                                    <h3 className="font-semibold text-gray-800 dark:text-slate-100">{record.user_id?.name}</h3>
                                     <span className={`${status.bg} ${status.color} text-xs px-2 py-1 rounded-full capitalize`}>
                                         {record.status}
                                     </span>
                                 </div>
-                                <p className="text-gray-600 text-sm flex items-center gap-2">
+                                <p className="text-gray-600 dark:text-slate-300 text-sm flex items-center gap-2">
                                    <Calendar size={14} /> {new Date(record.date).toLocaleDateString()} 
                                    <span className="mx-1">•</span> 
                                    <Clock size={14} /> {formatTime(record.check_in)} - {record.check_out ? formatTime(record.check_out) : "Active"}
@@ -267,7 +283,7 @@ export default function TimeTracking() {
                             <div className="flex gap-3 mt-3 md:mt-0 w-full md:w-auto justify-end">
                                 <button 
                                     onClick={() => handleView(record)}
-                                    className="px-3 py-1.5 rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1 shadow-sm border border-gray-200 transition"
+                                    className="px-3 py-1.5 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-1 shadow-sm border border-gray-200 dark:border-slate-600 transition"
                                 >
                                     <Eye className="w-4" /> View
                                 </button>
@@ -275,7 +291,7 @@ export default function TimeTracking() {
                         </div>
                     );
                 }) : (
-                    <div className="text-center py-10 text-gray-400">
+                    <div className="text-center py-10 text-gray-400 dark:text-slate-500">
                         <Calendar size={40} className="mb-2 opacity-20 mx-auto"/>
                         <p>No records found for this date.</p>
                     </div>
@@ -289,44 +305,44 @@ export default function TimeTracking() {
       {/* --- MODAL --- */}
       {openModal && selectedRecord && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl relative">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-lg shadow-2xl relative dark:text-slate-100">
             <button 
                 onClick={() => setOpenModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition"
+                className="absolute top-4 right-4 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition"
             >
                 <X size={20} />
             </button>
 
-            <h2 className="text-lg font-semibold mb-6 text-gray-800 border-b pb-3">Time Card Details</h2>
+            <h2 className="text-lg font-semibold mb-6 text-gray-800 dark:text-slate-100 border-b border-gray-200 dark:border-slate-700 pb-3">Time Card Details</h2>
             
             <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
-                    <h3 className="font-semibold text-gray-700 mb-1 text-sm">Employee</h3>
-                    <p className="text-gray-900 font-medium">{selectedRecord.user_id?.name}</p>
-                    <p className="text-gray-500 text-xs">{selectedRecord.user_id?.email}</p>
+                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">Employee</h3>
+                    <p className="text-gray-900 dark:text-slate-100 font-medium">{selectedRecord.user_id?.name}</p>
+                    <p className="text-gray-500 dark:text-slate-400 text-xs">{selectedRecord.user_id?.email}</p>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-gray-700 mb-1 text-sm">Summary</h3>
-                    <p className="text-gray-900 text-sm">Date: {new Date(selectedRecord.date).toLocaleDateString()}</p>
-                    <p className="text-gray-900 text-sm">Total: {selectedRecord.total_hours || 0} hrs</p>
+                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">Summary</h3>
+                    <p className="text-gray-900 dark:text-slate-100 text-sm">Date: {new Date(selectedRecord.date).toLocaleDateString()}</p>
+                    <p className="text-gray-900 dark:text-slate-100 text-sm">Total: {selectedRecord.total_hours || 0} hrs</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 dark:bg-slate-700 p-4 rounded-lg border border-gray-100 dark:border-slate-600">
                 <div>
-                    <p className="text-gray-500 text-xs uppercase font-bold mb-1">Clock In</p>
-                    <p className="font-mono text-blue-600 font-bold">{formatTime(selectedRecord.check_in)}</p>
+                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">Clock In</p>
+                    <p className="font-mono text-blue-600 dark:text-blue-400 font-bold">{formatTime(selectedRecord.check_in)}</p>
                 </div>
                 <div>
-                    <p className="text-gray-500 text-xs uppercase font-bold mb-1">Clock Out</p>
-                    <p className="font-mono text-blue-600 font-bold">{formatTime(selectedRecord.check_out)}</p>
+                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">Clock Out</p>
+                    <p className="font-mono text-blue-600 dark:text-blue-400 font-bold">{formatTime(selectedRecord.check_out)}</p>
                 </div>
             </div>
 
             {selectedRecord.notes && (
                 <div className="mb-6">
-                    <h3 className="font-semibold text-gray-800 mb-2 text-sm">Notes</h3>
-                    <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-800 border border-blue-100 italic">
+                    <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-2 text-sm">Notes</h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 border border-blue-100 dark:border-blue-700 italic">
                         "{selectedRecord.notes}"
                     </div>
                 </div>
@@ -335,7 +351,7 @@ export default function TimeTracking() {
             <div className="flex justify-end gap-2">
                 <button 
                     onClick={() => setOpenModal(false)}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
+                    className="px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600 transition text-sm font-medium"
                 >
                     Close
                 </button>
