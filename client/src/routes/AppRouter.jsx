@@ -16,21 +16,17 @@ import AuthError from "../pages/auth/AuthError.jsx";
 import OtpRoute from "./OtpRoute.jsx";
 import ResetPasswordRoute from "./ResetPasswordRoute.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import Loader from "../components/Loader.jsx";
+import CalendarModal from "../components/CalendarModal.jsx";
+import PaymentForm from "../pages/Payment.jsx";
 
 export default function AppRouter() {
   const { loading } = useAuth();
-
-  // 1. Wait for AuthContext to finish loading during refresh
-  // (This handles the first check: AuthContext is reading token, fetching user)
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
-      </div>
+      <Loader />
     );
   }
-
-
 
   return (
     <BrowserRouter>
@@ -41,16 +37,16 @@ export default function AppRouter() {
 
 function RoutesWrapper() {
   // eslint-disable-next-line no-unused-vars
-  const { isAuthenticated, userRole, status } = useAuth(); 
+  // const { isAuthenticated, userRole, status } = useAuth(); 
 
   // 2. Handle temporary state: Token exists (isAuthenticated=true) but userRole is still null/undefined during hydration/refresh.
-  if (isAuthenticated && !userRole) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading user...</div>
-      </div>
-    );
-  }
+  // if (isAuthenticated && userRole===null) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div>Loading user...</div>
+  //     </div>
+  //   );
+  // }
 
   return <AppRoutes />;
 }
@@ -60,7 +56,9 @@ function AppRoutes() {
   const roleRoutes = routesConfig[userRole] || [];
 
   return (
+    
     <Routes>
+      <Route path="/test" element={<PaymentForm />} />
       {/* Public Routes */}
       <Route
         path="/"

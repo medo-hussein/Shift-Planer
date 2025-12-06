@@ -4,13 +4,14 @@ import { attendanceService } from "../../api/services/admin/attendanceService";
 import { useLoading } from "../../contexts/LoaderContext";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
+import {Alert} from "../../utils/alertService.js";
 
 export default function TimeTracking() {
 
   const [isLive, setIsLive] = useState(true);
   const [records, setRecords] = useState([]);
   
-  // ✅ FIX: Use local date instead of UTC to avoid timezone issues
+  // Use local date instead of UTC to avoid timezone issues
   const getLocalDate = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -32,13 +33,11 @@ export default function TimeTracking() {
   const fetchData = async () => {
     try {
       show();
-      console.log("Fetching for date:", selectedDate); // Debugging
       const res = await attendanceService.getBranchAttendance(selectedDate);
-      console.log("Records found:", res.data.records.length); // Debugging
       setRecords(res.data.records || []);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load data");
+      Alert.error("Failed to load data");
     } finally {
       hide();
     }
@@ -52,13 +51,11 @@ export default function TimeTracking() {
     if (filterStatus !== "all" && record.status !== filterStatus) return false;
     
     if (isLive) {
-      // Check active employees (Have Check-In AND No Check-Out)
       return record.check_in && !record.check_out;
     }
     return true;
   });
 
-  // ... (باقي الكود كما هو بدون تغيير) ...
   
   // Helper Functions
   const formatTime = (dateStr) => {
@@ -87,7 +84,7 @@ export default function TimeTracking() {
 
   // Actions 
   const handleExport = () => {
-    if (filteredRecords.length === 0) return toast.error("No data to export");
+    if (filteredRecords.length === 0) return Alert.error("No data to export");
     try {
       const data = filteredRecords.map(r => ({
         Name: r.user_id?.name,
@@ -100,8 +97,8 @@ export default function TimeTracking() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Attendance");
       XLSX.writeFile(wb, `Attendance_${selectedDate}.xlsx`);
-      toast.success("Exported successfully");
-    } catch (e) { toast.error("Export failed"); }
+      Alert.success("Exported successfully");
+    } catch (e) { Alert.error("Export failed"); }
   };
 
   const handleView = (record) => {

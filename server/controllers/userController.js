@@ -2,8 +2,8 @@ import User from "../models/userModel.js";
 
 // Utility function to get the Super Admin ID (Tenant Owner ID)
 const getTenantOwnerId = (user) => {
-    // If the user is Super Admin, they are their own owner. Otherwise, use their stored Super Admin ID.
-    return user.role === "super_admin" ? user._id : user.super_admin_id;
+  // If the user is Super Admin, they are their own owner. Otherwise, use their stored Super Admin ID.
+  return user.role === "super_admin" ? user._id : user.super_admin_id;
 };
 
 // GET ALL ADMINS (BRANCHES) - Super Admin only (Now filtered by ownership)
@@ -16,9 +16,9 @@ export const getAdmins = async (req, res) => {
     const superAdminId = req.user._id; // Super Admin ID is the owner ID here
 
     // ISOLATION: Fetch admins filtered by the current Super Admin's ID
-    const admins = await User.find({ 
-        role: "admin",
-        super_admin_id: superAdminId 
+    const admins = await User.find({
+      role: "admin",
+      super_admin_id: superAdminId
     })
       .select('-password -resetPasswordToken -resetPasswordExpire')
       .sort({ createdAt: -1 });
@@ -30,9 +30,9 @@ export const getAdmins = async (req, res) => {
     });
   } catch (err) {
     console.error("getAdmins error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -58,27 +58,27 @@ export const getBranchEmployees = async (req, res) => {
 
     // Super admin can filter by branch
     if (userRole === "super_admin") {
-        let adminIdsToFilter = [];
+      let adminIdsToFilter = [];
 
-        if (req.query.branch_admin_id) {
-            // If branch ID is provided, ensure it belongs to this SA
-            const targetAdmin = await User.findOne({
-                _id: req.query.branch_admin_id,
-                role: "admin",
-                super_admin_id: tenantOwnerId // ISOLATION Check: Must be owned by this SA
-            });
-            
-            if (!targetAdmin) {
-                return res.status(404).json({ success: false, message: "Branch admin not found or not owned by you" });
-            }
-            adminIdsToFilter.push(targetAdmin._id);
-        } else {
-            // Get all admin IDs owned by this SA
-            const ownedAdmins = await User.find({ role: "admin", super_admin_id: tenantOwnerId }).select('_id');
-            adminIdsToFilter = ownedAdmins.map(id => id._id);
+      if (req.query.branch_admin_id) {
+        // If branch ID is provided, ensure it belongs to this SA
+        const targetAdmin = await User.findOne({
+          _id: req.query.branch_admin_id,
+          role: "admin",
+          super_admin_id: tenantOwnerId // ISOLATION Check: Must be owned by this SA
+        });
+
+        if (!targetAdmin) {
+          return res.status(404).json({ success: false, message: "Branch admin not found or not owned by you" });
         }
-        
-        query.branch_admin_id = { $in: adminIdsToFilter };
+        adminIdsToFilter.push(targetAdmin._id);
+      } else {
+        // Get all admin IDs owned by this SA
+        const ownedAdmins = await User.find({ role: "admin", super_admin_id: tenantOwnerId }).select('_id');
+        adminIdsToFilter = ownedAdmins.map(id => id._id);
+      }
+
+      query.branch_admin_id = { $in: adminIdsToFilter };
     }
 
     const employees = await User.find(query)
@@ -93,9 +93,9 @@ export const getBranchEmployees = async (req, res) => {
     });
   } catch (err) {
     console.error("getBranchEmployees error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -114,25 +114,48 @@ export const createEmployee = async (req, res) => {
     const { name, email, password, phone, position, department } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Name, email and password are required" 
+        message: "Name, email and password are required"
       });
     }
 
     // Prevent duplicate emails
     const existing = await User.findOne({ email });
     if (existing) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email already exists" 
+        message: "Email already exists"
+      });
+    }
+
+    // 🔍 ENFORCE SUBSCRIPTION LIMITS (Max Employees)
+    // 1. Get the Super Admin (Tenant Owner) to find the Company
+    const superAdmin = await User.findById(creatorSuperAdminId).populate('company');
+    if (!superAdmin || !superAdmin.company) {
+      return res.status(404).json({ success: false, message: "Company not found" });
+    }
+
+    const company = superAdmin.company;
+
+    // 2. Count total employees for this tenant
+    const currentEmployees = await User.countDocuments({
+      role: "employee",
+      super_admin_id: creatorSuperAdminId
+    });
+
+    if (currentEmployees >= company.subscription.maxUsers) {
+      return res.status(403).json({
+        success: false,
+        error: "LIMIT_EXCEEDED",
+        message: `You have reached the limit of ${company.subscription.maxUsers} employees for your ${company.subscription.plan_name} plan. Please upgrade to add more.`
       });
     }
 
     // Determine branch_admin_id
     let branch_admin_id = creatorId;
     let super_admin_id_to_set = creatorSuperAdminId;
-    
+
     // Super admin can specify which branch to add employee to
     if (userRole === "super_admin" && req.body.branch_admin_id) {
       const targetAdmin = await User.findOne({
@@ -140,17 +163,17 @@ export const createEmployee = async (req, res) => {
         role: "admin",
         super_admin_id: creatorSuperAdminId // ISOLATION Check: Target must be owned by this SA
       });
-      
+
       if (!targetAdmin) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "Branch admin not found or not owned by you" 
+          message: "Branch admin not found or not owned by you"
         });
       }
       branch_admin_id = req.body.branch_admin_id;
     } else if (userRole === "super_admin" && !req.body.branch_admin_id) {
-        // SA creates an employee directly
-        branch_admin_id = undefined;
+      // SA creates an employee directly
+      branch_admin_id = undefined;
     }
 
     const newEmployee = await User.create({
@@ -167,9 +190,9 @@ export const createEmployee = async (req, res) => {
     });
 
     // Get branch admin info for response
-    const branchAdmin = branch_admin_id ? 
-        await User.findById(branch_admin_id).select('name branch_name') : 
-        { name: 'N/A', branch_name: 'Super Admin Level' };
+    const branchAdmin = branch_admin_id ?
+      await User.findById(branch_admin_id).select('name branch_name') :
+      { name: 'N/A', branch_name: 'Super Admin Level' };
 
     return res.status(201).json({
       success: true,
@@ -193,9 +216,9 @@ export const createEmployee = async (req, res) => {
     });
   } catch (err) {
     console.error("createEmployee error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -205,11 +228,11 @@ export const getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password -resetPasswordToken -resetPasswordExpire');
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
@@ -245,9 +268,9 @@ export const getMyProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("getMyProfile error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -256,25 +279,25 @@ export const getMyProfile = async (req, res) => {
 export const updateMyProfile = async (req, res) => {
   try {
     const { name, phone, position, department } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // Update allowed fields
     if (name) user.name = name;
     if (phone !== undefined) user.phone = phone;
-    
+
     // Position and department can be updated by employees and admins
     if (position !== undefined && user.role !== "super_admin") {
       user.position = position;
     }
-    
+
     if (department !== undefined && user.role !== "super_admin") {
       user.department = department;
     }
@@ -291,9 +314,9 @@ export const updateMyProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("updateMyProfile error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -310,36 +333,36 @@ export const updateUser = async (req, res) => {
     // Check permissions (Admin or owner)
     const isOwner = id === req.user._id.toString();
     const isAdmin = ["super_admin", "admin"].includes(userRole);
-    
+
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Not authorized to update this user" 
+        message: "Not authorized to update this user"
       });
     }
 
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // ISOLATION: Check Super Admin ownership for non-Super Admins
     if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-         return res.status(403).json({ 
-            success: false,
-            message: "Not authorized to update a user not owned by you" 
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update a user not owned by you"
+      });
     }
 
     // Check branch permissions for Admin (only their employees)
     if (userRole === "admin" && user.role === "employee") {
       if (user.branch_admin_id?.toString() !== adminId.toString()) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           success: false,
-          message: "Not authorized to update this employee" 
+          message: "Not authorized to update this employee"
         });
       }
     }
@@ -348,9 +371,9 @@ export const updateUser = async (req, res) => {
     if (email && email !== user.email) {
       const existing = await User.findOne({ email });
       if (existing) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Email already exists" 
+          message: "Email already exists"
         });
       }
       user.email = email;
@@ -359,7 +382,7 @@ export const updateUser = async (req, res) => {
     // Update fields
     if (name) user.name = name;
     if (phone !== undefined) user.phone = phone;
-    
+
     // Only update position/department for employees
     if (user.role === "employee") {
       if (position !== undefined) user.position = position;
@@ -379,9 +402,9 @@ export const updateUser = async (req, res) => {
     });
   } catch (err) {
     console.error("updateUser error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -396,51 +419,51 @@ export const toggleUserStatus = async (req, res) => {
     const { is_active } = req.body;
 
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Admin access required" 
+        message: "Admin access required"
       });
     }
 
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // ISOLATION: Check Super Admin ownership for non-Super Admins
     if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-         return res.status(403).json({ 
-            success: false,
-            message: "Not authorized to modify a user not owned by you" 
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to modify a user not owned by you"
+      });
     }
-    
+
     // Check permissions
     if (userRole === "admin") {
       if (user.role === "employee" && user.branch_admin_id?.toString() !== adminId.toString()) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           success: false,
-          message: "Not authorized to update this employee" 
+          message: "Not authorized to update this employee"
         });
       }
-      
+
       // Admin cannot deactivate themselves or other admins
       if (id === adminId.toString() || user.role === "admin") {
-        return res.status(403).json({ 
+        return res.status(403).json({
           success: false,
-          message: "Not authorized to update admin accounts" 
+          message: "Not authorized to update admin accounts"
         });
       }
     }
 
     // Prevent deactivating yourself (super admin)
     if (id === adminId.toString() && userRole === "super_admin") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Cannot deactivate your own account" 
+        message: "Cannot deactivate your own account"
       });
     }
 
@@ -460,9 +483,9 @@ export const toggleUserStatus = async (req, res) => {
     });
   } catch (err) {
     console.error("toggleUserStatus error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -478,39 +501,39 @@ export const getUserById = async (req, res) => {
     const user = await User.findById(id)
       .select('-password -resetPasswordToken -resetPasswordExpire')
       .populate('branch_admin_id', 'name branch_name');
-      
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // Check permissions
     const isOwner = id === req.user._id.toString();
     const isAdmin = ["super_admin", "admin"].includes(userRole);
-    
+
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Not authorized to view this user" 
+        message: "Not authorized to view this user"
       });
     }
 
     // ISOLATION: Check Super Admin ownership for non-Super Admins
     if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-         return res.status(403).json({ 
-            success: false,
-            message: "Not authorized to view a user not owned by you" 
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view a user not owned by you"
+      });
     }
-    
+
     // Check branch permissions for admin
     if (userRole === "admin" && user.role === "employee") {
       if (user.branch_admin_id?._id.toString() !== adminId.toString()) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           success: false,
-          message: "Not authorized to view this employee" 
+          message: "Not authorized to view this employee"
         });
       }
     }
@@ -521,9 +544,9 @@ export const getUserById = async (req, res) => {
     });
   } catch (err) {
     console.error("getUserById error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };
@@ -536,33 +559,33 @@ export const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     if (userRole !== "super_admin") {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Super admin access required" 
+        message: "Super admin access required"
       });
     }
 
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // ISOLATION: Check Super Admin ownership for non-Super Admins being deleted
     if (user.role !== "super_admin" && user.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-         return res.status(403).json({ 
-            success: false,
-            message: "Not authorized to delete a user not owned by you" 
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete a user not owned by you"
+      });
     }
 
     // Prevent deleting yourself
     if (id === req.user._id.toString()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Cannot delete your own account" 
+        message: "Cannot delete your own account"
       });
     }
 
@@ -574,9 +597,9 @@ export const deleteUser = async (req, res) => {
     });
   } catch (err) {
     console.error("deleteUser error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message
     });
   }
 };

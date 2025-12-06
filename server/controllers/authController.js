@@ -462,6 +462,23 @@ export const getMyProfile = async (req, res) => {
       createdAt: user.createdAt
     };
 
+    // Add subscription data for super_admin
+    if (user.role === "super_admin" && user.company) {
+      const Company = (await import("../models/companyModel.js")).default;
+      const company = await Company.findById(user.company).populate('subscription.plan');
+
+      if (company && company.subscription) {
+        profileData.plan_slug = company.subscription.plan?.slug || company.subscription.plan_name || "free";
+        profileData.plan_name = company.subscription.plan?.name || company.subscription.plan_name || "Free";
+        profileData.subscription = {
+          status: company.subscription.status,
+          expiresAt: company.subscription.expiresAt,
+          maxUsers: company.subscription.maxUsers,
+          maxBranches: company.subscription.maxBranches
+        };
+      }
+    }
+
     if (user.role === "admin") {
       profileData.branch_name = user.branch_name;
     }
@@ -525,7 +542,7 @@ export const updateMyProfile = async (req, res) => {
 export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, branch_name } = req.body;
-    
+
     const superAdminId = req.user._id;
 
     const exists = await User.findOne({ email });
@@ -535,6 +552,24 @@ export const createAdmin = async (req, res) => {
         error: "EMAIL_EXISTS",
         message: "Email is already in use"
       });
+    }
+
+    // 🔍 ENFORCE SUBSCRIPTION LIMITS (Max Branches) - Added for consistency
+    const superAdmin = await User.findById(superAdminId).populate('company');
+    if (superAdmin && superAdmin.company) {
+      const company = superAdmin.company;
+      const currentBranches = await User.countDocuments({
+        role: "admin",
+        super_admin_id: superAdminId
+      });
+
+      if (currentBranches >= company.subscription.maxBranches) {
+        return res.status(403).json({
+          success: false,
+          error: "LIMIT_EXCEEDED",
+          message: `You have reached the limit of ${company.subscription.maxBranches} branches for your ${company.subscription.plan_name} plan.`
+        });
+      }
     }
 
     const admin = await User.create({

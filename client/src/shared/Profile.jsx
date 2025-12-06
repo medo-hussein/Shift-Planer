@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { authService } from "../api/services/authService";
 import { useLoading } from "../contexts/LoaderContext";
 import {
@@ -11,11 +11,14 @@ import {
   Camera,
   Save,
 } from "lucide-react";
+import { Alert } from "../utils/alertService.js";
+import { useTranslation } from "react-i18next";
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({ name: "", phone: "" });
   const { show, hide } = useLoading();
+  const { t, i18n } = useTranslation();
 
   // Fetch Data
   const fetchProfile = async () => {
@@ -46,10 +49,12 @@ export default function Profile() {
       show();
       await authService.updateProfile(formData);
       setProfile({ ...profile, ...formData });
-      alert("Profile updated successfully!");
-      // eslint-disable-next-line no-unused-vars
+      window.dispatchEvent(
+        new CustomEvent("auth-update", { detail: { ...profile, ...formData } })
+      );
+      Alert.success(t("profile.alerts.updateSuccess"));
     } catch (err) {
-      alert("Failed to update profile");
+      Alert.error(t("profile.alerts.updateFailed"));
     } finally {
       hide();
     }
@@ -70,14 +75,21 @@ export default function Profile() {
         await authService.updateProfile({ ...formData, avatar: base64Image });
 
         setProfile({ ...profile, avatar: base64Image });
-
-        // eslint-disable-next-line no-unused-vars
       } catch (err) {
-        alert("Failed to upload image. Try a smaller file.");
+        Alert.error(t("profile.alerts.imageUploadFailed"));
       } finally {
         hide();
       }
     };
+  };
+
+  const getRoleTranslation = (role) => {
+    switch (role) {
+      case 'super_admin': return t("profile.roles.superAdmin");
+      case 'branch_admin': return t("profile.roles.branchAdmin");
+      case 'employee': return t("profile.roles.employee");
+      default: return role.replace("_", " ").toUpperCase();
+    }
   };
 
   if (!profile) return null;
@@ -97,24 +109,25 @@ export default function Profile() {
                   {profile.avatar ? (
                     <img
                       src={profile.avatar}
-                      alt="Profile"
+                      alt={t("profile.avatarAlt")}
                       className="w-full h-full object-cover rounded-xl"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-4xl font-bold text-slate-500 uppercase">
+                    <div className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-4xl font-bold text-slate-500 dark:text-slate-400 uppercase">
                       {profile.name?.charAt(0)}
                     </div>
                   )}
                 </div>
 
                 {/* Hidden File Input */}
-                <label className="absolute bottom-2 right-2 p-2 bg-white rounded-lg shadow-md text-slate-600 hover:text-blue-600 transition cursor-pointer hover:scale-110">
+                <label className="absolute bottom-2 right-2 p-2 bg-white dark:bg-slate-700 rounded-lg shadow-md text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer hover:scale-110">
                   <Camera size={18} />
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
                     onChange={handleImageUpload}
+                    aria-label={t("profile.buttons.uploadImage")}
                   />
                 </label>
               </div>
@@ -126,11 +139,11 @@ export default function Profile() {
                 <div className="flex items-center gap-3 mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
                   <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
                     <Shield size={14} />{" "}
-                    {profile.role.replace("_", " ").toUpperCase()}
+                    {getRoleTranslation(profile.role)}
                   </span>
                   <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>{" "}
-                    Active
+                    {t("profile.status.active")}
                   </span>
                 </div>
               </div>
@@ -142,29 +155,31 @@ export default function Profile() {
           {/* 2. Left Sidebar */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">Account Details</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">
+                {t("profile.accountDetails")}
+              </h3>
               <div className="space-y-4">
                 <InfoRow
                   icon={<Mail size={18} />}
-                  label="Email"
+                  label={t("profile.fields.email")}
                   value={profile.email}
                 />
                 <InfoRow
                   icon={<Calendar size={18} />}
-                  label="Joined"
+                  label={t("profile.fields.joined")}
                   value={
                     profile.createdAt
-                      ? new Date(profile.createdAt).toLocaleDateString("en-GB")
-                      : "N/A"
+                      ? new Date(profile.createdAt).toLocaleDateString(i18n.language)
+                      : t("profile.fields.notAvailable")
                   }
                 />
                 <InfoRow
                   icon={<Clock size={18} />}
-                  label="Last Login"
+                  label={t("profile.fields.lastLogin")}
                   value={
                     profile.lastLogin
-                      ? new Date(profile.lastLogin).toLocaleString()
-                      : "Never"
+                      ? new Date(profile.lastLogin).toLocaleString(i18n.language)
+                      : t("profile.fields.never")
                   }
                 />
               </div>
@@ -176,14 +191,14 @@ export default function Profile() {
             <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-slate-700 pb-4">
                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                  Edit Profile
+                  {t("profile.editProfile")}
                 </h3>
               </div>
 
               <form onSubmit={handleUpdate} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormInput
-                    label="Full Name"
+                    label={t("profile.form.fullName")}
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -191,7 +206,7 @@ export default function Profile() {
                     icon={<User size={18} />}
                   />
                   <FormInput
-                    label="Phone Number"
+                    label={t("profile.form.phoneNumber")}
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
@@ -206,7 +221,7 @@ export default function Profile() {
                     type="submit"
                     className="bg-[#112D4E] hover:bg-[#274b74] text-white px-8 py-3 rounded-xl font-semibold transition shadow-lg shadow-blue-900/20 flex items-center gap-2"
                   >
-                    <Save size={18} /> Save Changes
+                    <Save size={18} /> {t("profile.buttons.saveChanges")}
                   </button>
                 </div>
               </form>

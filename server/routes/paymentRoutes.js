@@ -1,11 +1,25 @@
 import express from "express";
-import { createPayment, userPaid } from "../controllers/paymentController.js";
-
+import { createPayment, userPaid, webhook, debugPayment, forceFinalize, createRevenueManual } from "../controllers/paymentController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// here the useris requestss to payy
-router.post('/pay',createPayment)
-// here we are checking if the users paid or not !
+// Initiate payment (Requires Auth)
+router.post('/pay', protect, createPayment);
+
+// Payment Status Check (Frontend Redirect)
 router.get("/paymentStatus/:orderId", userPaid);
-export default router
+
+// Paymob Webhook (Public, secured by HMAC)
+router.post("/webhook", webhook);
+
+// Debug Route
+router.get("/debug/:orderId", debugPayment);
+
+// Force Finalize (for fixing pending payments when webhook fails)
+router.get("/forceFinalize/:orderId", forceFinalize);
+
+// Manual Revenue Creation (for orphaned orders when Paymob returns 404)
+router.get("/createRevenueManual/:orderId", createRevenueManual);
+
+export default router;

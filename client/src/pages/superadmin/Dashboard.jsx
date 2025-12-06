@@ -8,12 +8,14 @@ import {
   RotateCcw, ArrowRight, Plus, FileText, 
   TrendingUp, Zap 
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const { show, hide } = useLoading();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const fetchStats = async () => {
     try {
@@ -52,20 +54,22 @@ export default function Dashboard() {
         <div className="relative z-10 p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white dark:text-slate-100">
-              Welcome back, {user?.name?.split(' ')[0] || "Super Admin"}! 👋
+              {t("superDashboard.welcome")}, {user?.name?.split(' ')[0] || t("superDashboard.superAdmin")}! 👋
             </h1>
             <p className="text-blue-100 dark:text-slate-300 text-lg max-w-2xl">
-              Here's what's happening with your branches today. You have <span className="font-bold text-white">{overview?.active_branches} active branches</span> running smoothly.
+              {t("superDashboard.hero.description")}{" "}
+              <span className="font-bold text-white">{overview?.active_branches} {t("superDashboard.hero.activeBranches")}</span>
+              {t("superDashboard.hero.runningSmoothly")}
             </p>
             
             <div className="flex gap-4 mt-6">
                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 text-sm">
                   <TrendingUp size={16} className="text-emerald-400" />
-                  <span>System Health: {healthPercentage}%</span>
+                  <span>{t("superDashboard.hero.systemHealth")}: {healthPercentage}%</span>
                </div>
                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 text-sm">
                   <Zap size={16} className="text-yellow-400" />
-                  <span>All Services Online</span>
+                  <span>{t("superDashboard.hero.allServicesOnline")}</span>
                </div>
             </div>
           </div>
@@ -73,7 +77,7 @@ export default function Dashboard() {
           <button 
             onClick={fetchStats}
             className="p-3 bg-white/10 dark:bg-slate-700/50 hover:bg-white/20 dark:hover:bg-slate-700 border border-white/20 dark:border-slate-600 rounded-xl transition-all duration-300 shadow-sm group-hover:rotate-180"
-            title="Refresh Data"
+            title={t("superDashboard.buttons.refresh")}
           >
             <RotateCcw size={20} />
           </button>
@@ -83,25 +87,25 @@ export default function Dashboard() {
       {/* 2. Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard 
-          title="Total Branches" 
+          title={t("superDashboard.stats.totalBranches")}
           value={overview?.total_branches} 
           icon={<Building2 />} 
           color="blue"
         />
         <StatCard 
-          title="Active Branches" 
+          title={t("superDashboard.stats.activeBranches")}
           value={overview?.active_branches} 
           icon={<CheckCircle2 />} 
           color="emerald"
         />
         <StatCard 
-          title="Total Employees" 
+          title={t("superDashboard.stats.totalEmployees")}
           value={overview?.total_employees} 
           icon={<Users />} 
           color="purple"
         />
         <StatCard 
-          title="Total Shifts" 
+          title={t("superDashboard.stats.totalShifts")}
           value={overview?.total_shifts} 
           icon={<Calendar />} 
           color="orange"
@@ -114,12 +118,14 @@ export default function Dashboard() {
         {/* Left Column: Recent Branches Table */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex justify-between items-end mb-2">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Recent Branches Joined</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              {t("superDashboard.recentBranches.title")}
+            </h2>
             <button 
               onClick={() => navigate('/teams')}
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-all hover:gap-2"
             >
-              View All Branches <ArrowRight size={16} />
+              {t("superDashboard.buttons.viewAllBranches")} <ArrowRight size={16} />
             </button>
           </div>
 
@@ -128,10 +134,10 @@ export default function Dashboard() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-600">
                   <tr>
-                    <th className="px-6 py-4">Branch Name</th>
-                    <th className="px-6 py-4">Admin</th>
-                    <th className="px-6 py-4">Joined Date</th>
-                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">{t("superDashboard.table.branchName")}</th>
+                    <th className="px-6 py-4">{t("superDashboard.table.admin")}</th>
+                    <th className="px-6 py-4">{t("superDashboard.table.joinedDate")}</th>
+                    <th className="px-6 py-4">{t("superDashboard.table.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
@@ -153,7 +159,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                           {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString('en-GB') : 'N/A'}
+                           {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString(i18n.language) : t("superDashboard.table.notAvailable")}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
@@ -161,7 +167,10 @@ export default function Dashboard() {
                               ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800" 
                               : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800"
                           }`}>
-                            {branch.is_active ? "Active" : "Inactive"}
+                            {branch.is_active 
+                              ? t("superDashboard.table.statusActive") 
+                              : t("superDashboard.table.statusInactive")
+                            }
                           </span>
                         </td>
                       </tr>
@@ -169,7 +178,7 @@ export default function Dashboard() {
                   ) : (
                     <tr>
                       <td colSpan="4" className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                        No branches found.
+                        {t("superDashboard.table.noBranchesFound")}
                       </td>
                     </tr>
                   )}
@@ -184,7 +193,9 @@ export default function Dashboard() {
           
           {/* Quick Actions Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 text-lg">Quick Actions</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 text-lg">
+              {t("superDashboard.quickActions.title")}
+            </h3>
             <div className="space-y-3">
               <button 
                 onClick={() => navigate('/teams')}
@@ -194,8 +205,12 @@ export default function Dashboard() {
                   <Plus size={20} />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">Add New Branch</div>
-                  <div className="text-xs text-slate-400 dark:text-slate-500">Onboard a new admin</div>
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">
+                    {t("superDashboard.quickActions.addBranch")}
+                  </div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">
+                    {t("superDashboard.quickActions.onboardAdmin")}
+                  </div>
                 </div>
               </button>
 
@@ -207,8 +222,12 @@ export default function Dashboard() {
                   <FileText size={20} />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">System Reports</div>
-                  <div className="text-xs text-slate-400 dark:text-slate-500">View analytics</div>
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">
+                    {t("superDashboard.quickActions.systemReports")}
+                  </div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">
+                    {t("superDashboard.quickActions.viewAnalytics")}
+                  </div>
                 </div>
               </button>
             </div>
@@ -217,9 +236,9 @@ export default function Dashboard() {
           {/* Mini Summary Card (Visual Balance) */}
           <div className="bg-[#1d2931] dark:bg-slate-700 rounded-2xl shadow-lg p-6 text-white dark:text-slate-100 relative overflow-hidden">
             <div className="relative z-10">
-              <h3 className="font-bold text-lg mb-2">Pro Tip 💡</h3>
+              <h3 className="font-bold text-lg mb-2">{t("superDashboard.proTip.title")} 💡</h3>
               <p className="text-slate-300 dark:text-slate-400 text-sm leading-relaxed">
-                You can transfer employees between branches easily from the "Transfer Employees" page.
+                {t("superDashboard.proTip.description")}
               </p>
             </div>
             <div className="absolute -bottom-6 -right-6 bg-white/5 w-32 h-32 rounded-full blur-2xl"></div>
@@ -233,6 +252,8 @@ export default function Dashboard() {
 
 // --- Modern Stat Card Component ---
 function StatCard({ title, value, icon, color }) {
+  const { t } = useTranslation();
+  
   const colors = {
     blue: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 ring-blue-100 dark:ring-blue-900",
     emerald: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-900",
@@ -250,7 +271,7 @@ function StatCard({ title, value, icon, color }) {
         </div>
         {/* Fake trend for UI appeal */}
         <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-          Today
+          {t("superDashboard.stats.today")}
         </span>
       </div>
       <div>

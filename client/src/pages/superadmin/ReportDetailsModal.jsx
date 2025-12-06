@@ -5,28 +5,18 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import ReactMarkdown from "react-markdown";
 import { reportService } from "../../api/services/admin/reportService";
+import {Alert} from "../../utils/alertService.js";
 
-// -----------------------
-// Helpers for Markdown
-// -----------------------
-
-// إزالة الـ Bold/Italic واللينكات مع الإبقاء على النص
 function cleanInlineMarkdown(text) {
   if (!text) return "";
   return text
-    // روابط بصيغة [text](url)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    // صور ![alt](url)
     .replace(/!\[.*?\]\(.*?\)/g, "")
-    // **bold** أو __bold__
     .replace(/(\*\*|__)(.+?)\1/g, "$2")
-    // *italic* أو _italic_
     .replace(/(\*|_)(.+?)\1/g, "$2");
 }
 
-// -----------------------
-// Markdown → Blocks
-// -----------------------
+
 function parseMarkdownForPDF(markdown) {
   if (!markdown) return [];
   const lines = markdown.split("\n");
@@ -36,19 +26,17 @@ function parseMarkdownForPDF(markdown) {
     const trimmed = line.trim();
     if (!trimmed) return;
 
-    // Heading: أي عدد من # في البداية
     const headingMatch = trimmed.match(/^(#+)\s+(.*)$/);
     if (headingMatch) {
-      const level = headingMatch[1].length; // عدد الـ #
+      const level = headingMatch[1].length; 
       const text = cleanInlineMarkdown(headingMatch[2]);
 
       if (level === 1) blocks.push({ type: "h1", text });
       else if (level === 2) blocks.push({ type: "h2", text });
-      else blocks.push({ type: "h3", text }); // 3 أو أكتر
+      else blocks.push({ type: "h3", text });
       return;
     }
 
-    // Bullet: يبدأ بـ * أو - أو •
     const bulletMatch = trimmed.match(/^[-*•]\s+(.*)$/);
     if (bulletMatch) {
       const text = cleanInlineMarkdown(bulletMatch[1]);
@@ -56,16 +44,13 @@ function parseMarkdownForPDF(markdown) {
       return;
     }
 
-    // Paragraph عادي
     blocks.push({ type: "paragraph", text: cleanInlineMarkdown(trimmed) });
   });
 
   return blocks;
 }
 
-// ------------------------------
 // Render blocks inside jsPDF
-// ------------------------------
 function renderMarkdownIntoPDF(doc, blocks, xPos, yPos, align) {
   blocks.forEach((block) => {
     if (block.type === "h1") {
@@ -122,7 +107,7 @@ export default function ReportDetailsModal({ report, onClose }) {
       setAiSummary(res.data.data.ai_summary);
     } catch (err) {
       console.error(err);
-      alert("Failed to generate AI analysis. Try later.");
+      Alert.error("Failed to generate AI analysis. Try later.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -162,9 +147,7 @@ export default function ReportDetailsModal({ report, onClose }) {
     XLSX.writeFile(workbook, `${(title || "Report").replace(/\s+/g, "_")}.xlsx`);
   };
 
-  // -----------------------------
   // Export PDF
-  // -----------------------------
   const handleExportPDF = async () => {
     try {
       document.body.style.cursor = "wait";
@@ -315,7 +298,6 @@ export default function ReportDetailsModal({ report, onClose }) {
     }
   };
 
-  // ---------- UI PARTS (نفس القديم تقريباً) ----------
 
   const renderAttendanceDetails = () => (
     <div className="space-y-6">

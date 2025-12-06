@@ -13,6 +13,7 @@ import Button from "../../utils/Button";
 import apiClient from "../../api/apiClient";
 import { useLoading } from "../../contexts/LoaderContext";
 import { useToast } from "../../hooks/useToast";
+import { useTranslation } from "react-i18next";
 
 const TimeOffRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -21,6 +22,7 @@ const TimeOffRequests = () => {
   const [filter, setFilter] = useState("all");
   const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
   const { success, error } = useToast();
+  const { t, i18n } = useTranslation();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,12 +47,11 @@ const TimeOffRequests = () => {
 
       setRequests(response.data.data || []);
     } catch (err) {
-      console.error("Error fetching leave requests:", err);
-      // Optional: error('Failed to fetch requests');
+      console.error(t("timeOffRequests.errors.fetch"), err);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, t]);
 
   useEffect(() => {
     fetchRequests();
@@ -61,7 +62,7 @@ const TimeOffRequests = () => {
     e.preventDefault();
 
     if (!formData.start_date || !formData.end_date || !formData.reason) {
-      error("Please fill all required fields");
+      error(t("timeOffRequests.alerts.fillAllFields"));
       return;
     }
 
@@ -84,11 +85,11 @@ const TimeOffRequests = () => {
         });
         setShowForm(false);
         await fetchRequests();
-        success("Leave request submitted successfully!");
+        success(t("timeOffRequests.alerts.submitSuccess"));
       }
     } catch (err) {
-      console.error("Error submitting leave request:", err);
-      error(err.response?.data?.message || "Failed to submit leave request");
+      console.error(t("timeOffRequests.errors.submit"), err);
+      error(err.response?.data?.message || t("timeOffRequests.alerts.submitFailed"));
     } finally {
       hideGlobalLoading();
     }
@@ -109,10 +110,10 @@ const TimeOffRequests = () => {
       showGlobalLoading();
       await apiClient.patch(`/api/employee/leave-requests/${requestId}/cancel`);
       await fetchRequests();
-      success("Leave request cancelled successfully!");
+      success(t("timeOffRequests.alerts.cancelSuccess"));
     } catch (error) {
-      console.error("Error cancelling leave request:", error);
-      error(error.response?.data?.message || "Failed to cancel leave request");
+      console.error(t("timeOffRequests.errors.cancel"), error);
+      error(error.response?.data?.message || t("timeOffRequests.alerts.cancelFailed"));
     } finally {
       hideGlobalLoading();
     }
@@ -163,17 +164,17 @@ const TimeOffRequests = () => {
   const getLeaveTypeLabel = (type) => {
     switch (type) {
       case "sick":
-        return "Sick Leave";
+        return t("timeOffRequests.leaveTypes.sick");
       case "vacation":
-        return "Vacation";
+        return t("timeOffRequests.leaveTypes.vacation");
       case "personal":
-        return "Personal Leave";
+        return t("timeOffRequests.leaveTypes.personal");
       case "maternity":
-        return "Maternity Leave";
+        return t("timeOffRequests.leaveTypes.maternity");
       case "paternity":
-        return "Paternity Leave";
+        return t("timeOffRequests.leaveTypes.paternity");
       case "emergency":
-        return "Emergency Leave";
+        return t("timeOffRequests.leaveTypes.emergency");
       default:
         return type;
     }
@@ -181,7 +182,7 @@ const TimeOffRequests = () => {
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString(i18n.language, {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -201,16 +202,26 @@ const TimeOffRequests = () => {
 
   const stats = calculateStats();
 
+  const getStatusTranslation = (status) => {
+    switch (status) {
+      case "approved": return t("timeOffRequests.status.approved");
+      case "rejected": return t("timeOffRequests.status.rejected");
+      case "pending": return t("timeOffRequests.status.pending");
+      case "cancelled": return t("timeOffRequests.status.cancelled");
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-10 dark:bg-slate-900 dark:text-slate-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-50">
-            Time Off Requests
+            {t("timeOffRequests.title")}
           </h1>
           <p className="text-gray-600 dark:text-slate-400 mt-1">
-            Manage your leave requests and time off
+            {t("timeOffRequests.subtitle")}
           </p>
         </div>
 
@@ -220,7 +231,7 @@ const TimeOffRequests = () => {
           onClick={() => setShowForm(true)}
         >
           <Plus size={16} />
-          New Request
+          {t("timeOffRequests.buttons.newRequest")}
         </Button>
       </div>
 
@@ -230,7 +241,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-slate-400">
-                Total Requests
+                {t("timeOffRequests.stats.totalRequests")}
               </p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {stats.total}
@@ -244,7 +255,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-slate-400">
-                Pending
+                {t("timeOffRequests.stats.pending")}
               </p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {stats.pending}
@@ -258,7 +269,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-slate-400">
-                Approved
+                {t("timeOffRequests.stats.approved")}
               </p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {stats.approved}
@@ -275,7 +286,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-slate-400">
-                Rejected
+                {t("timeOffRequests.stats.rejected")}
               </p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {stats.rejected}
@@ -292,7 +303,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Filter size={20} className="text-gray-500 dark:text-slate-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              Filter by status:
+              {t("timeOffRequests.filter.label")}:
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -307,7 +318,7 @@ const TimeOffRequests = () => {
                       : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {getStatusTranslation(status)}
                 </button>
               )
             )}
@@ -318,7 +329,7 @@ const TimeOffRequests = () => {
       {/* Leave Requests List */}
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-50 mb-4">
-          Your Leave Requests
+          {t("timeOffRequests.yourRequests")}
         </h2>
 
         {requests.length === 0 ? (
@@ -328,7 +339,7 @@ const TimeOffRequests = () => {
               className="mx-auto text-gray-300 dark:text-slate-600 mb-3"
             />
             <p className="text-gray-500 dark:text-slate-400 mb-4">
-              No leave requests found
+              {t("timeOffRequests.noRequests")}
             </p>
             <Button
               variant="outline"
@@ -336,7 +347,7 @@ const TimeOffRequests = () => {
               onClick={() => setShowForm(true)}
             >
               <Plus size={16} />
-              Create Your First Request
+              {t("timeOffRequests.buttons.createFirstRequest")}
             </Button>
           </div>
         ) : (
@@ -355,15 +366,14 @@ const TimeOffRequests = () => {
                         )}`}
                       >
                         {getStatusIcon(request.status)}
-                        {request.status.charAt(0).toUpperCase() +
-                          request.status.slice(1)}
+                        {getStatusTranslation(request.status)}
                       </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-slate-50">
                         {getLeaveTypeLabel(request.leave_type)}
                       </span>
                       {request.is_half_day && (
                         <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full">
-                          Half Day
+                          {t("timeOffRequests.halfDay")}
                         </span>
                       )}
                     </div>
@@ -391,36 +401,35 @@ const TimeOffRequests = () => {
                             request.start_date,
                             request.end_date
                           )}{" "}
-                          day(s)
+                          {t("timeOffRequests.days")}
                         </span>
                       </div>
                     </div>
 
                     {request.reason && (
                       <div className="text-sm text-gray-600 dark:text-slate-400 mb-2">
-                        <strong>Reason:</strong> {request.reason}
+                        <strong>{t("timeOffRequests.reason")}:</strong> {request.reason}
                       </div>
                     )}
 
                     <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-500">
-                      <span>Requested: {formatDate(request.createdAt)}</span>
+                      <span>{t("timeOffRequests.requested")}: {formatDate(request.createdAt)}</span>
                       {request.admin_notes && (
                         <span className="text-gray-700 dark:text-slate-300">
-                          <strong>Note:</strong> {request.admin_notes}
+                          <strong>{t("timeOffRequests.adminNote")}:</strong> {request.admin_notes}
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    {/* ✅ تم تفعيل زر الإلغاء هنا */}
                     {request.status === "pending" && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleCancelRequest(request._id)}
                       >
-                        Cancel
+                        {t("timeOffRequests.buttons.cancel")}
                       </Button>
                     )}
                   </div>
@@ -438,11 +447,12 @@ const TimeOffRequests = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-50">
-                  New Leave Request
+                  {t("timeOffRequests.modal.title")}
                 </h3>
                 <button
                   onClick={() => setShowForm(false)}
                   className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+                  aria-label={t("timeOffRequests.modal.close")}
                 >
                   <XCircle size={24} />
                 </button>
@@ -451,7 +461,7 @@ const TimeOffRequests = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Leave Type *
+                    {t("timeOffRequests.form.leaveType")} *
                   </label>
                   <select
                     name="leave_type"
@@ -460,10 +470,10 @@ const TimeOffRequests = () => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-50"
                     required
                   >
-                    <option value="sick">Sick Leave</option>
-                    <option value="vacation">Vacation</option>
-                    <option value="personal">Personal Leave</option>
-                    <option value="emergency">Emergency Leave</option>
+                    <option value="sick">{t("timeOffRequests.leaveTypes.sick")}</option>
+                    <option value="vacation">{t("timeOffRequests.leaveTypes.vacation")}</option>
+                    <option value="personal">{t("timeOffRequests.leaveTypes.personal")}</option>
+                    <option value="emergency">{t("timeOffRequests.leaveTypes.emergency")}</option>
                   </select>
                 </div>
 
@@ -480,13 +490,13 @@ const TimeOffRequests = () => {
                     htmlFor="is_half_day"
                     className="text-sm text-gray-700 dark:text-slate-300"
                   >
-                    Half Day Leave
+                    {t("timeOffRequests.form.halfDay")}
                   </label>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Start Date *
+                    {t("timeOffRequests.form.startDate")} *
                   </label>
                   <input
                     type="date"
@@ -501,7 +511,7 @@ const TimeOffRequests = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    End Date *
+                    {t("timeOffRequests.form.endDate")} *
                   </label>
                   <input
                     type="date"
@@ -519,14 +529,14 @@ const TimeOffRequests = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                    Reason *
+                    {t("timeOffRequests.form.reason")} *
                   </label>
                   <textarea
                     name="reason"
                     value={formData.reason}
                     onChange={handleInputChange}
                     rows={4}
-                    placeholder="Please provide a reason for your leave request..."
+                    placeholder={t("timeOffRequests.form.reasonPlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-50 placeholder-gray-500 dark:placeholder-slate-400"
                     required
                   />
@@ -539,16 +549,16 @@ const TimeOffRequests = () => {
                     className="flex-1"
                     onClick={() => setShowForm(false)}
                   >
-                    Cancel
+                    {t("timeOffRequests.buttons.cancel")}
                   </Button>
                   <Button
                     type="submit"
                     variant="primary"
-                    className="flex-1"
+                    className="flex items-center justify-center gap-4"
                     disabled={loading}
                   >
                     <Send size={16} />
-                    Submit Request
+                    {t("timeOffRequests.buttons.submitRequest")}
                   </Button>
                 </div>
               </form>

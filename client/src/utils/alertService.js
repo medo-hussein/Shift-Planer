@@ -54,5 +54,23 @@ export const Alert = {
     });
   },
 
+    prompt: ({ title, inputLabel, placeholder = "", required = false }) => {
+    return Swal.fire({
+      title,
+      input: "text",
+      inputLabel,
+      inputPlaceholder: placeholder,
+      showCancelButton: true,
+      confirmButtonText: "Submit",
+      cancelButtonText: "Cancel",
+      inputValidator: (value) => {
+        if (required && !value) {
+          return "This field is required.";
+        }
+        return null;
+      }
+    });
+  },
+
   custom: (options = {}) => Swal.fire(options),
 };

@@ -53,17 +53,17 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F9F7F7] py-12 px-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg border border-[#DBE2EF] space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-[#F9F7F7] dark:bg-slate-950 py-12 px-4">
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border border-[#DBE2EF] dark:border-slate-700 space-y-6">
 
-        <h2 className="text-center text-3xl font-extrabold text-[#112D4E]">
+        <h2 className="text-center text-3xl font-extrabold text-[#112D4E] dark:text-sky-200">
           Reset Password
         </h2>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
 
           <div>
-            <label className="block text-sm font-medium text-[#112D4E]">
+            <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
               New Password
             </label>
             <input
@@ -71,13 +71,13 @@ export default function ResetPassword() {
               required
               value={newPassword}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] focus:outline-none focus:ring-[#3F72AF]"
+              className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 focus:outline-none focus:ring-[#3F72AF] placeholder-gray-500 dark:placeholder-slate-400"
               placeholder="Enter new password"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#112D4E]">
+            <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
               Confirm Password
             </label>
             <input
@@ -85,34 +85,34 @@ export default function ResetPassword() {
               required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] focus:outline-none focus:ring-[#3F72AF]"
+              className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 focus:outline-none focus:ring-[#3F72AF] placeholder-gray-500 dark:placeholder-slate-400"
               placeholder="Confirm your password"
             />
           </div>
 
           {message && (
-            <div className="rounded-md bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-800">{message}</p>
+            <div className="rounded-md bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-3">
+              <p className="text-sm text-green-800 dark:text-green-400">{message}</p>
             </div>
           )}
 
           {error && (
-            <div className="rounded-md bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="rounded-md bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-3">
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 rounded-md bg-[#19283a] text-white hover:bg-[#274b74] transition disabled:opacity-50"
+            className="w-full py-2 px-4 rounded-md bg-[#19283a] dark:bg-sky-700 text-white hover:bg-[#274b74] dark:hover:bg-sky-600 transition disabled:opacity-50"
           >
             {loading ? "Updating..." : "Reset Password"}
           </button>
 
-          <p className="text-center text-sm text-[#3F72AF]">
+          <p className="text-center text-sm text-[#3F72AF] dark:text-sky-400">
             Back to{" "}
-            <Link to="/login" className="font-medium text-[#112D4E] hover:text-[#3F72AF]">
+            <Link to="/login" className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200">
               Login
             </Link>
           </p>

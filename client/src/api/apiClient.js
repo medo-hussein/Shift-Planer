@@ -28,44 +28,40 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Try refreshing token
-        const { data } = await axios.get(
-          `${BASE_URL}/api/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
+        // CORRECT refresh call
+        const { data } = await apiClient.get("/api/auth/refresh", {
+          withCredentials: true,
+        });
 
-        if (data?.accessToken) {
-          const newToken = data.accessToken;
-          localStorage.setItem("accessToken", newToken);
+        const newToken = data?.accessToken;
+        if (!newToken) throw new Error("No access token returned");
 
-          // Update header
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        // Save new token
+        localStorage.setItem("accessToken", newToken);
+        
+        // new coustom event to notify auth context 
+        window.dispatchEvent(new CustomEvent("token-refreshed", { detail: newToken }));
 
-          // Fetch fresh user data & notify AuthProvider
-          try {
-            const me = await axios.get(`${BASE_URL}/api/auth/profile`, {
-              headers: { Authorization: `Bearer ${newToken}` },
-              withCredentials: true,
-            });
+        // Update header for current request
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
-            window.dispatchEvent(
-              new CustomEvent("auth-update", { detail: me.data })
-            );
-          // eslint-disable-next-line no-unused-vars
-          } catch (err) {
-            console.error("Failed to refresh user data.");
-          }
+        // Fetch user info with CORRECT client
+        try {
+          const me = await apiClient.get("/api/auth/profile", {
+            headers: { Authorization: `Bearer ${newToken}` }
+          });
 
-          return apiClient(originalRequest);
+          window.dispatchEvent(
+            new CustomEvent("auth-update", { detail: me.data })
+          );
+        } catch (err) {
+          console.warn("Failed to refresh user data.");
         }
 
-        // No token returned → force logout
-        localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        return apiClient(originalRequest);
 
-      // eslint-disable-next-line no-unused-vars
       } catch (err) {
+        // Refresh token expired → logout
         localStorage.removeItem("accessToken");
         window.location.href = "/login";
       }

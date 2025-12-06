@@ -1,41 +1,44 @@
 import React from "react";
 import dudes from "/images/home/dudes.jpg";
 import { Check } from "lucide-react";
-
-const chooseUsData = [
-  {
-    title: "Reduce Administrative Overhead",
-    desc: "Automate repetitive HR tasks and focus on strategic initiatives",
-  },
-  {
-    title: "Improve Employee Productivity",
-    desc: "Tools and insights to help your team focus on what matters most",
-  },
-  {
-    title: "Optimize Shift Scheduling",
-    desc: "Automatically match shifts to availability, skills, and business needs",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 const ChooseUs = () => {
+  const { t } = useTranslation();
+
+  const chooseUsData = [
+    {
+      titleKey: "chooseUs.items.reduceOverhead.title",
+      descKey: "chooseUs.items.reduceOverhead.description",
+    },
+    {
+      titleKey: "chooseUs.items.improveProductivity.title",
+      descKey: "chooseUs.items.improveProductivity.description",
+    },
+    {
+      titleKey: "chooseUs.items.optimizeScheduling.title",
+      descKey: "chooseUs.items.optimizeScheduling.description",
+    },
+  ];
+
   return (
-    <div className="bg-linear-to-r from-sky-950 via-sky-900 to-sky-800 flex flex-col lg:flex-row">
+    <div className="bg-linear-to-r from-sky-950 dark:from-slate-950 via-sky-900 dark:via-slate-800 to-sky-800 dark:to-slate-700 flex flex-col lg:flex-row">
       {/* TEXT SECTION */}
       <div className="flex-1 p-6 md:p-12 mt-6 lg:mt-12">
-        <h3 className="font-semibold text-3xl md:text-4xl text-white my-5">
-          Why Choose Tadbir ?
+        <h3 className="font-semibold text-3xl md:text-4xl text-white dark:text-sky-100 my-5">
+          {t("chooseUs.title")}
         </h3>
 
         <div className="space-y-4 mt-6">
           {chooseUsData.map((item, index) => (
             <div key={index} className="flex gap-4">
-              <div className="bg-sky-200 w-6 h-6 flex items-center justify-center rounded-full mt-1">
-                <Check className="mt-0.5 text-sky-950" size={16} />
+              <div className="bg-sky-200 dark:bg-sky-400/20 w-6 h-6 flex items-center justify-center rounded-full mt-1">
+                <Check className="mt-0.5 text-sky-950 dark:text-sky-300" size={16} />
               </div>
 
               <div>
-                <p className="text-white font-semibold">{item.title}</p>
-                <p className="text-gray-300 text-sm mt-1">{item.desc}</p>
+                <p className="text-white dark:text-sky-100 font-semibold">{t(item.titleKey)}</p>
+                <p className="text-gray-300 dark:text-sky-200/70 text-sm mt-1">{t(item.descKey)}</p>
               </div>
             </div>
           ))}
@@ -46,7 +49,7 @@ const ChooseUs = () => {
       <div className="flex-1 flex justify-center items-center py-6">
         <img
           src={dudes}
-          alt="Team working"
+          alt={t("chooseUs.imageAlt")}
           className="w-64 md:w-80 lg:w-[450px] rounded-xl"
         />
       </div>

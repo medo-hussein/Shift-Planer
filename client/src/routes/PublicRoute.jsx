@@ -15,8 +15,8 @@ export default function PublicRoute({ children }) {
     return children; // allow OTP page
   }
 
-  // ❗ If authenticated → dashboard
-  if (isAuthenticated) {
+  // ❗ If authenticated → dashboard (EXCEPT for Home page "/")
+  if (isAuthenticated && window.location.pathname !== "/") {
     return <Navigate to="/dashboard" replace />;
   }
 

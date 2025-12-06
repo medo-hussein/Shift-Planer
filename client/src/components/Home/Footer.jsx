@@ -1,16 +1,20 @@
+import { useTranslation } from "react-i18next";
+
 const Footer = () => {
+  const { t } = useTranslation();
+
   const footerLinks = [
     {
-      title: "Product",
-      links: ["Features", "Pricing", "Demo"],
+      title: t("footer.product"),
+      links: [t("footer.features"), t("footer.pricing"), t("footer.demo")],
     },
     {
-      title: "Company",
-      links: ["About", "Contact", "Careers"],
+      title: t("footer.company"),
+      links: [t("footer.about"), t("footer.contact"), t("footer.careers")],
     },
     {
-      title: "Legal",
-      links: ["Terms", "Privacy", "Security"],
+      title: t("footer.legal"),
+      links: [t("footer.terms"), t("footer.privacy"), t("footer.security")],
     },
   ];
 
@@ -24,7 +28,7 @@ const Footer = () => {
           </div>
 
           <p className="text-gray-300 text-sm leading-relaxed">
-            Smart workforce management and AI scheduling for modern businesses.
+            {t("footer.description")}
           </p>
         </div>
 
@@ -51,7 +55,7 @@ const Footer = () => {
 
       {/* BOTTOM TEXT */}
       <div className="text-center text-gray-500 mt-10 text-sm">
-        © {new Date().getFullYear()} Tadbir — All rights reserved.
+        {t("footer.copyright", { year: new Date().getFullYear() })}
       </div>
     </footer>
   );

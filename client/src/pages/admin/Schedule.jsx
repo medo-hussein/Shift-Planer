@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -6,7 +6,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { useLoading } from "../../contexts/LoaderContext";
 import shiftService from "../../api/services/admin/shiftService";
 import apiClient from "../../api/apiClient";
-import { Plus, X, Clock, MapPin, FileText, Users, Trash2, Save, AlertCircle, Lock, CheckSquare, Square, Info } from "lucide-react";
+import { Plus, X, Clock, MapPin, FileText, Trash2, Save, AlertCircle, Lock, CheckSquare, Square, Info } from "lucide-react";
+import {Alert} from "../../utils/alertService.js";
 
 export default function Schedule() {
   const [events, setEvents] = useState([]);
@@ -16,7 +17,7 @@ export default function Schedule() {
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState(null);
-  const [isReadOnly, setIsReadOnly] = useState(false); // ✅ حالة لمنع التعديل على الماضي
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   const [formData, setFormData] = useState({
     employee_ids: [], 
@@ -28,19 +29,16 @@ export default function Schedule() {
     notes: ""
   });
 
-  // 1. Fetch Shifts & Employees
+  // Fetch Shifts & Employees
   const fetchData = async () => {
     try {
       show();
       const [shiftsRes, employeesRes] = await Promise.all([
-        // ✅ طلب 1000 شيفت لتجاوز الـ Pagination الافتراضي (50)
         shiftService.getBranchShifts({ limit: 1000 }), 
         apiClient.get("/api/admin/employees")
       ]);
-
       const shifts = shiftsRes.data.data || [];
       const emps = employeesRes.data.data || [];
-
       setEvents(shifts.map(mapShiftToEvent));
       setEmployees(emps);
     } catch (err) {
@@ -54,10 +52,8 @@ export default function Schedule() {
     fetchData();
   }, []);
 
-  // ✅ Helper: Map DB shift to Calendar Event with AUTOMATIC STATUS COLORING
   const mapShiftToEvent = (s) => {
     const now = new Date();
-    // ✅ تحويل النصوص إلى كائنات Date لضمان العرض الصحيح في Week/Day View
     const start = new Date(s.start_date_time);
     const end = new Date(s.end_date_time);
     const isPast = end < now;
@@ -81,11 +77,11 @@ export default function Schedule() {
     return {
       id: s._id,
       title: `${s.employee_id?.name || "Unknown"} - ${s.title}`,
-      start: start, // ✅ تمرير كائن Date
-      end: end,     // ✅ تمرير كائن Date
+      start: start, 
+      end: end,
       backgroundColor: color,
       borderColor: borderColor,
-      allDay: false, // ✅ إجبار الحدث ليكون بتوقيت محدد وليس طوال اليوم
+      allDay: false,
       extendedProps: { 
         employeeId: s.employee_id?._id,
         rawTitle: s.title,
@@ -117,12 +113,10 @@ export default function Schedule() {
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
-  // 2. Handle Event Click (Open Edit Mode)
+  // Handle Event Click (Open Edit Mode)
   const handleEventClick = (info) => {
     const event = info.event;
     const props = event.extendedProps;
-
-    // ✅ منطق الحماية: لو الشيفت مكتمل، نخليه قراءة فقط
     const readOnly = props.status === 'completed';
     setIsReadOnly(readOnly);
 
@@ -140,7 +134,7 @@ export default function Schedule() {
     setIsModalOpen(true);
   };
 
-  // 3. Reset Form & Modal
+  // Reset Form & Modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedShiftId(null);
@@ -156,7 +150,7 @@ export default function Schedule() {
     });
   };
 
-  // ✅ Toggle Employee Selection Logic (Checkboxes)
+  // Toggle Employee Selection Logic (Checkboxes)
   const toggleEmployee = (empId) => {
     if (isReadOnly) return;
 
@@ -184,13 +178,13 @@ export default function Schedule() {
     }
   };
 
-  // 4. Handle Submit
+  // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isReadOnly) return; // منع الإرسال لو قراءة فقط
+    if (isReadOnly) return; 
 
     if (formData.employee_ids.length === 0 || !formData.start_date_time || !formData.end_date_time) {
-      return alert("Please select at least one employee and time range.");
+      return Alert.warning("Please select at least one employee and time range.");
     }
 
     try {
@@ -207,7 +201,7 @@ export default function Schedule() {
           location: formData.location,
           notes: formData.notes
         });
-        alert("Shift updated successfully!");
+        Alert.success("Shift updated successfully!");
       } else {
         // Create
         if (formData.employee_ids.length === 1) {
@@ -227,14 +221,14 @@ export default function Schedule() {
           }));
           await shiftService.createBulkShifts({ shifts: shiftsArray });
         }
-        alert("Shift(s) created successfully!");
+        Alert.success("Shift(s) created successfully!");
       }
 
       handleCloseModal();
-      fetchData(); // ✅ إعادة تحميل البيانات لتظهر التغييرات
+      fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Operation failed");
+      Alert.error(err.response?.data?.message || "Operation failed");
     } finally {
       hide();
     }
@@ -242,17 +236,19 @@ export default function Schedule() {
 
   // 5. Handle Delete
   const handleDelete = async () => {
-    if (isReadOnly) return; // منع الحذف لو قراءة فقط
-    if (!window.confirm("Are you sure you want to delete this shift?")) return;
+    if (isReadOnly) return;
+    
+    const confirmResult =await Alert.confirm("Are you sure you want to delete this shift?");
+    if (! confirmResult.isConfirmed) return;
     
     try {
       show();
       await shiftService.deleteShift(selectedShiftId);
-      alert("Shift deleted successfully!");
+      Alert.success("Shift deleted successfully!");
       handleCloseModal();
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete shift");
+      Alert.error(err.response?.data?.message || "Failed to delete shift");
     } finally {
       hide();
     }
@@ -362,7 +358,7 @@ export default function Schedule() {
           }}
           events={events}
           height="auto"
-          slotMinTime="00:00:00" // ✅ بداية اليوم من منتصف الليل
+          slotMinTime="00:00:00"
           slotMaxTime="24:00:00"
           allDaySlot={false}
           eventClick={handleEventClick}
@@ -402,7 +398,7 @@ export default function Schedule() {
                   </div>
               )}
 
-              {/* ✅ New Checkbox Employee Selection */}
+              {/* New Checkbox Employee Selection */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                     <label className="block text-xs font-bold text-slate-500 uppercase">
@@ -474,7 +470,6 @@ export default function Schedule() {
                     <option value="emergency">Emergency</option>
                   </select>
                   
-                  {/* ✅ UI Hint: التعديل للتوافق مع منطق الباك إند */}
                   {['overtime', 'holiday', 'weekend', 'emergency'].includes(formData.shift_type) && !isReadOnly && (
                      <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-amber-600 font-medium bg-amber-50 p-1.5 rounded-lg">
                         <Info size={12} />
@@ -551,7 +546,6 @@ export default function Schedule() {
 
               {/* Footer Buttons */}
               <div className="flex gap-3 pt-2">
-                {/* زر الحذف يختفي لو الشيفت مكتمل */}
                 {selectedShiftId && !isReadOnly && (
                   <button 
                     type="button" 
@@ -567,7 +561,6 @@ export default function Schedule() {
                   {isReadOnly ? "Close" : "Cancel"}
                 </button>
                 
-                {/* زر الحفظ يختفي لو الشيفت مكتمل */}
                 {!isReadOnly && (
                   <button type="submit" className="flex-1 py-2.5 bg-[#112D4E] dark:bg-[#1e3a5f] text-white rounded-xl hover:bg-[#274b74] dark:hover:bg-[#2d5080] font-medium transition shadow-md flex items-center justify-center gap-2">
                     {selectedShiftId ? <><Save size={18} /> Update Shift</> : "Create Shift"}

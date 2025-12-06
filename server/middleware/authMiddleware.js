@@ -31,6 +31,13 @@ export const protect = async (req, res, next) => {
   }
 };
 
+// PLATFORM OWNER ONLY
+export const platformOwnerOnly = (req, res, next) => {
+  if (req.user.role !== "platform_owner")
+    return res.status(403).json({ message: "Platform owner access required" });
+  next();
+};
+
 // SUPER ADMIN ONLY
 export const superAdminOnly = (req, res, next) => {
   if (req.user.role !== "super_admin")

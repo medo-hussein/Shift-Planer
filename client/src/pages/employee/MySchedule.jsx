@@ -4,17 +4,30 @@ import Button from '../../utils/Button';
 import apiClient from '../../api/apiClient';
 import { useLoading } from '../../contexts/LoaderContext';
 import CalendarModal from '../../components/CalendarModal';
+import { useTranslation } from 'react-i18next';
 
 const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
+  const { t, i18n } = useTranslation();
+
   if (!shift) return null;
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(i18n.language, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getStatusTranslation = (status) => {
+    switch (status) {
+      case 'scheduled': return t('mySchedule.status.scheduled');
+      case 'in_progress': return t('mySchedule.status.inProgress');
+      case 'completed': return t('mySchedule.status.completed');
+      case 'cancelled': return t('mySchedule.status.cancelled');
+      default: return status.replace('_', ' ');
+    }
   };
 
   return (
@@ -24,12 +37,18 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
         {/* Header */}
         <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
           <div>
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{shift.title || "Shift Details"}</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+              {shift.title || t("mySchedule.shiftModal.defaultTitle")}
+            </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
               <Calendar size={12} /> {formatDate(shift.start_date_time)}
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">
+          <button 
+            onClick={onClose} 
+            className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
+            aria-label={t("mySchedule.modal.close")}
+          >
             <X size={20} />
           </button>
         </div>
@@ -40,7 +59,7 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
           {/* Status Badge */}
           <div className="flex justify-center">
             <span className={`px-4 py-1.5 rounded-full text-sm font-bold capitalize shadow-sm border ${getStatusColor(shift.status).replace('bg-', 'border-').replace('text-', 'text-')}`}>
-              {shift.status.replace('_', ' ')}
+              {getStatusTranslation(shift.status)}
             </span>
           </div>
 
@@ -50,7 +69,9 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
               <Clock size={24} />
             </div>
             <div>
-              <p className="text-xs font-bold text-blue-400 dark:text-blue-300 uppercase">Time</p>
+              <p className="text-xs font-bold text-blue-400 dark:text-blue-300 uppercase">
+                {t("mySchedule.shiftModal.time")}
+              </p>
               <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
                 {formatTime(shift.start_date_time)} - {formatTime(shift.end_date_time)}
               </p>
@@ -63,10 +84,10 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
             <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
                 <MapPin size={16} />
-                <span className="text-xs font-bold uppercase">Location</span>
+                <span className="text-xs font-bold uppercase">{t("mySchedule.shiftModal.location")}</span>
               </div>
               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                {shift.location || "Not specified"}
+                {shift.location || t("mySchedule.shiftModal.notSpecified")}
               </p>
             </div>
 
@@ -74,10 +95,10 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
             <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
                 <Briefcase size={16} />
-                <span className="text-xs font-bold uppercase">Type</span>
+                <span className="text-xs font-bold uppercase">{t("mySchedule.shiftModal.type")}</span>
               </div>
               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">
-                {shift.shift_type || "Regular"}
+                {shift.shift_type || t("mySchedule.shiftModal.regular")}
               </p>
             </div>
           </div>
@@ -87,7 +108,7 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
             <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
                 <FileText size={16} />
-                <span className="text-xs font-bold uppercase">Description</span>
+                <span className="text-xs font-bold uppercase">{t("mySchedule.shiftModal.description")}</span>
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                 {shift.description}
@@ -100,7 +121,7 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl border border-yellow-100 dark:border-yellow-800">
               <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-2">
                 <Info size={16} />
-                <span className="text-xs font-bold uppercase">Notes</span>
+                <span className="text-xs font-bold uppercase">{t("mySchedule.shiftModal.notes")}</span>
               </div>
               <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed italic">
                 "{shift.notes}"
@@ -116,7 +137,7 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
             onClick={onClose}
             className="px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-600 transition font-medium shadow-md"
           >
-            Close
+            {t("mySchedule.buttons.close")}
           </button>
         </div>
 
@@ -125,18 +146,16 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
   );
 };
 
-
 const MySchedule = () => {
   const [shifts, setShifts] = useState([]);
   const [todayStatus, setTodayStatus] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
-  
-  // ✅ State for Modal
   const [selectedShift, setSelectedShift] = useState(null);
   
   const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
+  const { t, i18n } = useTranslation();
 
   // Fetch shifts for current week
   const fetchShifts = useCallback(async () => {
@@ -157,11 +176,11 @@ const MySchedule = () => {
 
       setShifts(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching shifts:', error);
+      console.error(t('mySchedule.errors.fetchShifts'), error);
     } finally {
       hideGlobalLoading();
     }
-  }, [currentWeek, showGlobalLoading, hideGlobalLoading]);
+  }, [currentWeek, showGlobalLoading, hideGlobalLoading, t]);
 
   // Fetch today's status
   const fetchTodayStatus = async () => {
@@ -169,7 +188,7 @@ const MySchedule = () => {
       const response = await apiClient.get('/api/employee/attendance/today-status');
       setTodayStatus(response.data.data);
     } catch (error) {
-      console.error('Error fetching today status:', error);
+      console.error(t('mySchedule.errors.fetchTodayStatus'), error);
     }
   };
 
@@ -179,12 +198,12 @@ const MySchedule = () => {
         await fetchShifts();
         await fetchTodayStatus();
       } catch (error) {
-        console.error('Error loading schedule data:', error);
+        console.error(t('mySchedule.errors.loadData'), error);
       }
     };
     
     loadData();
-  }, [currentWeek]);
+  }, [currentWeek, fetchShifts, t]);
 
   // Navigate weeks
   const navigateWeek = (direction) => {
@@ -209,7 +228,6 @@ const MySchedule = () => {
 
   // Get shifts for specific date
   const getShiftsForDate = (date) => {
-    // Use local date instead of UTC to avoid timezone issues
     const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
     return shifts.filter(shift => {
       const shiftDate = new Date(shift.start_date_time);
@@ -221,21 +239,31 @@ const MySchedule = () => {
   // Format time
   const formatTime = (timeString) => {
     const time = new Date(timeString);
-    return time.toLocaleTimeString('en-US', { 
+    return time.toLocaleTimeString(i18n.language, { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: false 
+      hour12: i18n.language === 'en' // Use 12-hour format for English, 24-hour for Arabic
     });
   };
 
   // Get status color
   const getStatusColor = (status) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in_progress': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800';
+      case 'in_progress': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800';
+      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+    }
+  };
+
+  const getStatusTranslation = (status) => {
+    switch (status) {
+      case 'scheduled': return t('mySchedule.status.scheduled');
+      case 'in_progress': return t('mySchedule.status.inProgress');
+      case 'completed': return t('mySchedule.status.completed');
+      case 'cancelled': return t('mySchedule.status.cancelled');
+      default: return status.replace('_', ' ');
     }
   };
 
@@ -247,23 +275,23 @@ const MySchedule = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-50">My Schedule</h1>
-          <p className="text-gray-600 dark:text-slate-400 mt-1">Manage your work shifts and schedule</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-50">{t("mySchedule.title")}</h1>
+          <p className="text-gray-600 dark:text-slate-400 mt-1">{t("mySchedule.subtitle")}</p>
         </div>
         
         {todayStatus && (
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="text-right">
-              <p className="text-sm text-gray-500 dark:text-slate-400">Today's Status</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{t("mySchedule.todayStatus")}</p>
               <p className={`font-semibold ${
                 todayStatus.clocked_in ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-400'
               }`}>
-                {todayStatus.clocked_in ? 'Clocked In' : 'Not Clocked In'}
+                {todayStatus.clocked_in ? t("mySchedule.clockedIn") : t("mySchedule.notClockedIn")}
               </p>
             </div>
             {todayStatus.check_in_time && (
               <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-slate-400">Check In Time</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400">{t("mySchedule.checkInTime")}</p>
                 <p className="font-semibold text-gray-900 dark:text-slate-50">
                   {formatTime(todayStatus.check_in_time)}
                 </p>
@@ -280,10 +308,11 @@ const MySchedule = () => {
           size="sm"
           onClick={() => navigateWeek('prev')}
           className="order-1 sm:order-0 flex items-center gap-1 py-4"
+          aria-label={t("mySchedule.buttons.previousWeek")}
         >
           <ChevronLeft size={16} />
-          <span className="hidden sm:inline">Previous Week</span>
-          <span className="sm:hidden">Prev</span>
+          <span className="hidden sm:inline">{t("mySchedule.buttons.previousWeek")}</span>
+          <span className="sm:hidden">{t("mySchedule.buttons.prev")}</span>
         </Button>
         
         <Button 
@@ -291,16 +320,17 @@ const MySchedule = () => {
           size="sm"
           onClick={() => navigateWeek('next')}
           className="order-3 sm:order-2 flex items-center gap-1 py-4"
+          aria-label={t("mySchedule.buttons.nextWeek")}
         >
-          <span className="hidden sm:inline">Next Week</span>
-          <span className="sm:hidden">Next</span>
+          <span className="hidden sm:inline">{t("mySchedule.buttons.nextWeek")}</span>
+          <span className="sm:hidden">{t("mySchedule.buttons.next")}</span>
           <ChevronRight size={16} />
         </Button>
 
         <div className="text-center order-2 sm:order-1">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-50">
-            {weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
-            {weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            {weekDates[0].toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })} - 
+            {weekDates[6].toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
           </h2>
         </div>
       </div>
@@ -310,7 +340,7 @@ const MySchedule = () => {
         {weekDates.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
           const isToday = date.toDateString() === new Date().toDateString();
-          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          const dayName = date.toLocaleDateString(i18n.language, { weekday: 'short' });
           const dayNumber = date.getDate();
 
           return (
@@ -336,7 +366,9 @@ const MySchedule = () => {
                     {dayNumber}
                   </p>
                   {isToday && (
-                    <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">Today</p>
+                    <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">
+                      {t("mySchedule.today")}
+                    </p>
                   )}
                 </div>
               </div>
@@ -346,18 +378,20 @@ const MySchedule = () => {
                 {dayShifts.length === 0 ? (
                   <div className="text-center py-4">
                     <Calendar size={24} className="mx-auto text-gray-300 dark:text-slate-600 mb-1" />
-                    <p className="text-xs text-gray-500 dark:text-slate-500">No shifts</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-500">
+                      {t("mySchedule.noShifts")}
+                    </p>
                   </div>
                 ) : (
                   dayShifts.map((shift) => (
                     <div 
                       key={shift._id}
-                      onClick={() => setSelectedShift(shift)} // ✅ Add Click Handler
+                      onClick={() => setSelectedShift(shift)}
                       className="bg-gray-50 dark:bg-slate-800 rounded-lg p-2 border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer hover:border-sky-300 dark:hover:border-sky-600 hover:bg-sky-50 dark:hover:bg-slate-700/50"
                     >
                       <div className="flex items-start justify-between mb-1">
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(shift.status)}`}>
-                          {shift.status.replace('_', ' ')}
+                          {getStatusTranslation(shift.status)}
                         </span>
                       </div>
                       
@@ -385,8 +419,8 @@ const MySchedule = () => {
                         )}
                         
                         {shift.shift_type && shift.shift_type !== 'regular' && (
-                          <div className="text-xs text-sky-600 dark:text-sky-400 font-medium">
-                            {shift.shift_type.replace('_', ' ').toUpperCase()}
+                          <div className="text-xs text-sky-600 dark:text-sky-400 font-medium uppercase">
+                            {shift.shift_type.replace('_', ' ')}
                           </div>
                         )}
                       </div>
@@ -401,7 +435,9 @@ const MySchedule = () => {
 
       {/* Quick Actions */}
       <div className="mt-8 bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-50 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-50 mb-4">
+          {t("mySchedule.quickActions.title")}
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button 
             variant="outline"
@@ -409,7 +445,7 @@ const MySchedule = () => {
             onClick={() => window.location.href = '/time-tracking'}
           >
             <Clock size={16} />
-            Clock In/Out
+            {t("mySchedule.quickActions.clockInOut")}
           </Button>
           
           <Button 
@@ -418,7 +454,7 @@ const MySchedule = () => {
             onClick={() => window.location.href = '/time-off'}
           >
             <Plus size={16} />
-            Request Time Off
+            {t("mySchedule.quickActions.requestTimeOff")}
           </Button>
           
           <Button 
@@ -427,7 +463,7 @@ const MySchedule = () => {
             onClick={() => setShowCalendarView(true)}
           >
             <Calendar size={16} />
-            Calendar View
+            {t("mySchedule.quickActions.calendarView")}
           </Button>
         </div>
       </div>
@@ -435,25 +471,27 @@ const MySchedule = () => {
       {/* Upcoming Shifts Summary */}
       {shifts.length > 0 && (
         <div className="mt-8 bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-50 mb-4">This Week's Summary</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-50 mb-4">
+            {t("mySchedule.weeklySummary.title")}
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{shifts.length}</p>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Total Shifts</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">{t("mySchedule.weeklySummary.totalShifts")}</p>
             </div>
             
             <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {shifts.filter(s => s.status === 'completed').length}
               </p>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Completed</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">{t("mySchedule.weeklySummary.completed")}</p>
             </div>
             
             <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {shifts.filter(s => s.status === 'scheduled').length}
               </p>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Scheduled</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">{t("mySchedule.weeklySummary.scheduled")}</p>
             </div>
             
             <div className="text-center p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
@@ -464,7 +502,7 @@ const MySchedule = () => {
                   return total + (end - start) / (1000 * 60 * 60);
                 }, 0).toFixed(1)}h
               </p>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Total Hours</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">{t("mySchedule.weeklySummary.totalHours")}</p>
             </div>
           </div>
         </div>

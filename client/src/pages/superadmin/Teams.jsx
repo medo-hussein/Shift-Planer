@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
 import { useLoading } from "../../contexts/LoaderContext";
 import { 
@@ -6,6 +6,8 @@ import {
   MoreVertical, Edit2, Trash2, Power, X,
   ChevronLeft, ChevronRight 
 } from "lucide-react";
+import {Alert} from "../../utils/alertService.js"
+import { useTranslation } from "react-i18next";
 
 export default function Teams() {
   const [branches, setBranches] = useState([]);
@@ -29,6 +31,7 @@ export default function Teams() {
   });
   
   const { show, hide } = useLoading();
+  const { t, i18n } = useTranslation();
 
   // Fetch Branches with Pagination
   const fetchBranches = async () => {
@@ -65,17 +68,17 @@ export default function Teams() {
           phone: formData.phone,
           is_active: formData.is_active
         });
-        alert("Branch updated successfully!");
+        Alert.success(t("teams.alerts.updateSuccess"));
       } else {
         await superAdminService.createBranchAdmin(formData);
-        alert("Branch created successfully!");
+        Alert.success(t("teams.alerts.createSuccess"));
       }
       
       setShowModal(false);
       resetForm();
       fetchBranches();
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
+      Alert.error(err.response?.data?.message || t("teams.alerts.operationFailed"));
     } finally {
       hide();
     }
@@ -83,7 +86,8 @@ export default function Teams() {
 
   // Handle Delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure? This will delete the admin and might affect branch data.")) return;
+    const result = await Alert.confirm(t("teams.alerts.confirmDelete"));
+    if (!result.isConfirmed) return;
     try {
       show();
       await superAdminService.deleteBranch(id);
@@ -92,10 +96,9 @@ export default function Teams() {
       } else {
         fetchBranches();
       }
-      alert("Branch deleted successfully");
-    // eslint-disable-next-line no-unused-vars
+      Alert.success(t("teams.alerts.deleteSuccess"));
     } catch (err) {
-      alert("Failed to delete branch");
+      Alert.error(t("teams.alerts.deleteFailed"));
     } finally {
       hide();
     }
@@ -106,10 +109,14 @@ export default function Teams() {
     try {
       show();
       await superAdminService.updateBranch(branch._id, { is_active: !branch.is_active });
+      Alert.success(branch.is_active 
+        ? t("teams.alerts.deactivateSuccess") 
+        : t("teams.alerts.activateSuccess")
+      );
       fetchBranches();
     // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      alert("Failed to update status");
+      Alert.error(t("teams.alerts.statusUpdateFailed"));
     } finally {
       hide();
     }
@@ -142,14 +149,14 @@ export default function Teams() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Branch Management</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Create, edit, and manage branch admins.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("teams.title")}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t("teams.subtitle")}</p>
         </div>
         <button 
           onClick={() => { resetForm(); setShowModal(true); }}
           className="bg-[#112D4E] hover:bg-[#274b74] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-sm font-medium"
         >
-          <Plus size={18} /> Add Branch
+          <Plus size={18} /> {t("teams.buttons.addBranch")}
         </button>
       </div>
 
@@ -162,7 +169,8 @@ export default function Teams() {
             <div className="absolute top-4 right-4 z-10">
               <button 
                 onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === branch._id ? null : branch._id); }}
-                className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-full transition"
+                className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"
+                aria-label={t("teams.actions.menu")}
               >
                 <MoreVertical size={18} />
               </button>
@@ -171,13 +179,13 @@ export default function Teams() {
               {activeMenu === branch._id && (
                 <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-100 dark:border-slate-600 overflow-hidden animate-fadeIn z-20">
                   <button onClick={() => openEditModal(branch)} className="w-full text-left px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2">
-                    <Edit2 size={14} /> Edit
+                    <Edit2 size={14} /> {t("teams.actions.edit")}
                   </button>
                   <button onClick={() => handleToggleStatus(branch)} className="w-full text-left px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2">
-                    <Power size={14} /> {branch.is_active ? 'Deactivate' : 'Activate'}
+                    <Power size={14} /> {branch.is_active ? t("teams.actions.deactivate") : t("teams.actions.activate")}
                   </button>
                   <button onClick={() => handleDelete(branch._id)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 border-t border-slate-100 dark:border-slate-600">
-                    <Trash2 size={14} /> Delete
+                    <Trash2 size={14} /> {t("teams.actions.delete")}
                   </button>
                 </div>
               )}
@@ -185,13 +193,13 @@ export default function Teams() {
 
             {/* Card Content */}
             <div className="flex items-center gap-4 mb-4">
-              <div className={`p-3 rounded-xl text-white ${branch.is_active ? 'bg-blue-600' : 'bg-slate-400'}`}>
+              <div className={`p-3 rounded-xl text-white ${branch.is_active ? 'bg-blue-600' : 'bg-slate-400 dark:bg-slate-600'}`}>
                 <Building size={24} />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 line-clamp-1">{branch.branch_name}</h3>
                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${branch.is_active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                  {branch.is_active ? 'Active' : 'Inactive'}
+                  {branch.is_active ? t("teams.status.active") : t("teams.status.inactive")}
                 </span>
               </div>
             </div>
@@ -205,20 +213,22 @@ export default function Teams() {
                 <Mail size={16} className="text-slate-400 dark:text-slate-500" /> {branch.email}
               </div>
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm">
-                <Phone size={16} className="text-slate-400 dark:text-slate-500" /> {branch.phone || "N/A"}
+                <Phone size={16} className="text-slate-400 dark:text-slate-500" /> {branch.phone || t("teams.card.notAvailable")}
               </div>
             </div>
 
             <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs font-medium text-slate-400 dark:text-slate-500">
-                <span>Joined: {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString() : 'N/A'}</span>
+                <span>{t("teams.card.joined")}: {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString(i18n.language) : t("teams.card.notAvailable")}</span>
                 {branch.employee_count !== undefined && (
-                    <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300">{branch.employee_count} Employees</span>
+                    <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300">
+                      {branch.employee_count} {t("teams.card.employees")}
+                    </span>
                 )}
             </div>
           </div>
         )) : (
           <div className="col-span-full text-center py-10 text-slate-500 dark:text-slate-400">
-             No branches found.
+             {t("teams.noBranchesFound")}
           </div>
         )}
       </div>
@@ -230,18 +240,20 @@ export default function Teams() {
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            aria-label={t("teams.pagination.previous")}
           >
             <ChevronLeft size={20} />
           </button>
           
           <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-            Page {page} of {totalPages}
+            {t("teams.pagination.page")} {page} {t("teams.pagination.of")} {totalPages}
           </span>
 
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            aria-label={t("teams.pagination.next")}
           >
             <ChevronRight size={20} />
           </button>
@@ -255,52 +267,65 @@ export default function Teams() {
             <button 
               onClick={() => setShowModal(false)}
               className="absolute top-4 right-4 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
+              aria-label={t("teams.modal.close")}
             >
               <X size={20} />
             </button>
 
             <h2 className="text-xl font-bold text-[#112D4E] dark:text-slate-100 mb-6">
-              {isEditing ? "Edit Branch Details" : "Create New Branch"}
+              {isEditing ? t("teams.modal.editTitle") : t("teams.modal.createTitle")}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Branch Name</label>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
+                  {t("teams.form.branchName")}
+                </label>
                 <input required type="text" className="w-full mt-1 p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#3F72AF] outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                   value={formData.branch_name} onChange={(e) => setFormData({...formData, branch_name: e.target.value})} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Admin Name</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
+                      {t("teams.form.adminName")}
+                    </label>
                     <input required type="text" className="w-full mt-1 p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#3F72AF] outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Phone</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
+                      {t("teams.form.phone")}
+                    </label>
                     <input type="tel" className="w-full mt-1 p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#3F72AF] outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Email</label>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
+                  {t("teams.form.email")}
+                </label>
                 <input required type="email" className="w-full mt-1 p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#3F72AF] outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                   value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
 
               {!isEditing && (
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Password</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
+                    {t("teams.form.password")}
+                  </label>
                   <input required type="password" className="w-full mt-1 p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#3F72AF] outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
                 </div>
               )}
 
               <div className="flex gap-3 mt-8 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition">Cancel</button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition">
+                  {t("teams.buttons.cancel")}
+                </button>
                 <button type="submit" className="flex-1 px-4 py-2.5 bg-[#112D4E] text-white rounded-lg hover:bg-[#274b74] font-medium transition shadow-md">
-                  {isEditing ? "Save Changes" : "Create Branch"}
+                  {isEditing ? t("teams.buttons.saveChanges") : t("teams.buttons.createBranch")}
                 </button>
               </div>
             </form>

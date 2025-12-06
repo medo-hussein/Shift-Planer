@@ -7,10 +7,19 @@ import {
   BarChart3,
   Plane,
   FingerprintPattern,
+  CreditCard,
+  Building2,
+  FileText,
 } from "lucide-react";
 
 // Shared Pages
 import SharedProfile from "../shared/Profile";
+import PaymentCallback from "../pages/shared/PaymentCallback";
+
+// Platform Owner Pages
+import PlatformDashboard from "../pages/platform/Dashboard";
+import CompaniesPage from "../pages/platform/Companies";
+import PlansPage from "../pages/platform/Plans";
 
 // Super Admin Pages
 import SA_Dashboard from "../pages/superadmin/Dashboard";
@@ -18,6 +27,7 @@ import SA_Teams from "../pages/superadmin/Teams";
 import SA_Employees from "../pages/superadmin/Employees";
 import SA_Reports from "../pages/superadmin/Reports";
 import SA_TimeOffRequests from "../pages/superadmin/TimeOffRequests";
+import SubscriptionPage from "../pages/superadmin/SubscriptionPage";
 
 // Admin Pages
 import A_Dashboard from "../pages/admin/Dashboard";
@@ -36,13 +46,23 @@ import E_Reports from "../pages/employee/MyReports";
 
 const routes = {
 
+  platform_owner: [
+    { path: "/dashboard", element: PlatformDashboard, label: "Dashboard", icon: LayoutDashboard },
+    { path: "/companies", element: CompaniesPage, label: "Companies", icon: Building2 },
+    { path: "/plans", element: PlansPage, label: "Plans", icon: FileText },
+    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
+    { path: "/payment/callback", element: PaymentCallback, label: "Payment Verification", icon: CreditCard, hidden: true },
+  ],
+
   super_admin: [
-      { path: "/dashboard", element: SA_Dashboard, label: "Dashboard", icon: LayoutDashboard },
-      { path: "/teams", element: SA_Teams, label: "Teams", icon: Users },
-      { path: "/employees", element: SA_Employees, label: "Employees", icon: UserCog },
-      { path: "/time-off", element: SA_TimeOffRequests, label: "Leave Requests", icon: Plane },
-      { path: "/reports", element: SA_Reports, label: "Reports", icon: BarChart3 },
-      { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
+    { path: "/dashboard", element: SA_Dashboard, label: "Dashboard", icon: LayoutDashboard },
+    { path: "/teams", element: SA_Teams, label: "Teams", icon: Users },
+    { path: "/employees", element: SA_Employees, label: "Employees", icon: UserCog },
+    { path: "/time-off", element: SA_TimeOffRequests, label: "Leave Requests", icon: Plane },
+    { path: "/reports", element: SA_Reports, label: "Reports", icon: BarChart3 },
+    { path: "/subscription", element: SubscriptionPage, label: "Subscription", icon: CreditCard },
+    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
+    { path: "/payment/callback", element: PaymentCallback, label: "Payment Verification", icon: CreditCard, hidden: true },
   ],
 
   admin: [
@@ -56,12 +76,12 @@ const routes = {
   ],
 
   employee: [
-      { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard }, 
-      { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
-      { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
-      { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
-      { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },
-      { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
+    { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard },
+    { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
+    { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
+    { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
+    { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },
+    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ]
 };
 

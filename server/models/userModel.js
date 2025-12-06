@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["super_admin", "admin", "employee"],
+      enum: ["platform_owner", "super_admin", "admin", "employee"],
       required: true
     },
 
@@ -73,7 +73,7 @@ const userSchema = new mongoose.Schema(
       default: true 
     },
     
-    // ❌ تم حذف isActive من هنا لمنع الازدواجية وتضارب البيانات
+
 
     lastLogin: {
       type: Date,
@@ -135,6 +135,14 @@ const userSchema = new mongoose.Schema(
 // Hash password
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
+
+  if (this.role === "platform_owner") {
+    this.branch_name = undefined;
+    this.branch_admin_id = undefined;
+    this.position = undefined;
+    this.super_admin_id = undefined;
+    this.company = undefined;
+  }
 
   if (this.role === "super_admin") {
     this.branch_name = undefined;

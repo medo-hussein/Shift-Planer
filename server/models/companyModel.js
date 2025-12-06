@@ -8,43 +8,43 @@ const companySchema = new mongoose.Schema(
       trim: true,
       unique: true
     },
-    
+
     description: {
       type: String,
       trim: true,
       default: ""
     },
-    
+
     industry: {
       type: String,
       trim: true,
       default: ""
     },
-    
+
     size: {
       type: String,
       enum: ["1-10", "11-50", "51-200", "201-500", "500+"],
       default: "1-10"
     },
-    
+
     website: {
       type: String,
       trim: true,
       default: ""
     },
-    
+
     phone: {
       type: String,
       trim: true,
       default: ""
     },
-    
+
     email: {
       type: String,
       trim: true,
       default: ""
     },
-    
+
     address: {
       street: { type: String, default: "" },
       city: { type: String, default: "" },
@@ -52,12 +52,12 @@ const companySchema = new mongoose.Schema(
       zipCode: { type: String, default: "" },
       country: { type: String, default: "" }
     },
-    
+
     logo: {
       type: String,
       default: ""
     },
-    
+
     settings: {
       timezone: {
         type: String,
@@ -80,11 +80,15 @@ const companySchema = new mongoose.Schema(
         end: { type: String, default: "17:00" }
       }
     },
-    
+
     subscription: {
       plan: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Plan",
+        required: false // Optional for now to support legacy data
+      },
+      plan_name: { // Snapshot of plan name
         type: String,
-        enum: ["free", "basic", "pro", "enterprise"],
         default: "free"
       },
       status: {
@@ -98,20 +102,24 @@ const companySchema = new mongoose.Schema(
       },
       maxUsers: {
         type: Number,
-        default: 10
+        default: 5 // Default for free plan
+      },
+      maxBranches: {
+        type: Number,
+        default: 1 // Default for free plan
       }
     },
-    
+
     isActive: {
       type: Boolean,
       default: true
     },
-    
+
     isVerified: {
       type: Boolean,
       default: false
     },
-    
+
     verificationToken: String,
     verificationExpires: Date
   },
@@ -123,15 +131,15 @@ companySchema.index({ isActive: 1 });
 companySchema.index({ "subscription.status": 1 });
 
 // Static methods
-companySchema.statics.getActiveCompanies = function() {
+companySchema.statics.getActiveCompanies = function () {
   return this.find({ isActive: true })
     .select('-verificationToken -verificationExpires')
     .sort({ createdAt: -1 });
 };
 
-companySchema.statics.getCompanyStats = async function(companyId) {
+companySchema.statics.getCompanyStats = async function (companyId) {
   const User = mongoose.model("User");
-  
+
   const stats = await User.aggregate([
     { $match: { company: companyId } },
     {
@@ -141,7 +149,7 @@ companySchema.statics.getCompanyStats = async function(companyId) {
       }
     }
   ]);
-  
+
   return stats.reduce((acc, stat) => {
     acc[stat._id] = stat.count;
     return acc;
@@ -149,30 +157,30 @@ companySchema.statics.getCompanyStats = async function(companyId) {
 };
 
 // Instance methods
-companySchema.methods.updateSettings = function(newSettings) {
+companySchema.methods.updateSettings = function (newSettings) {
   Object.assign(this.settings, newSettings);
   return this.save();
 };
 
-companySchema.methods.updateSubscription = function(plan, maxUsers) {
+companySchema.methods.updateSubscription = function (plan, maxUsers) {
   this.subscription.plan = plan;
   this.subscription.maxUsers = maxUsers;
   this.subscription.expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
   return this.save();
 };
 
-companySchema.methods.getUserCount = async function() {
+companySchema.methods.getUserCount = async function () {
   const User = mongoose.model("User");
   return await User.countDocuments({ company: this._id });
 };
 
-companySchema.methods.canAddUser = async function() {
+companySchema.methods.canAddUser = async function () {
   const currentUsers = await this.getUserCount();
   return currentUsers < this.subscription.maxUsers;
 };
 
 // Pre-save middleware
-companySchema.pre("save", function(next) {
+companySchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.name = this.name.trim();
   }

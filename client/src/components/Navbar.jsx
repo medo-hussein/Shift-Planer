@@ -1,11 +1,12 @@
 import { useState, useEffect, useContext } from "react";
-import { Bell, User, Menu, X, Check, Megaphone, Moon, Sun } from "lucide-react";
+import { Bell, User, Menu, X, Check, Megaphone, Moon, Sun, Home } from "lucide-react";
 import routes from "../routes/routesConfig";
 import { NavLink, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { notificationService } from "../api/services/notificationService";
 import AnnouncementModal from "./AnnouncementModal";
 import { ThemeContext } from "../contexts/ThemeContext.jsx";
+import PlanBadge from "./Shared/PlanBadge";
 
 export default function Navbar({ role }) {
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
@@ -86,6 +87,14 @@ export default function Navbar({ role }) {
         {/* Right Side Icons */}
         <div className="flex items-center gap-3 md:gap-5 relative">
           <button
+            onClick={() => navigate("/")}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
+            title="Go to Home Page"
+          >
+            <Home className="w-6 h-6" />
+          </button>
+
+          <button
             onClick={toggleTheme}
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
           >
@@ -146,24 +155,21 @@ export default function Navbar({ role }) {
                       <div
                         key={notif._id}
                         onClick={() => handleNotificationClick(notif)}
-                        className={`p-3 border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition flex gap-3 ${
-                          !notif.is_read
-                            ? "bg-blue-50/30 dark:bg-blue-900/30"
-                            : ""
-                        }`}
+                        className={`p-3 border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition flex gap-3 ${!notif.is_read
+                          ? "bg-blue-50/30 dark:bg-blue-900/30"
+                          : ""
+                          }`}
                       >
                         <div
-                          className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${
-                            !notif.is_read ? "bg-blue-500" : "bg-transparent"
-                          }`}
+                          className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${!notif.is_read ? "bg-blue-500" : "bg-transparent"
+                            }`}
                         ></div>
                         <div>
                           <p
-                            className={`text-sm ${
-                              !notif.is_read
-                                ? "font-semibold text-gray-800 dark:text-slate-100"
-                                : "text-gray-600 dark:text-slate-400"
-                            }`}
+                            className={`text-sm ${!notif.is_read
+                              ? "font-semibold text-gray-800 dark:text-slate-100"
+                              : "text-gray-600 dark:text-slate-400"
+                              }`}
                           >
                             {notif.title}
                           </p>
@@ -196,10 +202,20 @@ export default function Navbar({ role }) {
                 setOpenNotificationMenu(false);
               }}
             >
-              <User size={22} />
-              <span className="hidden md:inline text-sm font-medium">
-                {user?.name || "Profile"}
-              </span>
+              <div className="flex flex-col items-end md:items-center md:flex-row gap-2">
+                <div className="flex items-center gap-2">
+                  <User size={22} />
+                  <span className="hidden md:inline text-sm font-medium">
+                    {user?.name || "Profile"}
+                  </span>
+                </div>
+                {/* Show Badge only for Super Admin */}
+                {userRole === 'super_admin' && (
+                  <div className="hidden md:block">
+                    <PlanBadge planSlug={user?.plan_slug} planName={user?.plan_name} />
+                  </div>
+                )}
+              </div>
             </button>
             {openProfileMenu && (
               <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 shadow-lg rounded-lg z-50">
@@ -220,15 +236,14 @@ export default function Navbar({ role }) {
       {/* Desktop Navigation */}
       <nav className="hidden md:block w-full bg-[#1d2931] dark:bg-black text-white md:px-7">
         <ul className="flex items-center gap-10 px-6 py-3">
-          {items.map((item) => {
+          {items.filter(item => !item.hidden).map((item) => {
             const Icon = item.icon;
             return (
               <li key={item.path}>
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-2 hover:text-[#BBE1FA] transition ${
-                      isActive ? "text-[#BBE1FA] font-semibold" : ""
+                    `flex items-center gap-2 hover:text-[#BBE1FA] transition ${isActive ? "text-[#BBE1FA] font-semibold" : ""
                     }`
                   }
                 >
@@ -240,11 +255,12 @@ export default function Navbar({ role }) {
         </ul>
       </nav>
 
+
       {/* Mobile Navigation */}
       {openMobileMenu && (
         <div className="md:hidden bg-[#1d2931] dark:bg-slate-900 text-white px-6 py-3">
           <ul className="flex flex-col gap-4">
-            {items.map((item) => {
+            {items.filter(item => !item.hidden).map((item) => {
               const Icon = item.icon;
               return (
                 <li key={item.path}>
@@ -252,8 +268,7 @@ export default function Navbar({ role }) {
                     to={item.path}
                     onClick={() => setOpenMobileMenu(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 hover:text-[#BBE1FA] transition py-2 ${
-                        isActive ? "text-[#BBE1FA] font-semibold" : ""
+                      `flex items-center gap-3 hover:text-[#BBE1FA] transition py-2 ${isActive ? "text-[#BBE1FA] font-semibold" : ""
                       }`
                     }
                   >

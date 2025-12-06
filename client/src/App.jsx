@@ -1,13 +1,13 @@
-
 import Loader from "./components/Loader";
 import { useLoading } from "./contexts/LoaderContext";
 import AppRouter from "./routes/AppRouter";
 import { useToast } from "./hooks/useToast";
-
+import "./utils/I18n";
+import { useTranslation } from "react-i18next";
 function App() {
-  const {loading} = useLoading();
+  const { loading } = useLoading();
   const { ToastContainer } = useToast();
-  
+  const { i18n } = useTranslation();
   return (
     <div className="app-layout flex">
       <div className="flex-1">

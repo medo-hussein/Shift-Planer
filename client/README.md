@@ -1,16 +1,73 @@
-# React + Vite
+# ShiftMind Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend client for the ShiftMind application, built with **React 19**, **Vite**, and **Tailwind CSS v4**.
 
-Currently, two official plugins are available:
+## 🚀 Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```
+client/
+├── public/              # Static assets
+├── src/
+│   ├── api/             # API configuration & services
+│   │   ├── apiClient.js # Axios instance with interceptors
+│   │   └── services/    # API service functions
+│   ├── components/      # Reusable UI components
+│   ├── contexts/        # Global state (Auth, Loader, Theme)
+│   ├── hooks/           # Custom React hooks
+│   ├── pages/           # Page components (Views)
+│   ├── routes/          # Routing configuration
+│   │   ├── AppRouter.jsx # Main router logic
+│   │   └── routesConfig.js # Role-based route definitions
+│   ├── shared/          # Shared constants/utils
+│   ├── utils/           # Helper functions
+│   ├── App.jsx          # Main App component
+│   ├── main.jsx         # Entry point (Providers)
+│   └── index.css        # Global styles & Tailwind setup
+├── index.html           # HTML entry point
+├── package.json         # Dependencies & scripts
+└── vite.config.js       # Vite configuration
+```
 
-## React Compiler
+## 🛠️ Key Technologies
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+-   **Framework:** React 19 + Vite
+-   **Styling:** Tailwind CSS v4 (configured in `src/index.css`)
+-   **Routing:** React Router v7
+-   **State Management:** React Context API (`AuthContext`, `LoaderContext`)
+-   **HTTP Client:** Axios (with interceptors for JWT)
+-   **UI Libraries:**
+    -   `lucide-react`: Icons
+    -   `sweetalert2`: Alert modals
+    -   `react-hot-toast`: Toast notifications
+    -   `framer-motion`: Animations
+    -   `@fullcalendar/*`: Calendar functionality
 
-## Expanding the ESLint configuration
+## 🔐 Authentication & Security
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Authentication is handled via `AuthContext` and `apiClient.js`.
+
+1.  **JWT Handling:** Access tokens are stored in `localStorage`.
+2.  **Interceptors:** `apiClient.js` automatically attaches the token to requests.
+3.  **Refresh Logic:** If a 401 response is received, the interceptor attempts to refresh the token via `/api/auth/refresh` and retries the original request.
+4.  **Protected Routes:** `ProtectedRoute` and `VerifiedRoute` components ensure only authenticated and verified users can access specific pages.
+
+## 🎨 Styling
+
+We use **Tailwind CSS v4**. Custom utility classes are defined in `src/index.css` for consistency:
+
+-   `.btn`: Standard primary button.
+-   `.btn2`: Secondary/Outline button.
+-   `.card`: Standard card container with shadow and hover effect.
+-   `.dashboardBtn`: Dashboard action button.
+
+## 🚦 Routing
+
+Routing is centralized in `src/routes/AppRouter.jsx`.
+Routes are defined based on user roles (`super_admin`, `admin`, `employee`) in `src/routes/routesConfig.js`.
+
+## 📦 Scripts
+
+-   `npm run dev`: Start development server.
+-   `npm run build`: Build for production.
+-   `npm run preview`: Preview production build.
+-   `npm run lint`: Run ESLint.

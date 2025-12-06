@@ -66,13 +66,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F9F7F7] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-[#DBE2EF]">
+    <div className="min-h-screen flex items-center justify-center bg-[#F9F7F7] dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border border-[#DBE2EF] dark:border-slate-700">
 
         {/* Header */}
         <div>
-          <h2 className="mt-4 text-center text-3xl font-extrabold text-[#112D4E]">
-            Welcome Back to <span className="text-[#3F72AF]">Tadbire</span>
+          <h2 className="mt-4 text-center text-3xl font-extrabold text-[#112D4E] dark:text-sky-200">
+            Welcome Back to <span className="text-[#3F72AF] dark:text-sky-400">Tadbire</span>
           </h2>
         </div>
 
@@ -82,7 +82,7 @@ export default function Login() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[#112D4E]">
+              <label htmlFor="email" className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
                 Email Address
               </label>
               <input
@@ -92,14 +92,14 @@ export default function Login() {
                 required
                 value={form.email}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] placeholder-gray-400 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
                 placeholder="Enter your email"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[#112D4E]">
+              <label htmlFor="password" className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
                 Password
               </label>
               <input
@@ -109,7 +109,7 @@ export default function Login() {
                 required
                 value={form.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] rounded-md bg-[#F9F7F7] text-[#112D4E] placeholder-gray-400 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
                 placeholder="Enter your password"
               />
             </div>
@@ -117,7 +117,7 @@ export default function Login() {
           <div className="text-right">
             <Link
               to="/forget-password"
-              className="text-sm font-medium text-[#3F72AF] hover:text-[#112D4E]"
+              className="text-sm font-medium text-[#3F72AF] dark:text-sky-400 hover:text-[#112D4E] dark:hover:text-sky-300"
             >
               Forgot your password?
             </Link>
@@ -125,8 +125,8 @@ export default function Login() {
 
           {/* Error Message */}
           {error && (
-            <div className="rounded-md bg-red-50 p-4 border border-red-200">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-4 border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -135,7 +135,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-[#19283a] hover:bg-[#274b74] transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3F72AF] disabled:opacity-50"
+              className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-[#19283a] dark:bg-sky-700 hover:bg-[#274b74] dark:hover:bg-sky-600 transition focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900 focus:ring-[#3F72AF] disabled:opacity-50"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
@@ -144,10 +144,10 @@ export default function Login() {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-300 dark:border-slate-600" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400">Or continue with</span>
             </div>
           </div>
 
@@ -164,11 +164,11 @@ export default function Login() {
 
           {/* Footer */}
           <div className="text-center">
-            <p className="text-sm text-[#3F72AF]">
-              Don’t have an account?{" "}
+            <p className="text-sm text-[#3F72AF] dark:text-sky-400">
+              Don't have an account?{" "}
               <Link
                 to="/register"
-                className="font-medium text-[#112D4E] hover:text-[#3F72AF]"
+                className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200"
               >
                 Sign up here
               </Link>

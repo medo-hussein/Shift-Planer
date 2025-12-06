@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { reportService } from "../../api/services/admin/reportService";
 import { useLoading } from "../../contexts/LoaderContext";
 import apiClient from "../../api/apiClient";
@@ -6,8 +6,7 @@ import {
   FileText, Calendar, Plus, Trash2, Eye, Share2, 
   Clock, Filter, X, ChevronLeft, ChevronRight, Check
 } from "lucide-react";
-
-// استيراد المودال
+import {Alert} from "../../utils/alertService.js";
 import ReportDetailsModal from "../superadmin/ReportDetailsModal"; 
 
 export default function Reports() {
@@ -15,10 +14,7 @@ export default function Reports() {
   const [filterType, setFilterType] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
-  
-  // State لمودال المشاركة
   const [reportToShare, setReportToShare] = useState(null);
-
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6; 
@@ -56,13 +52,16 @@ export default function Reports() {
   }, [filterType]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
+    const confirmResult = await Alert.confirm("Are you sure you want to delete this report?");
+    if(!confirmResult.isConfirmed) return;
+
     try {
       show();
       await reportService.delete(id);
-      fetchData(); 
+      fetchData();
+      Alert.success("Report deleted successfully"); 
     } catch (err) {
-      alert("Failed to delete report", err);
+      Alert.error("Failed to delete report", err);
     } finally {
       hide();
     }
@@ -76,7 +75,6 @@ export default function Reports() {
     }
   };
 
-  // دالة لعرض إحصائيات سريعة على الكارت
   const renderQuickStats = (report) => {
     const data = report.data || {};
     
@@ -151,7 +149,6 @@ export default function Reports() {
                       <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
                           <Eye size={16}/>
                       </button>
-                      {/* زر المشاركة */}
                       <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
                           <Share2 size={16}/>
                       </button>
@@ -215,7 +212,6 @@ export default function Reports() {
         <ReportDetailsModal report={selectedReport} onClose={() => setSelectedReport(null)} />
       )}
 
-      {/* مودال المشاركة */}
       {reportToShare && (
         <ShareReportModal 
             report={reportToShare} 
@@ -254,12 +250,10 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
         try {
             const payload = { start_date: startDate, end_date: endDate, employee_id: employeeId || null };
             if (type === "attendance") await reportService.generateAttendance(payload);
-            else if (type === "shift") await reportService.generateShift(payload);
-            // تم إزالة خيار performance من هنا
-            
-            alert("Report generated!");
+            else if (type === "shift") await reportService.generateShift(payload);            
+            Alert.success("Report generated!");
             onSuccess();
-        } catch (err) { alert(err.response?.data?.message || "Failed"); } 
+        } catch (err) { Alert.error(err.response?.data?.message || "Failed"); } 
         finally { loadingUtils.hide(); }
     };
     
@@ -317,10 +311,10 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
         loadingUtils.show();
         try {
             await reportService.share(report.id, selectedEmployees);
-            alert("Report shared successfully!");
+            Alert.success("Report shared successfully!");
             onClose();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to share report");
+            Alert.error(err.response?.data?.message || "Failed to share report");
         } finally {
             loadingUtils.hide();
         }
