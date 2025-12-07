@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, Plus, X, FileText, Briefcase, Info } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, Plus, X, FileText, Briefcase, Info, ArrowRightLeft } from 'lucide-react';
 import Button from '../../utils/Button';
 import apiClient from '../../api/apiClient';
 import { useLoading } from '../../contexts/LoaderContext';
 import CalendarModal from '../../components/CalendarModal';
+import SwapRequestModal from '../../components/employee/SwapRequestModal'; 
 import { useTranslation } from 'react-i18next';
+import { Alert } from '../../utils/alertService'; // ✅ 1. Import Alert Service
 
-const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
+const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor, onSwapRequest }) => {
   const { t, i18n } = useTranslation();
 
   if (!shift) return null;
@@ -30,8 +32,11 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
     }
   };
 
+  // Check if shift is in the future
+  const isFutureShift = new Date(shift.start_date_time) > new Date();
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-60 p-4 animate-fadeIn dark:bg-black/80">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fadeIn dark:bg-black/80">
       <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transform transition-all scale-100">
         
         {/* Header */}
@@ -132,7 +137,19 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3">
+          
+          {/* Swap Button Logic */}
+          {shift.status === 'scheduled' && isFutureShift && (
+            <button 
+              onClick={() => onSwapRequest(shift)}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition font-medium shadow-md flex items-center gap-2"
+            >
+              <ArrowRightLeft size={16} />
+              Request Swap
+            </button>
+          )}
+
           <button 
             onClick={onClose}
             className="px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-600 transition font-medium shadow-md"
@@ -153,6 +170,10 @@ const MySchedule = () => {
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedShift, setSelectedShift] = useState(null);
+  
+  // Swap Modal State
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [shiftToSwap, setShiftToSwap] = useState(null);
   
   const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
   const { t, i18n } = useTranslation();
@@ -176,11 +197,12 @@ const MySchedule = () => {
 
       setShifts(response.data.data || []);
     } catch (error) {
-      console.error(t('mySchedule.errors.fetchShifts'), error);
+      console.error(error);
+      Alert.error(t('mySchedule.errors.fetchShifts') || "Failed to load shifts"); // ✅ 2. Use Alert for error
     } finally {
       hideGlobalLoading();
     }
-  }, [currentWeek, showGlobalLoading, hideGlobalLoading, t]);
+  }, [currentWeek, t]); // Removed showGlobalLoading/hideGlobalLoading to prevent loop
 
   // Fetch today's status
   const fetchTodayStatus = async () => {
@@ -188,7 +210,9 @@ const MySchedule = () => {
       const response = await apiClient.get('/api/employee/attendance/today-status');
       setTodayStatus(response.data.data);
     } catch (error) {
-      console.error(t('mySchedule.errors.fetchTodayStatus'), error);
+      console.error(error);
+      // Optional: Alert.error(t('mySchedule.errors.fetchTodayStatus')); 
+      // Sometimes we don't want to alert on background fetch failures to not annoy the user
     }
   };
 
@@ -198,7 +222,8 @@ const MySchedule = () => {
         await fetchShifts();
         await fetchTodayStatus();
       } catch (error) {
-        console.error(t('mySchedule.errors.loadData'), error);
+        console.error(error);
+        Alert.error(t('mySchedule.errors.loadData') || "Error loading schedule data"); // ✅ 3. Use Alert for error
       }
     };
     
@@ -242,7 +267,7 @@ const MySchedule = () => {
     return time.toLocaleTimeString(i18n.language, { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: i18n.language === 'en' // Use 12-hour format for English, 24-hour for Arabic
+      hour12: i18n.language === 'en'
     });
   };
 
@@ -265,6 +290,13 @@ const MySchedule = () => {
       case 'cancelled': return t('mySchedule.status.cancelled');
       default: return status.replace('_', ' ');
     }
+  };
+
+  // Handle Swap Click
+  const handleSwapClick = (shift) => {
+    setShiftToSwap(shift);
+    setSelectedShift(null); // Close details modal
+    setShowSwapModal(true); // Open swap modal
   };
 
   const weekDates = getWeekDates();
@@ -519,13 +551,26 @@ const MySchedule = () => {
         getStatusColor={getStatusColor}
       />
 
-      {/* ✅ Render Details Modal */}
+      {/* Render Details Modal */}
       {selectedShift && (
         <ShiftDetailsModal 
           shift={selectedShift} 
           onClose={() => setSelectedShift(null)} 
           formatTime={formatTime}
           getStatusColor={getStatusColor}
+          onSwapRequest={handleSwapClick}
+        />
+      )}
+
+      {/* Render Swap Modal */}
+      {showSwapModal && shiftToSwap && (
+        <SwapRequestModal 
+            shift={shiftToSwap} 
+            onClose={() => setShowSwapModal(false)}
+            onSuccess={() => {
+                fetchShifts();
+                setShiftToSwap(null);
+            }}
         />
       )}
 </>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router';
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { validateRegister } from "../../utils/validation.js";
+import { useTranslation } from "react-i18next";
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -21,6 +22,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planSlug = searchParams.get("plan");
+  const { t } = useTranslation();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,7 +54,7 @@ export default function Register() {
     );
 
     if (result.success) {
-      setSuccess(result.message || "Registration successful! Redirecting...");
+      setSuccess(t("register.successMessage") || "Registration successful! Redirecting...");
 
       if (planSlug) {
         localStorage.setItem("selectedPlan", planSlug);
@@ -72,12 +74,12 @@ export default function Register() {
 
         <div>
           <h2 className="text-center text-2xl font-extrabold text-[#112D4E] dark:text-sky-200">
-            Create your Tadbire account
+            {t("register.title")}
           </h2>
           <p className="mt-2 text-center text-sm text-[#3F72AF] dark:text-sky-400">
-            Already a member?{' '}
+            {t("register.alreadyMember")}{' '}
             <Link to="/login" className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200">
-              Sign in
+              {t("register.signIn")}
             </Link>
           </p>
         </div>
@@ -86,11 +88,11 @@ export default function Register() {
 
           <div className="space-y-4">
             {[
-              { id: "companyName", label: "Company Name", type: "text" },
-              { id: "name", label: "Full Name", type: "text" },
-              { id: "email", label: "Email", type: "email" },
-              { id: "password", label: "Password", type: "password" },
-              { id: "confirmPassword", label: "Confirm Password", type: "password" }
+              { id: "companyName", label: t("register.companyName"), type: "text" },
+              { id: "name", label: t("register.fullName"), type: "text" },
+              { id: "email", label: t("register.email"), type: "email" },
+              { id: "password", label: t("register.password"), type: "password" },
+              { id: "confirmPassword", label: t("register.confirmPassword"), type: "password" }
             ].map((field) => (
               <div key={field.id}>
                 <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
@@ -133,13 +135,13 @@ export default function Register() {
             disabled={loading}
             className="w-full py-2 px-4 text-sm font-semibold rounded-md bg-[#19283a] dark:bg-sky-700 text-white hover:bg-[#274b74] dark:hover:bg-sky-600 transition disabled:opacity-50"
           >
-            {loading ? "Creating Account..." : "Create Account"}
+            {loading ? t("register.creatingAccount") : t("register.createAccount")}
           </button>
 
           <p className="text-center text-sm text-[#3F72AF] dark:text-sky-400">
-            Back to{' '}
+            {t("register.backTo")}{' '}
             <Link to="/" className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200">
-              Tadbire Home
+              {t("register.homePage")}
             </Link>
           </p>
 

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import {Alert} from "../../utils/alertService.js";
 import ReportDetailsModal from "../superadmin/ReportDetailsModal"; 
+import { useTranslation } from "react-i18next";
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
@@ -20,6 +21,7 @@ export default function Reports() {
   const limit = 6; 
 
   const { show, hide } = useLoading();
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -52,16 +54,16 @@ export default function Reports() {
   }, [filterType]);
 
   const handleDelete = async (id) => {
-    const confirmResult = await Alert.confirm("Are you sure you want to delete this report?");
+    const confirmResult = await Alert.confirm(t("reports.confirmDelete"));
     if(!confirmResult.isConfirmed) return;
 
     try {
       show();
       await reportService.delete(id);
       fetchData();
-      Alert.success("Report deleted successfully"); 
+      Alert.success(t("reports.deleteSuccess")); 
     } catch (err) {
-      Alert.error("Failed to delete report", err);
+      Alert.error(t("reports.deleteFailed"));
     } finally {
       hide();
     }
@@ -81,9 +83,9 @@ export default function Reports() {
     if (report.type === 'attendance') {
       return (
         <div className="flex justify-between text-center mt-4 pt-4 border-t border-slate-50">
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Rate</p><p className="text-sm font-bold text-blue-600">{data.attendance_rate || 0}%</p></div>
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Present</p><p className="text-sm font-bold text-emerald-600">{data.summary?.present || 0}</p></div>
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Late</p><p className="text-sm font-bold text-amber-500">{data.summary?.late || 0}</p></div>
+          <div><p className="text-[10px] text-slate-400 uppercase font-bold">{t("reports.stats.rate")}</p><p className="text-sm font-bold text-blue-600">{data.attendance_rate || 0}%</p></div>
+          <div><p className="text-[10px] text-slate-400 uppercase font-bold">{t("reports.stats.present")}</p><p className="text-sm font-bold text-emerald-600">{data.summary?.present || 0}</p></div>
+          <div><p className="text-[10px] text-slate-400 uppercase font-bold">{t("reports.stats.late")}</p><p className="text-sm font-bold text-amber-500">{data.summary?.late || 0}</p></div>
         </div>
       );
     }
@@ -91,8 +93,8 @@ export default function Reports() {
     if (report.type === 'shift') {
       return (
         <div className="flex justify-between text-center mt-4 pt-4 border-t border-slate-50">
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Total</p><p className="text-sm font-bold text-orange-600">{data.total_shifts || 0}</p></div>
-          <div><p className="text-[10px] text-slate-400 uppercase font-bold">Completed</p><p className="text-sm font-bold text-blue-600">{data.by_status?.completed || 0}</p></div>
+          <div><p className="text-[10px] text-slate-400 uppercase font-bold">{t("reports.stats.total")}</p><p className="text-sm font-bold text-orange-600">{data.total_shifts || 0}</p></div>
+          <div><p className="text-[10px] text-slate-400 uppercase font-bold">{t("reports.stats.completed")}</p><p className="text-sm font-bold text-blue-600">{data.by_status?.completed || 0}</p></div>
         </div>
       );
     }
@@ -105,8 +107,12 @@ export default function Reports() {
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Reports & Analytics</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Generate, view, and analyze your branch reports.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {t("reports.title")}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            {t("reports.subtitle")}
+          </p>
         </div>
         
         <div className="flex gap-3">
@@ -117,16 +123,16 @@ export default function Reports() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
             >
-              <option value="">All Reports</option>
-              <option value="attendance">Attendance</option>
-              <option value="shift">Shift Analysis</option>
+              <option value="">{t("reports.filters.all")}</option>
+              <option value="attendance">{t("reports.filters.attendance")}</option>
+              <option value="shift">{t("reports.filters.shift")}</option>
             </select>
           </div>
           <button 
             onClick={() => setIsGenerateModalOpen(true)}
             className="bg-[#112D4E] hover:bg-[#274b74] text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition shadow-sm active:scale-95"
           >
-            <Plus size={16} /> Generate
+            <Plus size={16} /> {t("reports.generate")}
           </button>
         </div>
       </div>
@@ -146,13 +152,13 @@ export default function Reports() {
                       <Icon size={20} />
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title="View">
+                      <button onClick={() => setSelectedReport(report)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600" title={t("reports.actions.view")}>
                           <Eye size={16}/>
                       </button>
-                      <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title="Share">
+                      <button onClick={() => setReportToShare(report)} className="p-1.5 hover:bg-green-50 rounded-lg text-slate-400 hover:text-green-600" title={t("reports.actions.share")}>
                           <Share2 size={16}/>
                       </button>
-                      <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600" title="Delete">
+                      <button onClick={() => handleDelete(report.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600" title={t("reports.actions.delete")}>
                           <Trash2 size={16}/>
                       </button>
                     </div>
@@ -168,8 +174,10 @@ export default function Reports() {
                   {renderQuickStats(report)}
                   
                   <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
-                     <span>Created: {new Date(report.created_at).toLocaleDateString()}</span>
-                     <span className="capitalize bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{report.type}</span>
+                     <span>{t("reports.created")}: {new Date(report.created_at).toLocaleDateString()}</span>
+                     <span className="capitalize bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                      {t(`reports.types.${report.type}`)}
+                     </span>
                   </div>
                 </div>
               );
@@ -188,7 +196,7 @@ export default function Reports() {
               </button>
               
               <span className="text-sm font-medium text-slate-600">
-                Page {page} of {totalPages}
+                {t("reports.pageOf", { page, totalPages })}
               </span>
 
               <button
@@ -203,7 +211,7 @@ export default function Reports() {
         </>
       ) : (
         <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-500">
-          No reports found matching your filters.
+          {t("reports.noReports")}
         </div>
       )}
 
@@ -239,6 +247,7 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
     const [endDate, setEndDate] = useState("");
     const [employeeId, setEmployeeId] = useState("");
     const [employees, setEmployees] = useState([]);
+    const { t } = useTranslation();
 
     useEffect(() => {
         apiClient.get("/api/admin/employees").then(res => setEmployees(res.data.data || []));
@@ -251,31 +260,61 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
             const payload = { start_date: startDate, end_date: endDate, employee_id: employeeId || null };
             if (type === "attendance") await reportService.generateAttendance(payload);
             else if (type === "shift") await reportService.generateShift(payload);            
-            Alert.success("Report generated!");
+            Alert.success(t("reports.generateSuccess"));
             onSuccess();
-        } catch (err) { Alert.error(err.response?.data?.message || "Failed"); } 
+        } catch (err) { Alert.error(err.response?.data?.message || t("reports.generateFailed")); } 
         finally { loadingUtils.hide(); }
     };
     
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 dark:text-slate-100">
-                <div className="flex justify-between mb-4"><h3 className="font-bold dark:text-slate-100">Generate Report</h3><button onClick={onClose}><X size={20}/></button></div>
+                <div className="flex justify-between mb-4">
+                  <h3 className="font-bold dark:text-slate-100">{t("reports.generateModal.title")}</h3>
+                  <button onClick={onClose}><X size={20}/></button>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <select className="w-full border p-2 rounded" value={type} onChange={e => setType(e.target.value)}>
-                        <option value="attendance">Attendance</option>
-                        <option value="shift">Shift</option>
+                    <select 
+                      className="w-full border p-2 rounded dark:bg-slate-700 dark:text-slate-100 dark:border-slate-600"
+                      value={type} 
+                      onChange={e => setType(e.target.value)}
+                    >
+                        <option value="attendance">{t("reports.types.attendance")}</option>
+                        <option value="shift">{t("reports.types.shift")}</option>
                         {/* Performance removed */}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
-                        <input type="date" required className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                        <input type="date" required className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                        <input 
+                          type="date" 
+                          required 
+                          className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" 
+                          value={startDate} 
+                          onChange={e => setStartDate(e.target.value)} 
+                          placeholder={t("reports.generateModal.startDate")}
+                        />
+                        <input 
+                          type="date" 
+                          required 
+                          className="border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" 
+                          value={endDate} 
+                          onChange={e => setEndDate(e.target.value)}
+                          placeholder={t("reports.generateModal.endDate")}
+                        />
                     </div>
-                    <select className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" value={employeeId} onChange={e => setEmployeeId(e.target.value)}>
-                        <option value="">All Employees</option>
+                    <select 
+                      className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 p-2 rounded" 
+                      value={employeeId} 
+                      onChange={e => setEmployeeId(e.target.value)}
+                    >
+                        <option value="">{t("reports.generateModal.allEmployees")}</option>
                         {employees.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
                     </select>
-                    <button type="submit" className="w-full bg-blue-900 dark:bg-blue-700 text-white p-2 rounded hover:bg-blue-800 dark:hover:bg-blue-600">Generate</button>
+                    <button 
+                      type="submit" 
+                      className="w-full bg-blue-900 dark:bg-blue-700 text-white p-2 rounded hover:bg-blue-800 dark:hover:bg-blue-600"
+                    >
+                      {t("reports.generateModal.generateButton")}
+                    </button>
                 </form>
             </div>
         </div>
@@ -285,6 +324,7 @@ function GenerateReportModal({ onClose, onSuccess, loadingUtils }) {
 function ShareReportModal({ report, onClose, loadingUtils }) {
     const [employees, setEmployees] = useState([]);
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const { t } = useTranslation();
     
     useEffect(() => {
         const loadData = async () => {
@@ -311,10 +351,10 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
         loadingUtils.show();
         try {
             await reportService.share(report.id, selectedEmployees);
-            Alert.success("Report shared successfully!");
+            Alert.success(t("reports.shareSuccess"));
             onClose();
         } catch (err) {
-            Alert.error(err.response?.data?.message || "Failed to share report");
+            Alert.error(err.response?.data?.message || t("reports.shareFailed"));
         } finally {
             loadingUtils.hide();
         }
@@ -325,14 +365,18 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
             <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh] dark:text-slate-100">
                 <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-100 dark:border-slate-600 flex justify-between items-center">
                     <div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100">Share Report</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100">
+                          {t("reports.shareModal.title")}
+                        </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]">{report.title}</p>
                     </div>
                     <button onClick={onClose}><X size={20} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"/></button>
                 </div>
 
                 <div className="p-4 overflow-y-auto">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Select employees to share with:</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                      {t("reports.shareModal.selectEmployees")}
+                    </p>
                     <div className="space-y-2">
                         {employees.map(emp => (
                             <div 
@@ -350,13 +394,13 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{emp.name}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">{emp.position || 'Employee'}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{emp.position || t("reports.shareModal.defaultPosition")}</p>
                                     </div>
                                 </div>
                                 {selectedEmployees.includes(emp._id) && <Check size={18} className="text-blue-600 dark:text-blue-400" />}
                             </div>
                         ))}
-                        {employees.length === 0 && <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-4">No employees found.</p>}
+                        {employees.length === 0 && <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-4">{t("reports.shareModal.noEmployees")}</p>}
                     </div>
                 </div>
 
@@ -370,7 +414,7 @@ function ShareReportModal({ report, onClose, loadingUtils }) {
                             : "bg-[#112D4E] dark:bg-[#1e3a5f] text-white hover:bg-[#274b74] dark:hover:bg-[#2d5080]"
                         }`}
                     >
-                        <Share2 size={16} /> Share with {selectedEmployees.length} Employee(s)
+                        <Share2 size={16} /> {t("reports.shareModal.shareButton", { count: selectedEmployees.length })}
                     </button>
                 </div>
             </div>

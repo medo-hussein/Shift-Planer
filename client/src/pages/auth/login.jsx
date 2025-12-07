@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import GoogleSignInButton from "../../components/GoogleSignInButton.jsx";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -10,6 +11,7 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Load Google SDK
   useEffect(() => {
@@ -72,7 +74,8 @@ export default function Login() {
         {/* Header */}
         <div>
           <h2 className="mt-4 text-center text-3xl font-extrabold text-[#112D4E] dark:text-sky-200">
-            Welcome Back to <span className="text-[#3F72AF] dark:text-sky-400">Tadbire</span>
+            {t("login.welcomeBack")}{' '}
+            <span className="text-[#3F72AF] dark:text-sky-400">{t("login.companyName")}</span>
           </h2>
         </div>
 
@@ -83,7 +86,7 @@ export default function Login() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
-                Email Address
+                {t("login.email")}
               </label>
               <input
                 id="email"
@@ -93,14 +96,14 @@ export default function Login() {
                 value={form.email}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
-                placeholder="Enter your email"
+                placeholder={t("login.emailPlaceholder")}
               />
             </div>
 
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
-                Password
+                {t("login.password")}
               </label>
               <input
                 id="password"
@@ -110,7 +113,7 @@ export default function Login() {
                 value={form.password}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-[#3F72AF] focus:border-[#3F72AF] sm:text-sm"
-                placeholder="Enter your password"
+                placeholder={t("login.passwordPlaceholder")}
               />
             </div>
           </div>
@@ -119,7 +122,7 @@ export default function Login() {
               to="/forget-password"
               className="text-sm font-medium text-[#3F72AF] dark:text-sky-400 hover:text-[#112D4E] dark:hover:text-sky-300"
             >
-              Forgot your password?
+              {t("login.forgotPassword")}
             </Link>
           </div>
 
@@ -137,7 +140,7 @@ export default function Login() {
               disabled={loading || googleLoading}
               className="w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white bg-[#19283a] dark:bg-sky-700 hover:bg-[#274b74] dark:hover:bg-sky-600 transition focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900 focus:ring-[#3F72AF] disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? t("login.signingIn") : t("login.signIn")}
             </button>
           </div>
 
@@ -147,7 +150,9 @@ export default function Login() {
               <div className="w-full border-t border-gray-300 dark:border-slate-600" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400">Or continue with</span>
+              <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400">
+                {t("login.orContinueWith")}
+              </span>
             </div>
           </div>
 
@@ -165,12 +170,12 @@ export default function Login() {
           {/* Footer */}
           <div className="text-center">
             <p className="text-sm text-[#3F72AF] dark:text-sky-400">
-              Don't have an account?{" "}
+              {t("login.noAccount")}{" "}
               <Link
                 to="/register"
                 className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200"
               >
-                Sign up here
+                {t("login.signUpHere")}
               </Link>
             </p>
           </div>

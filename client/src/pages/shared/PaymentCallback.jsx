@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, Loader2, ArrowRight } from "lucide-react";
 import { paymentService } from "../../api/services/paymentService";
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const PaymentCallback = () => {
     const [status, setStatus] = useState("processing"); // processing, success, failed
@@ -12,6 +13,7 @@ const PaymentCallback = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const { refreshUser } = useAuth();
+    const { t } = useTranslation();
 
     useEffect(() => {
         const verifyPayment = async () => {
@@ -29,14 +31,14 @@ const PaymentCallback = () => {
             if (!orderId) {
                 console.error("❌ [Frontend Callback] Missing Order ID");
                 setStatus("failed");
-                setMessage("Invalid payment response. Missing order ID.");
+                setMessage(t("paymentCallback.errors.missingOrderId"));
                 return;
             }
 
             if (success === "false") {
                 console.warn("⚠️ [Frontend Callback] Payment declined/cancelled");
                 setStatus("failed");
-                setMessage("Payment was declined or cancelled.");
+                setMessage(t("paymentCallback.errors.paymentDeclined"));
                 return;
             }
 
@@ -50,8 +52,8 @@ const PaymentCallback = () => {
 
                 if (response.success) {
                     setStatus("success");
-                    setMessage("Payment verified successfully! Your subscription is active.");
-                    addToast("Subscription activated!", "success");
+                    setMessage(t("paymentCallback.messages.verificationSuccess"));
+                    addToast(t("paymentCallback.toasts.subscriptionActivated"), "success");
 
                     // Refresh user data to update the plan badge in navbar
                     console.log("👉 [Frontend Callback] Refreshing user data...");
@@ -60,12 +62,12 @@ const PaymentCallback = () => {
                 } else {
                     console.error("❌ [Frontend Callback] Backend returned success: false");
                     setStatus("failed");
-                    setMessage("Payment verification failed. Please contact support.");
+                    setMessage(t("paymentCallback.errors.verificationFailed"));
                 }
             } catch (error) {
                 console.error("❌ [Frontend Callback] Verification error:", error);
                 setStatus("failed");
-                setMessage(error.response?.data?.message || "Failed to verify payment from server.");
+                setMessage(error.response?.data?.message || t("paymentCallback.errors.serverError"));
             }
         };
 
@@ -83,9 +85,11 @@ const PaymentCallback = () => {
                 {status === "processing" && (
                     <div className="flex flex-col items-center">
                         <Loader2 className="w-16 h-16 text-sky-600 animate-spin mb-6" />
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Processing Payment</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                            {t("paymentCallback.status.processing")}
+                        </h2>
                         <p className="text-gray-500 dark:text-gray-400">
-                            Please wait while we verify your transaction...
+                            {t("paymentCallback.messages.verifying")}
                         </p>
                     </div>
                 )}
@@ -95,7 +99,9 @@ const PaymentCallback = () => {
                         <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
                             <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                            {t("paymentCallback.status.success")}
+                        </h2>
                         <p className="text-gray-500 dark:text-gray-400 mb-8">
                             {message}
                         </p>
@@ -103,7 +109,7 @@ const PaymentCallback = () => {
                             onClick={handleContinue}
                             className="w-full py-3 px-6 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                         >
-                            Go to Dashboard
+                            {t("paymentCallback.buttons.goToDashboard")}
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -114,7 +120,9 @@ const PaymentCallback = () => {
                         <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
                             <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Failed</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                            {t("paymentCallback.status.failed")}
+                        </h2>
                         <p className="text-gray-500 dark:text-gray-400 mb-8">
                             {message}
                         </p>
@@ -122,7 +130,7 @@ const PaymentCallback = () => {
                             onClick={handleContinue}
                             className="w-full py-3 px-6 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg font-semibold transition-all"
                         >
-                            Return to Dashboard
+                            {t("paymentCallback.buttons.returnToDashboard")}
                         </button>
                     </div>
                 )}

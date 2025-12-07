@@ -48,13 +48,39 @@ export const getPlatformDashboard = async (req, res) => {
   }
 };
 
-// @desc    Get All Companies
+// @desc    Get All Companies (Paginated)
 // @route   GET /api/platform/companies
 // @access  Platform Owner
 export const getAllCompanies = async (req, res) => {
   try {
-    const companies = await Company.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: companies });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const [companies, total] = await Promise.all([
+      Company.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Company.countDocuments(query)
+    ]);
+
+    res.json({
+      success: true,
+      data: companies,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

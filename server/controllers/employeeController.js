@@ -18,8 +18,9 @@ export const getEmployeeDashboard = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+    // ✅ FIX: Ensure weekStart is set to the beginning of the day (00:00:00)
+    const weekStart = new Date(today); 
+    weekStart.setDate(today.getDate() - today.getDay()); // Sunday as start of week
 
     // Get dashboard data in parallel (All queries now filtered by tenantOwnerId)
     const [
@@ -86,8 +87,9 @@ export const getEmployeeDashboard = async (req, res) => {
       present_days: weeklyAttendance.filter(a => 
         a.status === 'present' || a.status === 'late'
       ).length,
-      total_hours: weeklyAttendance.reduce((sum, a) => sum + (a.total_hours || 0), 0),
-      overtime: weeklyAttendance.reduce((sum, a) => sum + (a.overtime || 0), 0)
+      // ✅ FIX: Ensure numbers are formatted correctly to 2 decimals
+      total_hours: parseFloat(weeklyAttendance.reduce((sum, a) => sum + (a.total_hours || 0), 0).toFixed(2)),
+      overtime: parseFloat(weeklyAttendance.reduce((sum, a) => sum + (a.overtime || 0), 0).toFixed(2))
     };
 
     const dashboardData = {
@@ -505,6 +507,11 @@ export const endBreak = async (req, res) => {
     }
 
     lastBreak.end = new Date();
+    
+    // Optional: Calculate break duration right here for immediate feedback
+    const durationMs = lastBreak.end - lastBreak.start;
+    lastBreak.duration = Math.floor(durationMs / (1000 * 60)); // minutes
+
     await attendance.save();
 
     return res.json({
@@ -723,5 +730,57 @@ export const getMyReports = async (req, res) => {
       success: false,
       message: err.message 
     });
+  }
+};
+
+// ✅ GET COLLEAGUES (For Swap Selection)
+export const getColleagues = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const branchAdminId = req.user.branch_admin_id; // الموظف تابع لنفس الأدمن
+    const tenantOwnerId = req.user.super_admin_id;
+
+    // هات كل الموظفين في نفس الفرع ماعدا أنا
+    const colleagues = await User.find({
+      branch_admin_id: branchAdminId,
+      super_admin_id: tenantOwnerId,
+      role: "employee",
+      _id: { $ne: userId }, // استبعاد نفسي
+      is_active: true
+    }).select("name email position avatar");
+
+    return res.json({
+      success: true,
+      data: colleagues
+    });
+  } catch (err) {
+    console.error("getColleagues error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ✅ GET COLLEAGUE SHIFTS (For Shift-for-Shift Swap)
+export const getColleagueShifts = async (req, res) => {
+  try {
+    const { colleagueId } = req.params;
+    const tenantOwnerId = getTenantOwnerId(req.user);
+
+    // Get future scheduled shifts for the colleague
+    const shifts = await Shift.find({
+      employee_id: colleagueId,
+      super_admin_id: tenantOwnerId,
+      status: "scheduled",
+      start_date_time: { $gt: new Date() } // Future only
+    })
+    .sort({ start_date_time: 1 })
+    .select('_id start_date_time end_date_time title shift_type');
+
+    return res.json({
+      success: true,
+      data: shifts
+    });
+  } catch (err) {
+    console.error("getColleagueShifts error:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };

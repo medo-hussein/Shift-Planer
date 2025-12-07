@@ -12,6 +12,9 @@ export const shiftService = {
   // Create multiple shifts in bulk
   createBulkShifts: (data) => apiClient.post(`${BASE}/bulk`, data),
 
+  // Generate shifts using AI
+  generateFromAI: (command) => apiClient.post(`${BASE}/ai-generate`, { command }),
+
   // Update a shift by id
   updateShift: (id, data) => apiClient.put(`${BASE}/${id}`, data),
 

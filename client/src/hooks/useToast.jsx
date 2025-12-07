@@ -1,20 +1,29 @@
-import { useState } from 'react';
-import Toast from '../components/Toast';
+import Swal from 'sweetalert2';
 
 export const useToast = () => {
-  const [toasts, setToasts] = useState([]);
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener('mouseenter', Swal.stopTimer)
+      toast.addEventListener('mouseleave', Swal.resumeTimer)
+    }
+  });
 
   const addToast = (message, type = 'info', duration = 3000) => {
-    const id = Date.now();
-    const newToast = { id, message, type, duration };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    return id;
+    Toast.fire({
+      icon: type,
+      title: message,
+      timer: duration
+    });
   };
 
   const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    // SweetAlert handles removal automatically
   };
 
   const success = (message, duration) => addToast(message, 'success', duration);
@@ -22,19 +31,8 @@ export const useToast = () => {
   const warning = (message, duration) => addToast(message, 'warning', duration);
   const info = (message, duration) => addToast(message, 'info', duration);
 
-  const ToastContainer = () => (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
-    </div>
-  );
+  // No-op component to maintain compatibility with existing code
+  const ToastContainer = () => null;
 
   return {
     addToast,

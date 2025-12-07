@@ -9,6 +9,8 @@
   "scheduleDemo": "Schedule Demo",
   "noCreditCardRequired": "No credit card required • Cancel anytime",
   "whyChooseTadbir": "Why choose Tadbir?",
+  "theme": "Theme",
+  "navDashboard": "Dashboard",
 
   "footer": {
     "product": "Product",
@@ -118,7 +120,7 @@
   },
   "dashboard": {
     "branch": "Branch",
-    "welcome": "Welcome backssssssssssssssssssssssssssssssssssss",
+    "welcome": "Welcome back",
     "admin": "Admin",
     "hero": {
       "description": "Manage your branch activity. You have",
@@ -721,6 +723,989 @@
       "updateSuccess": "Profile updated successfully!",
       "updateFailed": "Failed to update profile",
       "imageUploadFailed": "Failed to upload image. Try a smaller file."
+    }
+  },
+  "register": {
+    "title": "Create your Tadbire account",
+    "alreadyMember": "Already a member?",
+    "signIn": "Sign in",
+    "companyName": "Company Name",
+    "fullName": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "creatingAccount": "Creating Account...",
+    "createAccount": "Create Account",
+    "backTo": "Back to",
+    "homePage": "Tadbire Home",
+    "successMessage": "Registration successful! Redirecting..."
+  },
+  "login": {
+    "welcomeBack": "Welcome Back to",
+    "companyName": "Tadbire",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot your password?",
+    "signingIn": "Signing in...",
+    "signIn": "Sign in",
+    "orContinueWith": "Or continue with",
+    "noAccount": "Don't have an account?",
+    "signUpHere": "Sign up here"
+  },
+  "navbar": {
+    "homeTitle": "Go to Home Page",
+    "broadcastTitle": "Broadcast Message",
+    "notifications": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications yet",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "googleSignIn": {
+    "failedToGetUrl": "Failed to get Google auth URL",
+    "buttonText": "Sign in with Google",
+    "redirecting": "Redirecting to Google..."
+  },
+  "pricing": {
+    "failedToLoad": "Failed to load plans",
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Choose the plan that fits your business needs. No hidden fees, cancel anytime.",
+    "mostPopular": "Most Popular",
+    "perMonth": "month",
+    "perYear": "year",
+    "getStartedFree": "Get Started Free",
+    "subscribeNow": "Subscribe Now"
+  },
+  "timeTracking": {
+    "title": "Time Tracking",
+    "subtitle": "Monitor employee clock in/out and manage time cards",
+    "failedToLoad": "Failed to load data",
+    "noDataToExport": "No data to export",
+    "exportButton": "Export",
+    "filtersButton": "Filters",
+    "liveTab": "Live Time Clock",
+    "timeCardsTab": "Time Cards",
+    "filterByStatus": "Filter By Status",
+    "currentlyWorking": "Currently Working ({{count}})",
+    "defaultPosition": "Employee",
+    "startTime": "Start Time",
+    "duration": "Duration",
+    "pausedBreak": "Paused (Break)",
+    "tracking": "Tracking...",
+    "noActiveEmployees": "No active employees found right now.",
+    "timeCardManagement": "Time Card Management",
+    "active": "Active",
+    "hoursShort": "H",
+    "viewButton": "View",
+    "noRecordsFound": "No records found for this date.",
+
+    "status": {
+      "absent": "Absent",
+      "approved": "Approved",
+      "onBreak": "On Break",
+      "working": "Working"
+    },
+
+    "statusFilters": {
+      "all": "All",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent"
+    },
+
+    "exportColumns": {
+      "name": "Name",
+      "date": "Date",
+      "in": "In",
+      "out": "Out",
+      "status": "Status",
+      "active": "Active"
+    },
+
+    "exportSheetName": "Attendance",
+    "exportFileName": "Attendance",
+    "exportSuccess": "Exported successfully",
+    "exportFailed": "Export failed",
+
+    "modal": {
+      "title": "Time Card Details",
+      "employee": "Employee",
+      "summary": "Summary",
+      "date": "Date",
+      "total": "Total",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "notes": "Notes",
+      "close": "Close"
+    },
+
+    "hours": "hrs"
+  },
+  "timeOff": {
+    "title": "Time Off Management",
+    "subtitle": "Manage team leaves & track your own.",
+    "requestLeave": "Request Leave",
+    "employeeRequests": "Employee Requests",
+    "myRequests": "My Requests",
+    "noRequestsFound": "No requests found.",
+    "noSubmissions": "You haven't submitted any requests yet.",
+    "approvalNote": "Approval Note",
+    "rejectionReason": "Rejection Reason",
+    "enterNote": "Please enter your note:",
+    "typeHere": "Type here...",
+    "requestStatusSuccess": "Request {{status}} successfully.",
+    "actionFailed": "Action failed",
+    "requestSentSuccess": "Request sent to Super Admin successfully.",
+    "submitFailed": "Failed",
+    "days": "Days",
+    "approve": "Approve",
+    "reject": "Reject",
+    "leave": "Leave",
+    "myReason": "My Reason",
+    "superAdminNote": "Super Admin Note",
+    "submittedOn": "Submitted on",
+    "submitLeaveRequest": "Submit Leave Request",
+    "type": "Type",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "reason": "Reason",
+    "submitRequestButton": "Submit Request",
+
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+
+    "leaveTypes": {
+      "vacation": "Vacation",
+      "sick": "Sick Leave",
+      "personal": "Personal"
+    }
+  },
+  "swapApprovals": {
+    "title": "Shift Swap Approvals",
+    "pendingApproval": "Pending Approval",
+    "history": "History",
+    "noRequestsFound": "No requests found.",
+    "confirmReject": "Are you sure you want to reject this request?",
+    "approveTitle": "Approve Swap",
+    "addNoteLabel": "Add a note (optional):",
+    "addNotePlaceholder": "e.g. Approved per policy",
+    "approveSuccess": "Request approved and schedule updated.",
+    "rejectSuccess": "Request rejected.",
+    "actionFailed": "Action failed",
+    "unknown": "Unknown",
+    "openShift": "Open Shift",
+    "shift": "Shift",
+    "shiftDeleted": "Original Shift Deleted",
+    "approveButton": "Approve",
+    "rejectButton": "Reject",
+
+    "status": {
+      "needsApproval": "Needs Approval",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "schedule": {
+    "title": "Schedule Management",
+    "subtitle": "Plan and manage employee shifts.",
+    "unknown": "Unknown",
+    "aiAssist": "AI Assist",
+    "addShift": "Add Shift",
+
+    "legend": {
+      "scheduled": "Scheduled",
+      "active": "Active",
+      "completed": "Completed",
+      "missed": "Missed"
+    },
+
+    "validation": {
+      "requiredFields": "Please select at least one employee and time range."
+    },
+
+    "success": {
+      "updated": "Shift updated successfully!",
+      "created": "Shift(s) created successfully!",
+      "deleted": "Shift deleted successfully!"
+    },
+
+    "errors": {
+      "operationFailed": "Operation failed",
+      "deleteFailed": "Failed to delete shift"
+    },
+
+    "confirm": {
+      "delete": "Are you sure you want to delete this shift?"
+    },
+
+    "voice": {
+      "browserNotSupported": "Your browser does not support voice input. Please use Chrome or Edge.",
+      "microphoneBlocked": "Microphone access blocked. Please allow microphone access.",
+      "stopListening": "Stop listening",
+      "startListening": "Start voice input"
+    },
+
+    "ai": {
+      "failedToUnderstand": "Failed to understand command. Try being more specific.",
+      "shiftsCreated": "{{count}} shifts created successfully!",
+      "failedToSave": "Failed to save shifts.",
+      "modalTitle": "AI Smart Scheduler",
+      "poweredBy": "Powered by Gemini AI",
+      "howItWorks": "How it works:",
+      "description": "Describe your schedule needs in plain English or Arabic. Mention names, days, times, and shift types.",
+      "example": "Example: \"Ahmed morning shift next week from 9am to 5pm, and Sarah night shift on Friday.\"",
+      "commandPlaceholder": "Type your command or use the microphone...",
+      "analyzing": "Analyzing Request...",
+      "generatePlan": "Generate Plan",
+      "previewTitle": "Preview ({{count}} Shifts)",
+      "discard": "Discard & Try Again",
+      "confirmSave": "Confirm & Save"
+    },
+
+    "shiftTypes": {
+      "regular": "Regular",
+      "overtime": "Overtime",
+      "holiday": "Holiday",
+      "weekend": "Weekend",
+      "emergency": "Emergency"
+    },
+
+    "modal": {
+      "viewCompleted": "View Completed Shift",
+      "editShift": "Edit Shift",
+      "addShift": "Add New Shift",
+      "readOnly": "Read Only",
+      "readOnlyWarning": "This shift is completed and cannot be edited to preserve historical records.",
+      "assignTo": "Assign To",
+      "deselectAll": "Deselect All",
+      "selectAll": "Select All",
+      "defaultPosition": "Employee",
+      "noEmployees": "No employees found.",
+      "selectedCount": "{{count}} employee(s) selected",
+      "shiftTitle": "Shift Title",
+      "titlePlaceholder": "e.g. Morning Shift",
+      "type": "Type",
+      "overtimeWarning": "All hours in this shift will be counted as Overtime.",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Main Branch, Remote...",
+      "notes": "Notes",
+      "notesPlaceholder": "Add optional notes...",
+      "deleteShift": "Delete Shift",
+      "close": "Close",
+      "cancel": "Cancel",
+      "updateShift": "Update Shift",
+      "createShift": "Create Shift"
+    }
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "subtitle": "Generate, view, and analyze your branch reports.",
+    "generate": "Generate",
+    "created": "Created",
+    "pageOf": "Page {{page}} of {{totalPages}}",
+    "noReports": "No reports found matching your filters.",
+    "confirmDelete": "Are you sure you want to delete this report?",
+    "deleteSuccess": "Report deleted successfully",
+    "deleteFailed": "Failed to delete report",
+    "generateSuccess": "Report generated!",
+    "generateFailed": "Failed",
+    "shareSuccess": "Report shared successfully!",
+    "shareFailed": "Failed to share report",
+
+    "filters": {
+      "all": "All Reports",
+      "attendance": "Attendance",
+      "shift": "Shift Analysis"
+    },
+
+    "types": {
+      "attendance": "Attendance",
+      "shift": "Shift"
+    },
+
+    "stats": {
+      "rate": "Rate",
+      "present": "Present",
+      "late": "Late",
+      "total": "Total",
+      "completed": "Completed"
+    },
+
+    "actions": {
+      "view": "View",
+      "share": "Share",
+      "delete": "Delete"
+    },
+
+    "generateModal": {
+      "title": "Generate Report",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "allEmployees": "All Employees",
+      "generateButton": "Generate"
+    },
+
+    "shareModal": {
+      "title": "Share Report",
+      "selectEmployees": "Select employees to share with:",
+      "defaultPosition": "Employee",
+      "noEmployees": "No employees found.",
+      "shareButton": "Share with {{count}} Employee(s)"
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "Manage your team members and their schedules",
+    "addEmployee": "Add New Employee",
+    "searchPlaceholder": "Search employees by name, email, or phone...",
+    "resetFilters": "Reset Filters",
+    "noEmployees": "No employees found",
+    "tryAdjusting": "Try adjusting your search or filters",
+    "getStarted": "Get started by adding your first employee",
+    "addEmployee": "Add Employee",
+    "shifts": "shifts",
+    "clockedIn": "Clocked in",
+    "notClockedIn": "Not clocked in",
+    "notProvided": "Not provided",
+    "notAvailable": "Not Available",
+    "invalidDate": "Invalid Date",
+
+    "stats": {
+      "totalEmployees": "Total Employees",
+      "presentToday": "Present Today",
+      "absentToday": "Absent Today",
+      "totalShifts": "Total Shifts"
+    },
+
+    "filters": {
+      "allPositions": "All Positions",
+      "allStatus": "All Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "presentToday": "Present Today",
+      "lateToday": "Late Today",
+      "absentToday": "Absent Today"
+    },
+
+    "table": {
+      "employee": "Employee",
+      "position": "Position",
+      "contact": "Contact",
+      "status": "Status",
+      "shifts": "Shifts",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+
+    "status": {
+      "inactive": "Inactive",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "active": "Active"
+    },
+
+    "actions": {
+      "viewDetails": "View Details",
+      "viewAttendance": "View Attendance",
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "activated": "activated",
+      "deactivated": "deactivated",
+      "delete": "Delete"
+    },
+
+    "success": {
+      "created": "Employee created successfully",
+      "updated": "Employee updated successfully",
+      "deleted": "Employee \"{{name}}\" has been deleted successfully"
+    },
+
+    "errors": {
+      "fetchFailed": "Failed to fetch employees",
+      "createFailed": "Failed to create employee",
+      "updateFailed": "Failed to update employee",
+      "toggleFailed": "Failed to update employee status",
+      "deleteFailed": "Failed to delete employee"
+    },
+
+    "confirmDelete": "You are about to delete \"{{name}}\". This action cannot be undone!",
+
+    "statusChange": {
+      "title": "Change Status",
+      "message": "Are you sure you want to {{action}} {{name}}?",
+      "confirmActivate": "Yes, activate",
+      "confirmDeactivate": "Yes, deactivate",
+      "success": "Employee \"{{name}}\" {{action}} successfully"
+    },
+
+    "pageOf": "Page {{page}} of {{totalPages}}"
+  },
+
+  "common": {
+    "cancel": "Cancel"
+  },
+  "authError": {
+    "title": "Authentication Failed",
+    "defaultMessage": "Authentication failed",
+    "backToLogin": "Back to Login",
+    "tryAgain": "Try Google Sign-In Again",
+    "needHelp": "Need Help?",
+    "helpTips": {
+      "validAccount": "Make sure you're using a valid Google account",
+      "popups": "Check that your browser allows pop-ups from this site",
+      "clearCache": "Try clearing your browser cache and cookies",
+      "contactSupport": "Contact support if the problem persists"
+    }
+  },
+  "authSuccess": {
+    "loading": "Completing authentication...",
+    "errorTitle": "Authentication Failed",
+    "backToLogin": "Back to Login",
+    "errors": {
+      "noToken": "Authentication token not found",
+      "failed": "Authentication failed"
+    }
+  },
+  "forgetPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your email and check your mail please ?",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "sendButton": "Send Reset Link",
+    "sending": "Sending...",
+    "successMessage": "A reset link has been sent to your email.",
+    "defaultError": "Something went wrong.",
+    "rememberPassword": "Remember your password?",
+    "signIn": "Sign in"
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "resetButton": "Reset Password",
+    "updating": "Updating...",
+    "successMessage": "Password reset successful! Redirecting to login...",
+    "defaultError": "Something went wrong.",
+    "backTo": "Back to",
+    "login": "Login"
+  },
+  "verifyOtp": {
+    "title": "Verify Your Account",
+    "subtitle": "Enter the OTP sent to",
+    "otpLabel": "OTP Code",
+    "otpPlaceholder": "Enter OTP",
+    "verifyButton": "Verify OTP",
+    "verifying": "Verifying...",
+    "noOtpReceived": "Didn't receive OTP?",
+    "resendOtp": "Resend OTP",
+    "errors": {
+      "noOtp": "Please enter the OTP",
+      "noEmail": "No email found. Please register again."
+    }
+  },
+  "swapRequests": {
+    "title": "Shift Swaps",
+    "incomingTab": "Incoming Requests ({{count}})",
+    "outgoingTab": "My Requests ({{count}})",
+    "noRequests": "No {{type}} requests found.",
+    "incoming": "incoming",
+    "outgoing": "outgoing",
+    "confirmReject": "Are you sure you want to reject this request?",
+    "acceptSuccess": "Request accepted! Waiting for manager approval.",
+    "rejectSuccess": "Request rejected.",
+    "actionFailed": "Action failed",
+    "requestedOn": "Requested on",
+    "requestTitle": "{{name}} wants to swap",
+    "colleague": "Colleague",
+    "shift": "Shift",
+    "acceptButton": "Accept",
+    "rejectButton": "Reject",
+
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+
+    "statusMessages": {
+      "pending": "Waiting for a colleague to accept...",
+      "accepted": "Colleague accepted. Waiting for manager approval.",
+      "approved": "Swap approved! Schedule updated.",
+      "rejected": "Request was rejected."
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "Manage all employees across branches",
+    "buttons": {
+      "addEmployee": "Add Employee",
+      "saveChanges": "Save Changes",
+      "createAccount": "Create Account"
+    },
+    "selectBranch": {
+      "placeholder": "Select a branch to view employees",
+      "title": "Select a Branch",
+      "description": "Choose a branch from the dropdown above to view its employees"
+    },
+    "search": {
+      "placeholder": "Search employees by name or email..."
+    },
+    "noEmployeesFound": "No employees found in this branch.",
+    "unknownBranch": "Unknown Branch",
+    "actions": {
+      "menu": "Actions menu",
+      "edit": "Edit",
+      "transfer": "Transfer",
+      "delete": "Delete"
+    },
+    "card": {
+      "defaultPosition": "No position set",
+      "notAvailable": "Not available"
+    },
+    "alerts": {
+      "confirmDelete": "Are you sure you want to delete this employee?",
+      "deleteSuccess": "Employee deleted successfully",
+      "deleteFailed": "Failed to delete employee",
+      "updateSuccess": "Employee updated successfully",
+      "createSuccess": "Employee created successfully",
+      "selectBranchWarning": "Please select a branch first",
+      "operationFailed": "Operation failed",
+      "transferSuccess": "Employee transferred successfully",
+      "transferFailed": "Transfer failed"
+    },
+    "modal": {
+      "editTitle": "Edit Employee",
+      "createTitle": "Add New Employee",
+      "close": "Close modal"
+    },
+    "form": {
+      "name": "Name",
+      "position": "Position",
+      "email": "Email",
+      "assignToBranch": "Assign to Branch",
+      "selectBranch": "Select branch",
+      "phone": "Phone",
+      "password": "Password",
+      "newPasswordOptional": "New Password (optional)"
+    },
+    "transferModal": {
+      "title": "Transfer Employee",
+      "description": "Transfer employee",
+      "selectTargetBranch": "Select target branch...",
+      "confirmTransfer": "Confirm Transfer"
+    }
+  },
+  "subscription": {
+    "title": "Subscription Plans",
+    "subtitle": "Upgrade your workspace to unlock more features.",
+    "selected": "Selected",
+    "currentPlan": "Current Plan",
+    "subscribeButton": "Subscribe",
+    "processing": "Processing...",
+    "alreadyOnFreePlan": "You are already on the free plan.",
+
+    "errors": {
+      "failedToLoad": "Failed to load plans",
+      "paymentInitFailed": "Failed to initiate payment",
+      "paymentFailed": "Payment failed"
+    }
+  },
+  "paymentCallback": {
+    "status": {
+      "processing": "Processing Payment",
+      "success": "Payment Successful!",
+      "failed": "Payment Failed"
+    },
+    "messages": {
+      "verifying": "Please wait while we verify your transaction...",
+      "verificationSuccess": "Payment verified successfully! Your subscription is active."
+    },
+    "buttons": {
+      "goToDashboard": "Go to Dashboard",
+      "returnToDashboard": "Return to Dashboard"
+    },
+    "toasts": {
+      "subscriptionActivated": "Subscription activated!"
+    },
+    "errors": {
+      "missingOrderId": "Invalid payment response. Missing order ID.",
+      "paymentDeclined": "Payment was declined or cancelled.",
+      "verificationFailed": "Payment verification failed. Please contact support.",
+      "serverError": "Failed to verify payment from server."
+    }
+  },
+  "timeTracking": {
+    "title": "Time Tracking",
+    "subtitle": "Track your attendance, breaks and work hours",
+    "currentTime": "Current Time",
+    "attendanceStatus": "Attendance Status",
+    "currentStatus": {
+      "label": "Current Status",
+      "clockedIn": "Clocked In",
+      "notClockedIn": "Not Clocked In",
+      "onBreak": "On Break"
+    },
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "scheduledShift": "Scheduled Shift",
+    "shift": {
+      "defaultTitle": "Regular Shift"
+    },
+    "noShiftScheduled": "No shift scheduled for today",
+    "loadingStatus": "Loading status...",
+    "form": {
+      "locationPlaceholder": "Enter your location (e.g., Office, Remote)",
+      "clockOutNotesPlaceholder": "Add notes (optional)",
+      "breakReasonPlaceholder": "Reason for break (optional)"
+    },
+    "buttons": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "startBreak": "Start Break",
+      "endBreak": "End Break"
+    },
+    "breakManagement": "Break Management",
+    "breakPrompt": "Ready for a break? Let's log it!",
+    "onBreak": "Currently On Break",
+    "breakSince": "Since",
+    "clockInFirst": "Clock in first to take breaks",
+    "stats": {
+      "totalHours": "Total Hours",
+      "overtime": "Overtime",
+      "presentDays": "Present Days",
+      "totalDays": "Total Days"
+    },
+    "attendanceHistory": "Attendance History",
+    "noAttendanceRecords": "No attendance records found",
+    "table": {
+      "date": "Date",
+      "checkIn": "Check In",
+      "checkOut": "Check Out",
+      "hours": "Hours",
+      "status": "Status"
+    },
+    "status": {
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "halfDay": "Half Day"
+    },
+    "duration": {
+      "default": "--:--"
+    },
+    "alerts": {
+      "clockInSuccess": "Successfully clocked in!",
+      "clockInFailed": "Failed to clock in",
+      "clockInFailedTitle": "Clock In Error",
+      "clockOutSuccess": "Successfully clocked out!",
+      "clockOutFailed": "Failed to clock out",
+      "breakStartSuccess": "Break started successfully!",
+      "breakStartFailed": "Failed to start break",
+      "breakEndSuccess": "Break ended successfully!",
+      "breakEndFailed": "Failed to end break"
+    },
+    "errors": {
+      "fetchTodayStatus": "Error fetching today's status",
+      "fetchAttendanceHistory": "Error fetching attendance history",
+      "fetchSummaryStats": "Error fetching summary stats",
+      "loadData": "Error loading data"
+    }
+  },
+  "timeTracking": {
+    "title": "Employee Time Tracking",
+    "subtitle": "Monitor attendance, breaks, and work hours across your organization",
+    "failedToLoad": "Failed to load attendance data. Please try again.",
+    "exportButton": "Export",
+    "filtersButton": "Filters",
+    "liveTab": "Live View",
+    "timeCardsTab": "Time Cards",
+    "filterByStatus": "Filter by status",
+    "currentlyWorking": "Currently Working ({{count}})",
+    "defaultPosition": "Employee",
+    "startTime": "Start Time",
+    "duration": "Duration",
+    "pausedBreak": "On Break",
+    "tracking": "Tracking",
+    "noActiveEmployees": "No employees are currently working",
+    "timeCardManagement": "Time Card Management",
+    "viewButton": "View",
+    "active": "Active",
+    "hoursShort": "h",
+    "noRecordsFound": "No time cards found for this date",
+    "modal": {
+      "title": "Attendance Details",
+      "employee": "Employee",
+      "summary": "Summary",
+      "date": "Date",
+      "total": "Total hours",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "notes": "Notes",
+      "close": "Close"
+    },
+    "status": {
+      "absent": "Absent",
+      "approved": "Approved",
+      "onBreak": "On Break",
+      "working": "Working",
+      "present": "Present",
+      "late": "Late"
+    },
+    "statusFilters": {
+      "all": "All",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent"
+    },
+    "exportColumns": {
+      "name": "Employee Name",
+      "date": "Date",
+      "in": "Check In",
+      "out": "Check Out",
+      "status": "Status"
+    },
+    "exportSheetName": "Attendance",
+    "exportFileName": "attendance_report",
+    "exportSuccess": "Attendance report exported successfully!",
+    "exportFailed": "Failed to export attendance report",
+    "noDataToExport": "No data available to export"
+  },
+  "timeTracking": {
+    "title": "Employee Time Tracking",
+    "subtitle": "Monitor attendance, breaks, and work hours across your organization",
+    "failedToLoad": "Failed to load attendance data. Please try again.",
+    "exportButton": "Export",
+    "filtersButton": "Filters",
+    "liveTab": "Live View",
+    "timeCardsTab": "Time Cards",
+    "filterByStatus": "Filter by status",
+    "currentlyWorking": "Currently Working ({{count}})",
+    "defaultPosition": "Employee",
+    "startTime": "Start Time",
+    "duration": "Duration",
+    "pausedBreak": "On Break",
+    "tracking": "Tracking",
+    "noActiveEmployees": "No employees are currently working",
+    "timeCardManagement": "Time Card Management",
+    "viewButton": "View",
+    "active": "Active",
+    "hoursShort": "h",
+    "noRecordsFound": "No time cards found for this date",
+
+    "modal": {
+      "title": "Attendance Details",
+      "employee": "Employee",
+      "summary": "Summary",
+      "date": "Date",
+      "total": "Total hours",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "notes": "Notes",
+      "close": "Close"
+    },
+    "status": {
+      "absent": "Absent",
+      "approved": "Approved",
+      "onBreak": "On Break",
+      "working": "Working",
+      "present": "Present",
+      "late": "Late"
+    },
+    "statusFilters": {
+      "all": "All",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent"
+    },
+    "exportColumns": {
+      "name": "Employee Name",
+      "date": "Date",
+      "in": "Check In",
+      "out": "Check Out",
+      "status": "Status"
+    },
+    "exportSheetName": "Attendance",
+    "exportFileName": "attendance_report",
+    "exportSuccess": "Attendance report exported successfully!",
+    "exportFailed": "Failed to export attendance report",
+    "noDataToExport": "No data available to export"
+  },
+  "employeeTimeTracking": {
+    "title": "My Time Tracking",
+    "subtitle": "Track your work hours and breaks",
+    "currentTime": "Current Time",
+    "attendanceStatus": "Attendance Status",
+    "currentStatus": {
+      "label": "Current Status",
+      "clockedIn": "Clocked In",
+      "notClockedIn": "Not Clocked In",
+      "onBreak": "On Break"
+    },
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "scheduledShift": "Scheduled Shift",
+    "shift": {
+      "defaultTitle": "Regular Shift"
+    },
+    "noShiftScheduled": "No shift scheduled for today",
+    "loadingStatus": "Loading status...",
+    "form": {
+      "locationPlaceholder": "Enter your location (e.g., Office, Remote)",
+      "clockOutNotesPlaceholder": "Add notes (optional)",
+      "breakReasonPlaceholder": "Reason for break (optional)"
+    },
+    "buttons": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "startBreak": "Start Break",
+      "endBreak": "End Break"
+    },
+    "breakManagement": "Break Management",
+    "breakPrompt": "Ready for a break? Let's log it!",
+    "onBreak": "Currently On Break",
+    "breakSince": "Since",
+    "clockInFirst": "Clock in first to take breaks",
+    "stats": {
+      "totalHours": "Total Hours",
+      "overtime": "Overtime",
+      "presentDays": "Present Days",
+      "totalDays": "Total Days"
+    },
+    "attendanceHistory": "Attendance History",
+    "noAttendanceRecords": "No attendance records found",
+    "table": {
+      "date": "Date",
+      "checkIn": "Check In",
+      "checkOut": "Check Out",
+      "hours": "Hours",
+      "status": "Status"
+    },
+    "status": {
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "halfDay": "Half Day"
+    },
+    "duration": {
+      "default": "--:--"
+    },
+    "alerts": {
+      "clockInSuccess": "Successfully clocked in!",
+      "clockInFailed": "Failed to clock in",
+      "clockInFailedTitle": "Clock In Error",
+      "clockOutSuccess": "Successfully clocked out!",
+      "clockOutFailed": "Failed to clock out",
+      "breakStartSuccess": "Break started successfully!",
+      "breakStartFailed": "Failed to start break",
+      "breakEndSuccess": "Break ended successfully!",
+      "breakEndFailed": "Failed to end break"
+    },
+    "errors": {
+      "fetchTodayStatus": "Error fetching today's status",
+      "fetchAttendanceHistory": "Error fetching attendance history",
+      "fetchSummaryStats": "Error fetching summary stats",
+      "loadData": "Error loading data"
+    }
+  },"admin": {
+    "employees": {
+      "title": "Employee Management",
+      "subtitle": "Manage and monitor your workforce",
+      "addEmployee": "Add Employee",
+      "searchPlaceholder": "Search employees...",
+      "resetFilters": "Reset Filters",
+      "notAvailable": "N/A",
+      "invalidDate": "Invalid Date",
+      "notProvided": "Not provided",
+      "shifts": "shifts",
+      "clockedIn": "Clocked in today",
+      "notClockedIn": "Not clocked in",
+      "noEmployees": "No employees found",
+      "tryAdjusting": "Try adjusting your search or filters to find what you're looking for.",
+      "getStarted": "Get started by adding your first employee to the system.",
+      "pageOf": "Page {page} of {totalPages}",
+      
+      "stats": {
+        "totalEmployees": "Total Employees",
+        "presentToday": "Present Today",
+        "absentToday": "Absent Today",
+        "totalShifts": "Total Shifts"
+      },
+      
+      "filters": {
+        "allPositions": "All Positions",
+        "allStatus": "All Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "presentToday": "Present Today",
+        "lateToday": "Late Today",
+        "absentToday": "Absent Today"
+      },
+      
+      "status": {
+        "inactive": "Inactive",
+        "present": "Present",
+        "late": "Late",
+        "absent": "Absent",
+        "active": "Active"
+      },
+      
+      "table": {
+        "employee": "Employee",
+        "position": "Position",
+        "contact": "Contact",
+        "status": "Status",
+        "shifts": "Shifts",
+        "joined": "Joined",
+        "actions": "Actions"
+      },
+      
+      "actions": {
+        "viewDetails": "View Details",
+        "viewAttendance": "View Attendance",
+        "edit": "Edit",
+        "deactivate": "Deactivate",
+        "activate": "Activate",
+        "activated": "activated",
+        "deactivated": "deactivated",
+        "delete": "Delete"
+      },
+      
+      "statusChange": {
+        "title": "Change Status",
+        "message": "Are you sure you want to {action} {name}?",
+        "confirmActivate": "Yes, Activate",
+        "confirmDeactivate": "Yes, Deactivate",
+        "success": "{name} has been {action} successfully."
+      },
+      
+      "confirmDelete": "Are you sure you want to delete {name}? This action cannot be undone.",
+      
+      "success": {
+        "created": "Employee created successfully!",
+        "updated": "Employee updated successfully!",
+        "deleted": "{name} has been deleted successfully!"
+      },
+      
+      "errors": {
+        "fetchFailed": "Failed to fetch employees",
+        "createFailed": "Failed to create employee",
+        "updateFailed": "Failed to update employee",
+        "toggleFailed": "Failed to change status",
+        "deleteFailed": "Failed to delete employee"
+      }
     }
   }
 }

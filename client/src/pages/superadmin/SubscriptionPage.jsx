@@ -4,6 +4,7 @@ import { Check, Loader2, CreditCard } from "lucide-react";
 import { planService } from "../../api/services/planService";
 import { initiatePayment } from "../../api/services/paymentService";
 import { useToast } from "../../hooks/useToast";
+import { useTranslation } from "react-i18next";
 
 const SubscriptionPage = () => {
     const [plans, setPlans] = useState([]);
@@ -11,6 +12,7 @@ const SubscriptionPage = () => {
     const [processing, setProcessing] = useState(null);
     const [searchParams] = useSearchParams();
     const { addToast: showToast } = useToast();
+    const { t } = useTranslation();
 
     const preSelectedPlanSlug = searchParams.get("plan");
 
@@ -27,20 +29,20 @@ const SubscriptionPage = () => {
                 setPlans(plansList.sort((a, b) => a.price - b.price));
             } catch (err) {
                 console.error("Failed to fetch plans:", err);
-                showToast("Failed to load plans", "error");
+                showToast(t("subscription.errors.failedToLoad"), "error");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchPlans();
-    }, []);
+    }, [t]);
 
     const handleSubscribe = async (plan) => {
         console.log("👉 [Frontend] User clicked Subscribe for plan:", plan.name, "ID:", plan._id);
 
         if (plan.price === 0) {
-            showToast("You are already on the free plan.", "info");
+            showToast(t("subscription.alreadyOnFreePlan"), "info");
             return;
         }
 
@@ -55,11 +57,11 @@ const SubscriptionPage = () => {
                 window.location.href = response.iframeURL; // Redirect to Paymob
             } else {
                 console.error("❌ [Frontend] No iframeURL in response");
-                showToast("Failed to initiate payment", "error");
+                showToast(t("subscription.errors.paymentInitFailed"), "error");
             }
         } catch (err) {
             console.error("❌ [Frontend] Payment initiation error:", err);
-            showToast(err.response?.data?.message || "Payment failed", "error");
+            showToast(err.response?.data?.message || t("subscription.errors.paymentFailed"), "error");
         } finally {
             setProcessing(null);
         }
@@ -74,11 +76,13 @@ const SubscriptionPage = () => {
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 md:p-10 min-h-screen dark:bg-slate-800">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Subscription Plans</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {t("subscription.title")}
+                </h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    Upgrade your workspace to unlock more features.
+                    {t("subscription.subtitle")}
                 </p>
             </div>
 
@@ -97,7 +101,7 @@ const SubscriptionPage = () => {
                             {isPreSelected && (
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                                     <span className="bg-sky-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                                        Selected
+                                        {t("subscription.selected")}
                                     </span>
                                 </div>
                             )}
@@ -108,9 +112,13 @@ const SubscriptionPage = () => {
                                 </h3>
                                 <div className="flex items-baseline justify-center mt-2">
                                     <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                                        ${plan.price}
+                                        {plan.price} <span className="text-lg">EGP</span>
                                     </span>
-                                    <span className="text-gray-500 dark:text-gray-400 ml-1 text-sm">/{plan.billing_cycle}</span>
+                                    <span className="text-gray-500 dark:text-gray-400 ml-1 text-sm">
+                                        /{plan.billing_cycle === 'month' ? t("pricing.perMonth") :
+                                            plan.billing_cycle === 'year' ? t("pricing.perYear") :
+                                                plan.billing_cycle}
+                                    </span>
                                 </div>
                                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-3 min-h-[40px]">
                                     {plan.description}
@@ -137,14 +145,14 @@ const SubscriptionPage = () => {
                                 {processing === plan._id ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                        Processing...
+                                        {t("subscription.processing")}
                                     </>
                                 ) : plan.price === 0 ? (
-                                    "Current Plan"
+                                    t("subscription.currentPlan")
                                 ) : (
                                     <>
                                         <CreditCard className="w-4 h-4" />
-                                        Subscribe
+                                        {t("subscription.subscribeButton")}
                                     </>
                                 )}
                             </button>

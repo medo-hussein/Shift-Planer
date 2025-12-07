@@ -10,6 +10,7 @@ import {
   CreditCard,
   Building2,
   FileText,
+  ArrowRightLeft, // ✅ Import Icon
 } from "lucide-react";
 
 // Shared Pages
@@ -36,6 +37,7 @@ import A_Employees from "../pages/admin/Employees";
 import A_TimeTracking from "../pages/admin/TimeTracking";
 import A_TimeOff from "../pages/admin/TimeOff";
 import A_Reports from "../pages/admin/Reports";
+import SwapApprovals from "../pages/admin/SwapApprovals"; // ✅ Import Admin Page
 
 // Employee Pages
 import E_Dashboard from "../pages/employee/Dashboard";
@@ -43,6 +45,7 @@ import E_Schedule from "../pages/employee/MySchedule";
 import E_TimeTracking from "../pages/employee/TimeTracking";
 import E_TimeOff from "../pages/employee/TimeOffRequests";
 import E_Reports from "../pages/employee/MyReports";
+import E_SwapRequests from "../pages/employee/SwapRequests"; // ✅ Import Employee Page
 
 const routes = {
 
@@ -68,6 +71,7 @@ const routes = {
   admin: [
     { path: "/dashboard", element: A_Dashboard, label: "Dashboard", icon: LayoutDashboard },
     { path: "/schedule", element: A_Schedule, label: "Scheduler", icon: CalendarDays },
+    { path: "/swaps", element: SwapApprovals, label: "Swap Approvals", icon: ArrowRightLeft }, // ✅ New Route for Admin
     { path: "/employees", element: A_Employees, label: "Employees", icon: Users },
     { path: "/time-tracking", element: A_TimeTracking, label: "Time Tracking", icon: Clock },
     { path: "/time-off", element: A_TimeOff, label: "Time Off", icon: Plane },
@@ -78,6 +82,7 @@ const routes = {
   employee: [
     { path: "/dashboard", element: E_Dashboard, label: "Dashboard", icon: LayoutDashboard },
     { path: "/schedule", element: E_Schedule, label: "My Schedule", icon: CalendarDays },
+    { path: "/swaps", element: E_SwapRequests, label: "Shift Swaps", icon: ArrowRightLeft }, // ✅ New Route for Employee
     { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
     { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
     { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },

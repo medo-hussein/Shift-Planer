@@ -5,6 +5,7 @@ import { useLoading } from "../../contexts/LoaderContext";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
 import {Alert} from "../../utils/alertService.js";
+import { useTranslation } from "react-i18next";
 
 export default function TimeTracking() {
 
@@ -29,6 +30,7 @@ export default function TimeTracking() {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { show, hide } = useLoading();
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -37,7 +39,7 @@ export default function TimeTracking() {
       setRecords(res.data.records || []);
     } catch (err) {
       console.error(err);
-      Alert.error("Failed to load data");
+      Alert.error(t("timeTracking.failedToLoad"));
     } finally {
       hide();
     }
@@ -72,33 +74,33 @@ export default function TimeTracking() {
   };
 
   const getStatusInfo = (record) => {
-    if (!record.check_in) return { text: "Absent", bg: "bg-red-100", color: "text-red-700" };
-    if (record.check_out) return { text: "Approved", bg: "bg-green-100", color: "text-green-700" };
+    if (!record.check_in) return { text: t("timeTracking.status.absent"), bg: "bg-red-100", color: "text-red-700" };
+    if (record.check_out) return { text: t("timeTracking.status.approved"), bg: "bg-green-100", color: "text-green-700" };
     
     // Check Break
     const activeBreak = record.breaks?.find(b => b.start && !b.end);
-    if (activeBreak) return { text: "On Break", bg: "bg-yellow-100", color: "text-yellow-700", icon: <Coffee size={14}/> };
+    if (activeBreak) return { text: t("timeTracking.status.onBreak"), bg: "bg-yellow-100", color: "text-yellow-700", icon: <Coffee size={14}/> };
 
-    return { text: "Working", bg: "bg-blue-100", color: "text-blue-700", icon: <Timer size={14}/> };
+    return { text: t("timeTracking.status.working"), bg: "bg-blue-100", color: "text-blue-700", icon: <Timer size={14}/> };
   };
 
   // Actions 
   const handleExport = () => {
-    if (filteredRecords.length === 0) return Alert.error("No data to export");
+    if (filteredRecords.length === 0) return Alert.error(t("timeTracking.noDataToExport"));
     try {
       const data = filteredRecords.map(r => ({
-        Name: r.user_id?.name,
-        Date: new Date(r.date).toLocaleDateString(),
-        In: formatTime(r.check_in),
-        Out: r.check_out ? formatTime(r.check_out) : "Active",
-        Status: r.status
+        [t("timeTracking.exportColumns.name")]: r.user_id?.name,
+        [t("timeTracking.exportColumns.date")]: new Date(r.date).toLocaleDateString(),
+        [t("timeTracking.exportColumns.in")]: formatTime(r.check_in),
+        [t("timeTracking.exportColumns.out")]: r.check_out ? formatTime(r.check_out) : t("timeTracking.exportColumns.active"),
+        [t("timeTracking.exportColumns.status")]: r.status
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-      XLSX.writeFile(wb, `Attendance_${selectedDate}.xlsx`);
-      Alert.success("Exported successfully");
-    } catch (e) { Alert.error("Export failed"); }
+      XLSX.utils.book_append_sheet(wb, ws, t("timeTracking.exportSheetName"));
+      XLSX.writeFile(wb, `${t("timeTracking.exportFileName")}_${selectedDate}.xlsx`);
+      Alert.success(t("timeTracking.exportSuccess"));
+    } catch (e) { Alert.error(t("timeTracking.exportFailed")); }
   };
 
   const handleView = (record) => {
@@ -115,8 +117,12 @@ export default function TimeTracking() {
         {/* --- HEADER --- */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-800 dark:text-slate-100">Time Tracking</h1>
-            <p className="text-gray-600 dark:text-slate-400">Monitor employee clock in/out and manage time cards</p>
+            <h1 className="text-2xl font-extrabold text-gray-800 dark:text-slate-100">
+              {t("timeTracking.title")}
+            </h1>
+            <p className="text-gray-600 dark:text-slate-400">
+              {t("timeTracking.subtitle")}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -128,7 +134,7 @@ export default function TimeTracking() {
             />
             
             <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 flex items-center gap-1 shadow-sm transition">
-              <Download className="w-4" /> Export
+              <Download className="w-4" /> {t("timeTracking.exportButton")}
             </button>
             
             <button 
@@ -139,7 +145,7 @@ export default function TimeTracking() {
                     : "text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600"
                 }`}
             >
-              <Funnel className="w-4" /> Filters
+              <Funnel className="w-4" /> {t("timeTracking.filtersButton")}
             </button>
           </div>
         </div>
@@ -152,7 +158,7 @@ export default function TimeTracking() {
             }`}
             onClick={() => setIsLive(true)}
           >
-            Live Time Clock
+            {t("timeTracking.liveTab")}
           </button>
           <button
             className={`flex-1 py-2 rounded-md font-medium transition-all ${
@@ -160,7 +166,7 @@ export default function TimeTracking() {
             }`}
             onClick={() => setIsLive(false)}
           >
-            Time Cards
+            {t("timeTracking.timeCardsTab")}
           </button>
         </div>
 
@@ -168,7 +174,9 @@ export default function TimeTracking() {
         {showFilters && (
           <div className="mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm animate-fadeIn">
              <div className="flex flex-wrap gap-4 items-center">
-                <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Filter By Status:</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
+                  {t("timeTracking.filterByStatus")}:
+                </span>
                 <div className="flex gap-2">
                     {['all', 'present', 'late', 'absent'].map((status) => (
                         <button
@@ -180,7 +188,7 @@ export default function TimeTracking() {
                                 : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                             }`}
                         >
-                            {status}
+                            {t(`timeTracking.statusFilters.${status}`)}
                         </button>
                     ))}
                 </div>
@@ -194,7 +202,7 @@ export default function TimeTracking() {
             <div className="flex items-center gap-2 mb-6">
               <User className="text-gray-400 dark:text-slate-500" />
               <h2 className="text-xl font-semibold text-gray-800 dark:text-slate-100">
-                Currently Working ({filteredRecords.length})
+                {t("timeTracking.currentlyWorking", { count: filteredRecords.length })}
               </h2>
             </div>
 
@@ -211,7 +219,7 @@ export default function TimeTracking() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 dark:text-slate-100">{record.user_id?.name}</p>
-                        <p className="text-gray-500 dark:text-slate-400 text-sm">{record.user_id?.position || "Employee"}</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-sm">{record.user_id?.position || t("timeTracking.defaultPosition")}</p>
                         <p className="text-gray-400 dark:text-slate-500 text-xs">{record.user_id?.email}</p>
                       </div>
                     </div>
@@ -219,24 +227,28 @@ export default function TimeTracking() {
                     {/* Timing & Status */}
                     <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
                       <div className="flex flex-col text-center md:text-left">
-                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">Start Time</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                          {t("timeTracking.startTime")}
+                        </p>
                         <p className="font-semibold text-gray-800 dark:text-slate-100">{formatTime(record.check_in)}</p>
                       </div>
 
                       <div className="text-center md:text-right">
-                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">Duration</p>
+                        <p className="text-gray-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                          {t("timeTracking.duration")}
+                        </p>
                         <p className="font-semibold text-gray-800 dark:text-slate-100">
                           {calculateDuration(record.check_in, null)}
                         </p>
                       </div>
 
                       <div className={`px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm ${
-                          status.text === "On Break" 
+                          status.text === t("timeTracking.status.onBreak")
                           ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-700" 
                           : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
                       }`}>
                          {status.icon}
-                         {status.text === "On Break" ? "Paused (Break)" : "Tracking..."}
+                         {status.text === t("timeTracking.status.onBreak") ? t("timeTracking.pausedBreak") : t("timeTracking.tracking")}
                       </div>
 
                     </div>
@@ -244,7 +256,7 @@ export default function TimeTracking() {
                 );
               }) : (
                 <div className="text-center py-10 text-gray-400 dark:text-slate-500">
-                    <p>No active employees found right now.</p>
+                    <p>{t("timeTracking.noActiveEmployees")}</p>
                 </div>
               )}
             </div>
@@ -254,7 +266,9 @@ export default function TimeTracking() {
           <div className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-6 min-h-[400px]">
             <div className="bg-white dark:bg-slate-800 p-1 rounded-xl">
               <div className="flex justify-between items-center mb-6">
-                 <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Time Card Management</h2>
+                 <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
+                   {t("timeTracking.timeCardManagement")}
+                 </h2>
               </div>
 
               <div className="space-y-4">
@@ -272,8 +286,8 @@ export default function TimeTracking() {
                                 <p className="text-gray-600 dark:text-slate-300 text-sm flex items-center gap-2">
                                    <Calendar size={14} /> {new Date(record.date).toLocaleDateString()} 
                                    <span className="mx-1">•</span> 
-                                   <Clock size={14} /> {formatTime(record.check_in)} - {record.check_out ? formatTime(record.check_out) : "Active"}
-                                   <span className="font-bold ml-1">( {record.total_hours || calculateDuration(record.check_in, record.check_out) } H )</span>
+                                   <Clock size={14} /> {formatTime(record.check_in)} - {record.check_out ? formatTime(record.check_out) : t("timeTracking.active")}
+                                   <span className="font-bold ml-1">( {record.total_hours || calculateDuration(record.check_in, record.check_out) } {t("timeTracking.hoursShort")} )</span>
                                 </p>
                             </div>
 
@@ -282,7 +296,7 @@ export default function TimeTracking() {
                                     onClick={() => handleView(record)}
                                     className="px-3 py-1.5 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-1 shadow-sm border border-gray-200 dark:border-slate-600 transition"
                                 >
-                                    <Eye className="w-4" /> View
+                                    <Eye className="w-4" /> {t("timeTracking.viewButton")}
                                 </button>
                             </div>
                         </div>
@@ -290,7 +304,7 @@ export default function TimeTracking() {
                 }) : (
                     <div className="text-center py-10 text-gray-400 dark:text-slate-500">
                         <Calendar size={40} className="mb-2 opacity-20 mx-auto"/>
-                        <p>No records found for this date.</p>
+                        <p>{t("timeTracking.noRecordsFound")}</p>
                     </div>
                 )}
               </div>
@@ -310,35 +324,51 @@ export default function TimeTracking() {
                 <X size={20} />
             </button>
 
-            <h2 className="text-lg font-semibold mb-6 text-gray-800 dark:text-slate-100 border-b border-gray-200 dark:border-slate-700 pb-3">Time Card Details</h2>
+            <h2 className="text-lg font-semibold mb-6 text-gray-800 dark:text-slate-100 border-b border-gray-200 dark:border-slate-700 pb-3">
+              {t("timeTracking.modal.title")}
+            </h2>
             
             <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
-                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">Employee</h3>
+                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">
+                      {t("timeTracking.modal.employee")}
+                    </h3>
                     <p className="text-gray-900 dark:text-slate-100 font-medium">{selectedRecord.user_id?.name}</p>
                     <p className="text-gray-500 dark:text-slate-400 text-xs">{selectedRecord.user_id?.email}</p>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">Summary</h3>
-                    <p className="text-gray-900 dark:text-slate-100 text-sm">Date: {new Date(selectedRecord.date).toLocaleDateString()}</p>
-                    <p className="text-gray-900 dark:text-slate-100 text-sm">Total: {selectedRecord.total_hours || 0} hrs</p>
+                    <h3 className="font-semibold text-gray-700 dark:text-slate-300 mb-1 text-sm">
+                      {t("timeTracking.modal.summary")}
+                    </h3>
+                    <p className="text-gray-900 dark:text-slate-100 text-sm">
+                      {t("timeTracking.modal.date")}: {new Date(selectedRecord.date).toLocaleDateString()}
+                    </p>
+                    <p className="text-gray-900 dark:text-slate-100 text-sm">
+                      {t("timeTracking.modal.total")}: {selectedRecord.total_hours || 0} {t("timeTracking.hours")}
+                    </p>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 dark:bg-slate-700 p-4 rounded-lg border border-gray-100 dark:border-slate-600">
                 <div>
-                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">Clock In</p>
+                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">
+                      {t("timeTracking.modal.clockIn")}
+                    </p>
                     <p className="font-mono text-blue-600 dark:text-blue-400 font-bold">{formatTime(selectedRecord.check_in)}</p>
                 </div>
                 <div>
-                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">Clock Out</p>
+                    <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold mb-1">
+                      {t("timeTracking.modal.clockOut")}
+                    </p>
                     <p className="font-mono text-blue-600 dark:text-blue-400 font-bold">{formatTime(selectedRecord.check_out)}</p>
                 </div>
             </div>
 
             {selectedRecord.notes && (
                 <div className="mb-6">
-                    <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-2 text-sm">Notes</h3>
+                    <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-2 text-sm">
+                      {t("timeTracking.modal.notes")}
+                    </h3>
                     <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 border border-blue-100 dark:border-blue-700 italic">
                         "{selectedRecord.notes}"
                     </div>
@@ -350,7 +380,7 @@ export default function TimeTracking() {
                     onClick={() => setOpenModal(false)}
                     className="px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600 transition text-sm font-medium"
                 >
-                    Close
+                    {t("timeTracking.modal.close")}
                 </button>
             </div>
           </div>

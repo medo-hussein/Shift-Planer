@@ -1,5 +1,6 @@
 import Shift from "../models/shiftModel.js";
 import User from "../models/userModel.js";
+import { parseShiftCommand } from "../services/aiService.js"; // ✅ 1. استيراد خدمة الذكاء الاصطناعي
 
 const MS_IN_24H = 24 * 60 * 60 * 1000;
 
@@ -695,6 +696,41 @@ export const createBulkShifts = async (req, res) => {
     });
   }
 };
+
+// ✅ GENERATE SHIFTS FROM AI (NEW)
+export const generateShiftsFromAI = async (req, res) => {
+  try {
+    const adminId = req.user._id;
+    // ✅ استقبال المنطقة الزمنية من الطلب (إضافة timeZone)
+    const { command, timeZone } = req.body; 
+    
+    // 1. Get branch employees to send to AI
+    const employees = await User.find({ 
+      branch_admin_id: adminId,
+      role: "employee",
+      is_active: true
+    }).select("_id name");
+
+    if (employees.length === 0) {
+      return res.status(400).json({ success: false, message: "No active employees found in your branch." });
+    }
+
+    // 2. Call AI service (تمرير timeZone للدالة)
+    const suggestedShifts = await parseShiftCommand(command, employees, new Date(), timeZone);
+
+    // 3. Return suggestions
+    return res.json({
+      success: true,
+      message: "AI generated suggestions successfully",
+      data: suggestedShifts
+    });
+
+  } catch (err) {
+    console.error("generateShiftsFromAI error:", err);
+    return res.status(500).json({ success: false, message: "Failed to generate shifts. Try rephrasing." });
+  }
+};
+
 // GET TODAY'S SHIFTS (Employee only)
 export const getTodayShifts = async (req, res) => {
   try {

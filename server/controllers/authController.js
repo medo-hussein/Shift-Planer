@@ -380,14 +380,18 @@ export const logoutUser = async (req, res) => {
   }
 };
 
-// FORGET PASSWORD
+// FORGET PASSWORD - MODIFIED
 export const forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.json({ message: "If the email exists, a reset link has been sent." });
+      return res.status(404).json({ 
+        success: false,
+        message: "Email not found. Please register first." 
+      });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -398,14 +402,24 @@ export const forgetPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     await sendResetPasswordEmail(user.email, resetUrl);
 
-    return res.json({ message: "Reset email sent." });
+    return res.json({ 
+      success: true,
+      message: "Reset link has been sent to your email." 
+    });
   } catch (err) {
     console.error("forgetPassword error:", err);
-    return res.status(500).json({ message: "Email could not be sent." });
+    const user = await User.findOne({ email: req.body.email });
+    if (user) {
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+    }
+    return res.status(500).json({ success: false, message: "Email could not be sent. Please try again." });
   }
 };
 
@@ -500,7 +514,6 @@ export const getMyProfile = async (req, res) => {
 // UPDATE PROFILE
 export const updateMyProfile = async (req, res) => {
   try {
-    // ✅ التعديل: إضافة avatar هنا
     const { name, phone, position, department, avatar } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -511,7 +524,6 @@ export const updateMyProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    // ✅ التعديل: تحديث الصورة
     if (avatar) user.avatar = avatar;
 
     if (position && user.role !== "super_admin") user.position = position;
@@ -527,7 +539,7 @@ export const updateMyProfile = async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
-        avatar: user.avatar, // إرجاع الصورة الجديدة
+        avatar: user.avatar, 
         position: user.position,
         department: user.department
       }
@@ -538,7 +550,7 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-// ADD createAdmin HERE
+// CREATE ADMIN
 export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, branch_name } = req.body;
@@ -554,7 +566,7 @@ export const createAdmin = async (req, res) => {
       });
     }
 
-    // 🔍 ENFORCE SUBSCRIPTION LIMITS (Max Branches) - Added for consistency
+    // ENFORCE SUBSCRIPTION LIMITS (Max Branches) - Added for consistency
     const superAdmin = await User.findById(superAdminId).populate('company');
     if (superAdmin && superAdmin.company) {
       const company = superAdmin.company;
@@ -590,7 +602,7 @@ export const createAdmin = async (req, res) => {
         id: admin._id,
         email: admin.email,
         branch_name: admin.branch_name,
-        super_admin_id: admin.super_admin_id // تأكيد الربط
+        super_admin_id: admin.super_admin_id 
       }
     });
   } catch (err) {

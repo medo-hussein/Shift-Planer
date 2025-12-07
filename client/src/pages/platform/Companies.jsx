@@ -9,17 +9,22 @@ import {
 
 export default function Companies() {
     const [companies, setCompanies] = useState([]);
-    const [filteredCompanies, setFilteredCompanies] = useState([]);
     const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCompanies, setTotalCompanies] = useState(0);
     const { show, hide } = useLoading();
     const { addToast } = useToast();
 
     const fetchCompanies = async () => {
         try {
             show();
-            const res = await platformService.getAllCompanies();
+            // Debounce search is handled by useEffect dependency naturally if we were strictly reacting
+            // But here we might want to debounce the actual call if search changes rapidly
+            const res = await platformService.getAllCompanies(page, 9, search); // Limit 9 for grid 3x3
             setCompanies(res.data.data);
-            setFilteredCompanies(res.data.data);
+            setTotalPages(res.data.pagination.pages);
+            setTotalCompanies(res.data.pagination.total);
         } catch (err) {
             console.error("Error fetching companies:", err);
             addToast("Failed to load companies", "error");
@@ -28,18 +33,21 @@ export default function Companies() {
         }
     };
 
+    // Debounce search effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(1); // Reset to page 1 on search
+            fetchCompanies();
+        }, 500);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line
+    }, [search]);
+
+    // Fetch on page change (skip if triggered by search reset to avoid double fetch)
     useEffect(() => {
         fetchCompanies();
-    }, []);
-
-    useEffect(() => {
-        const lower = search.toLowerCase();
-        const filtered = companies.filter(c =>
-            c.name.toLowerCase().includes(lower) ||
-            (c.subscription?.plan_name || "").toLowerCase().includes(lower)
-        );
-        setFilteredCompanies(filtered);
-    }, [search, companies]);
+        // eslint-disable-next-line
+    }, [page]);
 
     const handleToggleStatus = async (id, currentStatus) => {
         try {
@@ -57,12 +65,14 @@ export default function Companies() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans text-slate-800">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 lg:p-10 font-sans text-slate-800 dark:text-slate-200">
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Companies</h1>
-                    <p className="text-slate-500 mt-1">Manage registered companies and their subscriptions.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Companies</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                        Manage registered companies and their subscriptions. ({totalCompanies} total)
+                    </p>
                 </div>
 
                 <div className="relative w-full md:w-72">
@@ -72,14 +82,14 @@ export default function Companies() {
                         placeholder="Search companies..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:placeholder-slate-400 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCompanies.map((company) => (
-                    <div key={company._id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 hover:shadow-md transition-all duration-300 group">
+                {companies.map((company) => (
+                    <div key={company._id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 hover:shadow-md transition-all duration-300 group">
 
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
@@ -87,8 +97,8 @@ export default function Companies() {
                                     {company.name.charAt(0)}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-slate-800">{company.name}</h3>
-                                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                    <h3 className="font-bold text-slate-800 dark:text-slate-100">{company.name}</h3>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                         <Calendar size={12} />
                                         Joined {new Date(company.createdAt).toLocaleDateString()}
                                     </div>
@@ -109,36 +119,36 @@ export default function Companies() {
                             </div>
                         </div>
 
-                        <div className="space-y-3 border-t border-slate-50 pt-4">
+                        <div className="space-y-3 border-t border-slate-50 dark:border-slate-700 pt-4">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500 flex items-center gap-2">
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <CreditCard size={16} /> Plan
                                 </span>
-                                <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                <span className="font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-xs">
                                     {company.subscription?.plan_name || "Free"}
                                 </span>
                             </div>
 
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500 flex items-center gap-2">
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <Building2 size={16} /> Branches
                                 </span>
-                                <span className="font-medium text-slate-700">
+                                <span className="font-medium text-slate-700 dark:text-slate-200">
                                     Max {company.subscription?.maxBranches || 1}
                                 </span>
                             </div>
 
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500 flex items-center gap-2">
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <Users size={16} /> Employees
                                 </span>
-                                <span className="font-medium text-slate-700">
+                                <span className="font-medium text-slate-700 dark:text-slate-200">
                                     Max {company.subscription?.maxUsers || 5}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                        <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-700 flex justify-between items-center">
                             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${company.isActive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
                                 }`}>
                                 {company.isActive ? "Active" : "Suspended"}
@@ -155,13 +165,49 @@ export default function Companies() {
                 ))}
             </div>
 
-            {filteredCompanies.length === 0 && (
+            {companies.length === 0 && (
                 <div className="text-center py-20">
-                    <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="text-slate-400" size={32} />
+                    <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Search className="text-slate-400 dark:text-slate-400" size={32} />
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-700">No companies found</h3>
-                    <p className="text-slate-500">Try adjusting your search terms.</p>
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">No companies found</h3>
+                    <p className="text-slate-500 dark:text-slate-400">Try adjusting your search terms.</p>
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center gap-2">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        Previous
+                    </button>
+
+                    <div className="flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                            <button
+                                key={p}
+                                onClick={() => setPage(p)}
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${page === p
+                                        ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                                        : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                                    }`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        Next
+                    </button>
                 </div>
             )}
         </div>

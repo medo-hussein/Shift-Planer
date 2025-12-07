@@ -14,7 +14,9 @@ import {
   getMyProfile,
   updateMyProfile,
   getTodayStatus,
-  getMyReports
+  getMyReports,
+  getColleagues,
+  getColleagueShifts
 } from "../controllers/employeeController.js";
 
 import { createLeaveRequest, getMyLeaveRequests, cancelLeaveRequest } from "../controllers/leaveRequestController.js"; 
@@ -31,6 +33,10 @@ router.get("/dashboard", getEmployeeDashboard);
 // Profile management
 router.get("/profile", getMyProfile);
 router.put("/profile", updateMyProfile);
+
+// Colleagues (For Swap Requests)
+router.get("/colleagues", getColleagues); 
+router.get("/colleagues/:colleagueId/shifts", getColleagueShifts); 
 
 // Attendance
 router.get("/attendance", getMyAttendance);

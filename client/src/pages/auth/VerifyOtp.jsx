@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useTranslation } from "react-i18next";
 
 export default function VerifyOtp() {
   const { user, verifyOtp, resendOtp, status } = useAuth();
   const pendingEmail = localStorage.getItem("pendingEmail");
+  const { t } = useTranslation();
 
   const emailToUse = user?.email || pendingEmail;
 
@@ -25,8 +27,8 @@ export default function VerifyOtp() {
     setError("");
     setSuccess("");
 
-    if (!otp) return setError("Please enter the OTP");
-    if (!emailToUse) return setError("No email found. Please register again.");
+    if (!otp) return setError(t("verifyOtp.errors.noOtp"));
+    if (!emailToUse) return setError(t("verifyOtp.errors.noEmail"));
 
     setLoading(true);
 
@@ -54,7 +56,7 @@ export default function VerifyOtp() {
     setError("");
     setSuccess("");
 
-    if (!emailToUse) return setError("No email found.");
+    if (!emailToUse) return setError(t("verifyOtp.errors.noEmail"));
 
     const result = await resendOtp(emailToUse);
     if (result.success) setSuccess(result.message);
@@ -67,10 +69,11 @@ export default function VerifyOtp() {
 
         <div>
           <h2 className="text-center text-2xl font-extrabold text-[#112D4E] dark:text-sky-200">
-            Verify Your Account
+            {t("verifyOtp.title")}
           </h2>
           <p className="mt-2 text-center text-sm text-[#3F72AF] dark:text-sky-400">
-            Enter the OTP sent to <span className="font-medium">
+            {t("verifyOtp.subtitle")}{" "}
+            <span className="font-medium">
               {emailToUse}
             </span>
           </p>
@@ -78,13 +81,15 @@ export default function VerifyOtp() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">OTP Code</label>
+            <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
+              {t("verifyOtp.otpLabel")}
+            </label>
             <input
               type="text"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               className="mt-1 w-full px-3 py-2 border rounded-md bg-[#DBE2EF]/40 dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 border-[#DBE2EF] dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-[#3F72AF] placeholder-gray-500 dark:placeholder-slate-400"
-              placeholder="Enter OTP"
+              placeholder={t("verifyOtp.otpPlaceholder")}
             />
           </div>
 
@@ -96,17 +101,17 @@ export default function VerifyOtp() {
             disabled={loading}
             className="w-full py-2 px-4 text-sm font-semibold rounded-md bg-[#19283a] dark:bg-sky-700 text-white hover:bg-[#274b74] dark:hover:bg-sky-600 transition disabled:opacity-50"
           >
-            {loading ? "Verifying..." : "Verify OTP"}
+            {loading ? t("verifyOtp.verifying") : t("verifyOtp.verifyButton")}
           </button>
 
           <p className="text-center text-sm text-[#3F72AF] dark:text-sky-400">
-            Didn't receive OTP?{" "}
+            {t("verifyOtp.noOtpReceived")}{" "}
             <button
               type="button"
               onClick={handleResend}
               className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200"
             >
-              Resend OTP
+              {t("verifyOtp.resendOtp")}
             </button>
           </p>
         </form>

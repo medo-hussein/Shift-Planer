@@ -106,12 +106,12 @@ export default function Plans() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans text-slate-800">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 lg:p-10 font-sans text-slate-800 dark:text-slate-200">
 
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Subscription Plans</h1>
-                    <p className="text-slate-500 mt-1">Manage pricing tiers and features.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Subscription Plans</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage pricing tiers and features.</p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
@@ -123,38 +123,38 @@ export default function Plans() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
-                    <div key={plan._id} className={`bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition-all duration-300 relative ${!plan.is_active ? 'opacity-75 grayscale' : 'border-slate-100'}`}>
+                    <div key={plan._id} className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border p-6 hover:shadow-md transition-all duration-300 relative ${!plan.is_active ? 'opacity-75 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
 
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-800">{plan.name}</h3>
-                                <p className="text-sm text-slate-500">{plan.description}</p>
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{plan.name}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{plan.description}</p>
                             </div>
                             <div className="text-right">
                                 <div className="text-2xl font-bold text-blue-600">
                                     {plan.price === 0 ? "Free" : `${plan.price} ${plan.currency}`}
                                 </div>
-                                <div className="text-xs text-slate-400 uppercase">{plan.billing_cycle}</div>
+                                <div className="text-xs text-slate-400 dark:text-slate-400 uppercase">{plan.billing_cycle}</div>
                             </div>
                         </div>
 
-                        <div className="space-y-3 border-t border-slate-50 pt-4 mb-6">
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="space-y-3 border-t border-slate-50 dark:border-slate-700 pt-4 mb-6">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                                 <Building2 size={16} className="text-blue-500" />
                                 <span className="font-medium">{plan.limits.max_branches} Branches</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                                 <Users size={16} className="text-purple-500" />
                                 <span className="font-medium">{plan.limits.max_employees} Employees</span>
                             </div>
                             <div className="flex flex-col gap-1 mt-2">
                                 {plan.features.slice(0, 3).map((feature, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-500">
+                                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
                                         <Check size={12} className="text-emerald-500" /> {feature}
                                     </div>
                                 ))}
                                 {plan.features.length > 3 && (
-                                    <span className="text-xs text-slate-400 pl-5">+{plan.features.length - 3} more features</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-400 pl-5">+{plan.features.length - 3} more features</span>
                                 )}
                             </div>
                         </div>
@@ -162,14 +162,14 @@ export default function Plans() {
                         <div className="flex gap-2 mt-auto">
                             <button
                                 onClick={() => handleOpenModal(plan)}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium transition"
+                                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 text-sm font-medium transition"
                             >
                                 <Edit2 size={16} /> Edit
                             </button>
                             {plan.is_active && (
                                 <button
                                     onClick={() => handleDelete(plan._id)}
-                                    className="p-2 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition"
+                                    className="p-2 rounded-lg border border-red-100 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-900 transition"
                                     title="Deactivate Plan"
                                 >
                                     <Trash2 size={16} />
@@ -183,12 +183,12 @@ export default function Plans() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                            <h2 className="text-xl font-bold text-slate-800">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 z-10">
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                                 {editingPlan ? "Edit Plan" : "Create New Plan"}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-300">
                                 <X size={24} />
                             </button>
                         </div>
@@ -201,7 +201,7 @@ export default function Plans() {
                                         type="text" required
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                         placeholder="e.g. Pro Plan"
                                     />
                                 </div>
@@ -211,7 +211,7 @@ export default function Plans() {
                                         type="text" required
                                         value={formData.slug}
                                         onChange={e => setFormData({ ...formData, slug: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                         placeholder="e.g. pro-monthly"
                                     />
                                 </div>
@@ -223,7 +223,7 @@ export default function Plans() {
                                     required
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                     rows="2"
                                     placeholder="Brief description of the plan..."
                                 />
@@ -236,7 +236,7 @@ export default function Plans() {
                                         type="number" required min="0"
                                         value={formData.price}
                                         onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                     />
                                 </div>
                                 <div>
@@ -244,7 +244,7 @@ export default function Plans() {
                                     <select
                                         value={formData.billing_cycle}
                                         onChange={e => setFormData({ ...formData, billing_cycle: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white"
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white dark:bg-slate-800 dark:text-slate-200"
                                     >
                                         <option value="monthly">Monthly</option>
                                         <option value="yearly">Yearly</option>
@@ -259,7 +259,7 @@ export default function Plans() {
                                         type="number" required min="1"
                                         value={formData.limits.max_branches}
                                         onChange={e => setFormData({ ...formData, limits: { ...formData.limits, max_branches: Number(e.target.value) } })}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                     />
                                 </div>
                                 <div>
@@ -278,7 +278,7 @@ export default function Plans() {
                                 <textarea
                                     value={formData.features}
                                     onChange={e => setFormData({ ...formData, features: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono text-sm"
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono text-sm"
                                     rows="5"
                                     placeholder="Advanced Reporting&#10;Priority Support&#10;API Access"
                                 />
@@ -292,14 +292,14 @@ export default function Plans() {
                                     onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
                                     className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                                 />
-                                <label htmlFor="isActive" className="text-sm font-medium text-slate-700">Active Plan</label>
+                                <label htmlFor="isActive" className="text-sm font-medium text-slate-700 dark:text-slate-200">Active Plan</label>
                             </div>
 
-                            <div className="flex gap-4 pt-4 border-t border-slate-100">
+                            <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+                                    className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                                 >
                                     Cancel
                                 </button>

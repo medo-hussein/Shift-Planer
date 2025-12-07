@@ -3,6 +3,7 @@ import { Check, Loader2 } from "lucide-react";
 import { planService } from "../../api/services/planService";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const PricingSection = () => {
     const [plans, setPlans] = useState([]);
@@ -10,6 +11,7 @@ const PricingSection = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -25,14 +27,14 @@ const PricingSection = () => {
                 }
             } catch (err) {
                 console.error("Failed to fetch plans:", err);
-                setError("Failed to load plans");
+                setError(t("pricing.failedToLoad"));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchPlans();
-    }, []);
+    }, [t]);
 
     const handleSubscribe = (plan) => {
         if (isAuthenticated) {
@@ -65,10 +67,10 @@ const PricingSection = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                        Simple, Transparent Pricing
+                        {t("pricing.title")}
                     </h2>
                     <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                        Choose the plan that fits your business needs. No hidden fees, cancel anytime.
+                        {t("pricing.subtitle")}
                     </p>
                 </div>
 
@@ -84,7 +86,7 @@ const PricingSection = () => {
                             {plan.slug.includes("starter") && (
                                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                                     <span className="bg-sky-600 text-white text-sm font-semibold px-4 py-1 rounded-full">
-                                        Most Popular
+                                        {t("pricing.mostPopular")}
                                     </span>
                                 </div>
                             )}
@@ -98,9 +100,13 @@ const PricingSection = () => {
                                 </p>
                                 <div className="flex items-baseline justify-center mb-6">
                                     <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                                        ${plan.price}
+                                        {plan.price} <span className="text-xl">EGP</span>
                                     </span>
-                                    <span className="text-gray-500 dark:text-gray-400 ml-2">/{plan.billing_cycle}</span>
+                                    <span className="text-gray-500 dark:text-gray-400 ml-2">
+                                        /{plan.billing_cycle === 'month' ? t("pricing.perMonth") :
+                                            plan.billing_cycle === 'year' ? t("pricing.perYear") :
+                                                plan.billing_cycle}
+                                    </span>
                                 </div>
                             </div>
 
@@ -120,7 +126,7 @@ const PricingSection = () => {
                                     : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
                                     }`}
                             >
-                                {plan.price === 0 ? "Get Started Free" : "Subscribe Now"}
+                                {plan.price === 0 ? t("pricing.getStartedFree") : t("pricing.subscribeNow")}
                             </button>
                         </div>
                     ))}

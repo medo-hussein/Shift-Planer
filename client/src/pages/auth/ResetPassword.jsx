@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router";
 import apiClient from "../../api/apiClient.js";
 import { validateResetPassword } from "../../utils/validation.js";
+import { useTranslation } from "react-i18next";
 
 export default function ResetPassword() {
   const [newPassword, setPassword] = useState("");
@@ -11,6 +12,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const token = params.get("token");
 
@@ -38,7 +40,7 @@ export default function ResetPassword() {
         newPassword,
       });
 
-      setMessage("Password reset successful! Redirecting to login...");
+      setMessage(t("resetPassword.successMessage"));
 
       // redirect after 1.5s good for UX
       setTimeout(() => {
@@ -46,7 +48,7 @@ export default function ResetPassword() {
       }, 1500);
 
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong.");
+      setError(err.response?.data?.message || t("resetPassword.defaultError"));
     }
 
     setLoading(false);
@@ -57,14 +59,14 @@ export default function ResetPassword() {
       <div className="max-w-md w-full bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border border-[#DBE2EF] dark:border-slate-700 space-y-6">
 
         <h2 className="text-center text-3xl font-extrabold text-[#112D4E] dark:text-sky-200">
-          Reset Password
+          {t("resetPassword.title")}
         </h2>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
 
           <div>
             <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
-              New Password
+              {t("resetPassword.newPassword")}
             </label>
             <input
               type="password"
@@ -72,13 +74,13 @@ export default function ResetPassword() {
               value={newPassword}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 focus:outline-none focus:ring-[#3F72AF] placeholder-gray-500 dark:placeholder-slate-400"
-              placeholder="Enter new password"
+              placeholder={t("resetPassword.newPasswordPlaceholder")}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#112D4E] dark:text-slate-300">
-              Confirm Password
+              {t("resetPassword.confirmPassword")}
             </label>
             <input
               type="password"
@@ -86,7 +88,7 @@ export default function ResetPassword() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-[#DBE2EF] dark:border-slate-600 rounded-md bg-[#F9F7F7] dark:bg-slate-800 text-[#112D4E] dark:text-slate-50 focus:outline-none focus:ring-[#3F72AF] placeholder-gray-500 dark:placeholder-slate-400"
-              placeholder="Confirm your password"
+              placeholder={t("resetPassword.confirmPasswordPlaceholder")}
             />
           </div>
 
@@ -107,13 +109,13 @@ export default function ResetPassword() {
             disabled={loading}
             className="w-full py-2 px-4 rounded-md bg-[#19283a] dark:bg-sky-700 text-white hover:bg-[#274b74] dark:hover:bg-sky-600 transition disabled:opacity-50"
           >
-            {loading ? "Updating..." : "Reset Password"}
+            {loading ? t("resetPassword.updating") : t("resetPassword.resetButton")}
           </button>
 
           <p className="text-center text-sm text-[#3F72AF] dark:text-sky-400">
-            Back to{" "}
+            {t("resetPassword.backTo")}{" "}
             <Link to="/login" className="font-medium text-[#112D4E] dark:text-sky-300 hover:text-[#3F72AF] dark:hover:text-sky-200">
-              Login
+              {t("resetPassword.login")}
             </Link>
           </p>
 

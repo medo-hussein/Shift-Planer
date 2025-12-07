@@ -2,7 +2,6 @@ import Report from "../models/reportModel.js";
 import Attendance from "../models/attendanceModel.js";
 import User from "../models/userModel.js";
 import Shift from "../models/shiftModel.js";
-// ✅ استيراد خدمة الذكاء الاصطناعي
 import { generateReportSummary } from "../services/aiService.js";
 
 // Utility function to get the Super Admin ID (Tenant Owner ID)
@@ -16,7 +15,6 @@ export const generateAIAnalysis = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
     const userRole = req.user.role;
-    // ✅ استقبال اللغة من الـ Body (الافتراضي 'ar' لو مش موجودة)
     const { language } = req.body; 
 
     // 1. Find the report
@@ -985,8 +983,14 @@ async function generateShiftAnalysis(shifts, start, end) {
     empData.total_hours += shiftHours;
   });
 
+  // ✅ FIX: Explicitly map employee details to avoid reference issues
   summary.by_employee = Array.from(employeeMap.values()).map(emp => ({
-    employee: emp.employee,
+    employee: {
+      id: emp.employee._id,
+      name: emp.employee.name,
+      email: emp.employee.email,
+      position: emp.employee.position
+    },
     total_shifts: emp.shifts.length,
     total_hours: emp.total_hours.toFixed(2),
     completed_shifts: emp.shifts.filter(s => s.status === "completed").length
