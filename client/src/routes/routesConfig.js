@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -10,42 +11,47 @@ import {
   CreditCard,
   Building2,
   FileText,
-  ArrowRightLeft, // ✅ Import Icon
+  ArrowRightLeft,
 } from "lucide-react";
 
+// ============================================
+// LAZY LOADED PAGE COMPONENTS
+// Each page is loaded only when the user navigates to it
+// ============================================
+
 // Shared Pages
-import SharedProfile from "../shared/Profile";
-import PaymentCallback from "../pages/shared/PaymentCallback";
+const SharedProfile = lazy(() => import("../shared/Profile"));
+const PaymentCallback = lazy(() => import("../pages/shared/PaymentCallback"));
 
 // Platform Owner Pages
-import PlatformDashboard from "../pages/platform/Dashboard";
-import CompaniesPage from "../pages/platform/Companies";
-import PlansPage from "../pages/platform/Plans";
+const PlatformDashboard = lazy(() => import("../pages/platform/Dashboard"));
+const CompaniesPage = lazy(() => import("../pages/platform/Companies"));
+const PlansPage = lazy(() => import("../pages/platform/Plans"));
 
 // Super Admin Pages
-import SA_Dashboard from "../pages/superadmin/Dashboard";
-import SA_Teams from "../pages/superadmin/Teams";
-import SA_Employees from "../pages/superadmin/Employees";
-import SA_Reports from "../pages/superadmin/Reports";
-import SA_TimeOffRequests from "../pages/superadmin/TimeOffRequests";
-import SubscriptionPage from "../pages/superadmin/SubscriptionPage";
+const SA_Dashboard = lazy(() => import("../pages/superadmin/Dashboard"));
+const SA_Teams = lazy(() => import("../pages/superadmin/Teams"));
+const SA_Employees = lazy(() => import("../pages/superadmin/Employees"));
+const SA_Reports = lazy(() => import("../pages/superadmin/Reports"));
+const SA_TimeOffRequests = lazy(() => import("../pages/superadmin/TimeOffRequests"));
+const BillingPage = lazy(() => import("../pages/superadmin/BillingPage"));
 
 // Admin Pages
-import A_Dashboard from "../pages/admin/Dashboard";
-import A_Schedule from "../pages/admin/Schedule";
-import A_Employees from "../pages/admin/Employees";
-import A_TimeTracking from "../pages/admin/TimeTracking";
-import A_TimeOff from "../pages/admin/TimeOff";
-import A_Reports from "../pages/admin/Reports";
-import SwapApprovals from "../pages/admin/SwapApprovals"; // ✅ Import Admin Page
+const A_Dashboard = lazy(() => import("../pages/admin/Dashboard"));
+const A_Schedule = lazy(() => import("../pages/admin/Schedule"));
+const A_Employees = lazy(() => import("../pages/admin/Employees"));
+const A_TimeTracking = lazy(() => import("../pages/admin/TimeTracking"));
+const A_TimeOff = lazy(() => import("../pages/admin/TimeOff"));
+const A_Reports = lazy(() => import("../pages/admin/Reports"));
+const SwapApprovals = lazy(() => import("../pages/admin/SwapApprovals"));
 
 // Employee Pages
-import E_Dashboard from "../pages/employee/Dashboard";
-import E_Schedule from "../pages/employee/MySchedule";
-import E_TimeTracking from "../pages/employee/TimeTracking";
-import E_TimeOff from "../pages/employee/TimeOffRequests";
-import E_Reports from "../pages/employee/MyReports";
-import E_SwapRequests from "../pages/employee/SwapRequests"; // ✅ Import Employee Page
+const E_Dashboard = lazy(() => import("../pages/employee/Dashboard"));
+const E_Schedule = lazy(() => import("../pages/employee/MySchedule"));
+const E_TimeTracking = lazy(() => import("../pages/employee/TimeTracking"));
+const E_TimeOff = lazy(() => import("../pages/employee/TimeOffRequests"));
+const E_Reports = lazy(() => import("../pages/employee/MyReports"));
+const E_SwapRequests = lazy(() => import("../pages/employee/SwapRequests"));
 
 const routes = {
 
@@ -63,7 +69,7 @@ const routes = {
     { path: "/employees", element: SA_Employees, label: "Employees", icon: UserCog },
     { path: "/time-off", element: SA_TimeOffRequests, label: "Leave Requests", icon: Plane },
     { path: "/reports", element: SA_Reports, label: "Reports", icon: BarChart3 },
-    { path: "/subscription", element: SubscriptionPage, label: "Subscription", icon: CreditCard },
+    { path: "/billing", element: BillingPage, label: "Billing", icon: CreditCard }, // Updated Route
     { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
     { path: "/payment/callback", element: PaymentCallback, label: "Payment Verification", icon: CreditCard, hidden: true },
   ],

@@ -133,18 +133,16 @@ export const createBranchAdmin = async (req, res) => {
     }
 
     // 🔍 ENFORCE SUBSCRIPTION LIMITS (Max Branches)
-    console.log("🔍 [createBranchAdmin] Fetching superAdmin:", superAdminId);
     const superAdmin = await User.findById(superAdminId).populate('company');
 
     if (!superAdmin) {
-      console.error("❌ [createBranchAdmin] SuperAdmin not found in DB");
+      console.error(" [createBranchAdmin] SuperAdmin not found in DB");
     } else {
-      console.log("✅ [createBranchAdmin] SuperAdmin found:", superAdmin.email);
-      console.log("🔍 [createBranchAdmin] Company field:", superAdmin.company);
+
     }
 
     if (!superAdmin || !superAdmin.company) {
-      console.error("❌ [createBranchAdmin] Company is missing!");
+      console.error(" [createBranchAdmin] Company is missing!");
       return res.status(404).json({ success: false, message: "Company not found" });
     }
 

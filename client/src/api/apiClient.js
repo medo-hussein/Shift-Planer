@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -13,8 +13,6 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-    console.log("sending request with token:", localStorage.getItem("accessToken"));
-
   return config;
 });
 
@@ -38,7 +36,7 @@ apiClient.interceptors.response.use(
 
         // Save new token
         localStorage.setItem("accessToken", newToken);
-        
+
         // new coustom event to notify auth context 
         window.dispatchEvent(new CustomEvent("token-refreshed", { detail: newToken }));
 

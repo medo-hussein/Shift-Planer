@@ -1,24 +1,27 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import routesConfig from "./routesConfig";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import Navbar from "../components/Navbar.jsx";
+import PageLoader from "../components/PageLoader.jsx";
 
-import Home from "../pages/Home";
-import Login from "../pages/auth/login";
-import Register from "../pages/auth/register";
-import ForgetPassword from "../pages/auth/ForgetPassword.jsx";
-import ResetPassword from "../pages/auth/ResetPassword.jsx";
-import VerifyOtp from "../pages/auth/VerifyOtp.jsx";
-import AuthSuccess from "../pages/auth/AuthSuccess.jsx";
-import AuthError from "../pages/auth/AuthError.jsx";
+// Lazy load auth pages too for better initial load
+const Home = lazy(() => import("../pages/Home"));
+const Login = lazy(() => import("../pages/auth/login"));
+const Register = lazy(() => import("../pages/auth/register"));
+const ForgetPassword = lazy(() => import("../pages/auth/ForgetPassword.jsx"));
+const ResetPassword = lazy(() => import("../pages/auth/ResetPassword.jsx"));
+const VerifyOtp = lazy(() => import("../pages/auth/VerifyOtp.jsx"));
+const AuthSuccess = lazy(() => import("../pages/auth/AuthSuccess.jsx"));
+const AuthError = lazy(() => import("../pages/auth/AuthError.jsx"));
+const PaymentForm = lazy(() => import("../pages/Payment.jsx"));
 
 import OtpRoute from "./OtpRoute.jsx";
 import ResetPasswordRoute from "./ResetPasswordRoute.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import Loader from "../components/Loader.jsx";
 import CalendarModal from "../components/CalendarModal.jsx";
-import PaymentForm from "../pages/Payment.jsx";
 
 export default function AppRouter() {
   const { loading } = useAuth();
@@ -52,93 +55,94 @@ function RoutesWrapper() {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, userRole, status } = useAuth(); 
+  const { isAuthenticated, userRole, status } = useAuth();
   const roleRoutes = routesConfig[userRole] || [];
 
   return (
-    
-    <Routes>
-      <Route path="/test" element={<PaymentForm />} />
-      {/* Public Routes */}
-      <Route
-        path="/"
-        element={
-          <PublicRoute isAuthenticated={isAuthenticated}>
-            <Home />
-          </PublicRoute>
-        }
-      />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/test" element={<PaymentForm />} />
+        {/* Public Routes */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute isAuthenticated={isAuthenticated}>
+              <Home />
+            </PublicRoute>
+          }
+        />
 
-      <Route
-        path="/login"
-        element={
-          <PublicRoute isAuthenticated={isAuthenticated}>
-            <Login />
-          </PublicRoute>
-        }
-      />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute isAuthenticated={isAuthenticated}>
+              <Login />
+            </PublicRoute>
+          }
+        />
 
-      <Route
-        path="/register"
-        element={
-          <PublicRoute isAuthenticated={isAuthenticated}>
-            <Register />
-          </PublicRoute>
-        }
-      />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute isAuthenticated={isAuthenticated}>
+              <Register />
+            </PublicRoute>
+          }
+        />
 
-      <Route
-        path="/forget-password"
-        element={
-          <PublicRoute
-            isAuthenticated={isAuthenticated}
-            status={status}
-            allowForgetPassword
-          >
-            <ForgetPassword />
-          </PublicRoute>
-        }
-      />
-
-      <Route
-        path="/reset-password"
-        element={
-          <ResetPasswordRoute isAuthenticated={isAuthenticated}>
-            <ResetPassword />
-          </ResetPasswordRoute>
-        }
-      />
-
-      <Route
-        path="/verify-otp"
-        element={
-          <OtpRoute status={status}>
-            <VerifyOtp />
-          </OtpRoute>
-        }
-      />
-
-      {/* Google Auth Routes */}
-      <Route path="/auth/success" element={<AuthSuccess />} />
-      <Route path="/auth/error" element={<AuthError />} />
-
-      {/* Unauthorized */}
-      <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
-
-      {/* Protected Routes */}
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <VerifiedRoute
+        <Route
+          path="/forget-password"
+          element={
+            <PublicRoute
+              isAuthenticated={isAuthenticated}
               status={status}
-              userRole={userRole}
-              roleRoutes={roleRoutes}
-            />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+              allowForgetPassword
+            >
+              <ForgetPassword />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/reset-password"
+          element={
+            <ResetPasswordRoute isAuthenticated={isAuthenticated}>
+              <ResetPassword />
+            </ResetPasswordRoute>
+          }
+        />
+
+        <Route
+          path="/verify-otp"
+          element={
+            <OtpRoute status={status}>
+              <VerifyOtp />
+            </OtpRoute>
+          }
+        />
+
+        {/* Google Auth Routes */}
+        <Route path="/auth/success" element={<AuthSuccess />} />
+        <Route path="/auth/error" element={<AuthError />} />
+
+        {/* Unauthorized */}
+        <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <VerifiedRoute
+                status={status}
+                userRole={userRole}
+                roleRoutes={roleRoutes}
+              />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -154,7 +158,7 @@ function MainAppLayout() {
   const { userRole } = useAuth();
   const roleRoutes = routesConfig[userRole] || [];
 
-  if (!userRole) return null; 
+  if (!userRole) return null;
 
   return (
     <div>

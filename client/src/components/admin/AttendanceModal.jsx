@@ -7,11 +7,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 const AttendanceModal = ({ employee, onClose }) => {
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const { show: showLoader, hide: hideLoader } = useLoading();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchAttendance();
@@ -24,7 +26,7 @@ const AttendanceModal = ({ employee, onClose }) => {
       const response = await employeesService.getEmployeeAttendance(employee._id);
       setAttendanceData(response.data);
     } catch (error) {
-      toast.error("Failed to fetch attendance data");
+      toast.error(t("admin.employeeAttendance.loadError"));
       console.error("Error:", error);
     } finally {
       setLoading(false);
@@ -33,7 +35,7 @@ const AttendanceModal = ({ employee, onClose }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return t("admin.shared.unavailable");
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -43,16 +45,29 @@ const AttendanceModal = ({ employee, onClose }) => {
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return "N/A";
+    if (!timeString) return t("admin.shared.unavailable");
 
     const date = new Date(timeString);
 
-    if (isNaN(date.getTime())) return "N/A";
+    if (isNaN(date.getTime())) return t("admin.shared.unavailable");
 
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'present':
+        return t("admin.employeeAttendance.statusTypes.present");
+      case 'late':
+        return t("admin.employeeAttendance.statusTypes.lateArrival");
+      case 'absent':
+        return t("admin.employeeAttendance.statusTypes.notPresent");
+      default:
+        return t("admin.shared.unavailable");
+    }
   };
 
   if (loading) {
@@ -78,8 +93,12 @@ const AttendanceModal = ({ employee, onClose }) => {
                 <Clock className="text-blue-600 dark:text-blue-400" size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Attendance History</h2>
-                <p className="text-sm text-gray-600 dark:text-slate-400">{empInfo?.name} • {empInfo?.position}</p>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
+                  {t("admin.employeeAttendance.modalTitle")}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-slate-400">
+                  {empInfo?.name} • {empInfo?.position}
+                </p>
               </div>
             </div>
             <button
@@ -97,7 +116,9 @@ const AttendanceModal = ({ employee, onClose }) => {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">Total Records</p>
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
+                    {t("admin.employeeAttendance.metrics.totalEntries")}
+                  </p>
                   <p className="text-xl font-bold text-blue-900 dark:text-blue-300">{total || 0}</p>
                 </div>
                 <Clock className="text-blue-600 dark:text-blue-400" size={18} />
@@ -107,7 +128,9 @@ const AttendanceModal = ({ employee, onClose }) => {
             <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">Total Hours</p>
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">
+                    {t("admin.employeeAttendance.metrics.workedHours")}
+                  </p>
                   <p className="text-xl font-bold text-emerald-900 dark:text-emerald-300">{total_hours || 0}</p>
                 </div>
                 <TrendingUp className="text-emerald-600 dark:text-emerald-400" size={18} />
@@ -117,7 +140,9 @@ const AttendanceModal = ({ employee, onClose }) => {
             <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">Overtime</p>
+                  <p className="text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">
+                    {t("admin.employeeAttendance.metrics.extraTime")}
+                  </p>
                   <p className="text-xl font-bold text-orange-900 dark:text-orange-300">{total_overtime || 0}</p>
                 </div>
                 <Clock className="text-orange-600 dark:text-orange-400" size={18} />
@@ -131,11 +156,21 @@ const AttendanceModal = ({ employee, onClose }) => {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-slate-600">
                   <tr>
-                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">Date</th>
-                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">Clock In</th>
-                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">Clock Out</th>
-                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">Hours</th>
-                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">Status</th>
+                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">
+                      {t("admin.employeeAttendance.tableHeaders.day")}
+                    </th>
+                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">
+                      {t("admin.employeeAttendance.tableHeaders.startTime")}
+                    </th>
+                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">
+                      {t("admin.employeeAttendance.tableHeaders.endTime")}
+                    </th>
+                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">
+                      {t("admin.employeeAttendance.tableHeaders.duration")}
+                    </th>
+                    <th className="py-2 px-3 text-left font-semibold text-gray-900 dark:text-slate-100">
+                      {t("admin.employeeAttendance.tableHeaders.workStatus")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
@@ -159,7 +194,7 @@ const AttendanceModal = ({ employee, onClose }) => {
                         </td>
                         <td className="py-2 px-3">
                           <div className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                            {record.total_hours || '0'} hrs
+                            {record.total_hours || '0'} {t("admin.employeeAttendance.timeUnit")}
                           </div>
                         </td>
                         <td className="py-2 px-3">
@@ -169,9 +204,7 @@ const AttendanceModal = ({ employee, onClose }) => {
                                 ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                                 : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                             }`}>
-                            {record.status === 'present' ? 'On Time' :
-                              record.status === 'late' ? 'Late' :
-                                record.status === 'absent' ? 'Absent' : 'N/A'}
+                            {getStatusText(record.status)}
                           </span>
                         </td>
                       </tr>
@@ -181,9 +214,11 @@ const AttendanceModal = ({ employee, onClose }) => {
                       <td colSpan="5" className="py-8 px-4 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <Clock size={32} className="text-gray-400 dark:text-slate-500 mb-2" />
-                          <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100 mb-1">No attendance records</h3>
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-slate-100 mb-1">
+                            {t("admin.employeeAttendance.emptyState.title")}
+                          </h3>
                           <p className="text-gray-600 dark:text-slate-400 text-xs max-w-md">
-                            No attendance records found for {empInfo?.name}.
+                            {t("admin.employeeAttendance.emptyState.description", { name: empInfo?.name })}
                           </p>
                         </div>
                       </td>
@@ -202,7 +237,7 @@ const AttendanceModal = ({ employee, onClose }) => {
               onClick={onClose}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors text-sm"
             >
-              Close
+              {t("admin.employeeAttendance.exitButton")}
             </button>
           </div>
         </div>

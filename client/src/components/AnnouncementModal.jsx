@@ -36,7 +36,7 @@ export default function AnnouncementModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-60 p-4 animate-fadeIn">
       <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden scale-100 dark:text-slate-100">
         <div className="bg-[#112D4E] p-4 flex justify-between items-center text-white">
           <div className="flex items-center gap-2">

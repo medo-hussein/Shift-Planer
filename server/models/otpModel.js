@@ -104,7 +104,6 @@ otpSchema.statics.cleanupExpired = async function() {
   const result = await this.deleteMany({
     expiresAt: { $lt: Date.now() }
   });
-  console.log(`Cleaned up ${result.deletedCount} expired OTPs`);
   return result;
 };
 

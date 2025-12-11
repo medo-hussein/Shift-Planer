@@ -12,8 +12,6 @@ import otpRoutes from "./routes/otpRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
-// Add to routes
-// Import the new routes
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
@@ -59,7 +57,6 @@ app.use("/api", paymentRoutes);
 app.get("/payment-callback", (req, res) => {
   const queryString = new URLSearchParams(req.query).toString();
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  console.log("🔀 [Redirect] Payment callback -> Frontend");
   res.redirect(`${frontendUrl}/payment/callback?${queryString}`);
 });
 
@@ -72,31 +69,4 @@ app.listen(PORT, () =>
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`)
 );
 
-// 🎯 Updated Features - ShiftMind New Architecture
 
-// 🏢 New Branch-Based System
-// Super Admin → Manages entire system and all branches
-// Branch Admin → Manages their specific branch and employees
-// Employee → Belongs to a specific branch with limited access
-
-// 🔐 Enhanced Role-Based Access
-// Super Admin: Full system access + branch management
-// Admin: Branch-specific management + employee oversight
-// Employee: Personal data + attendance + shifts
-
-// 📊 Consolidated Features
-// Attendance tracking with branch isolation
-// Shift management per branch
-// Reports with branch-level permissions
-// Employee management within branches
-
-// 🚀 Improved Security
-// Branch isolation prevents cross-branch data access
-// Granular permissions for each role
-// Automatic access control based on branch_admin_id
-
-// 💡 Key Benefits
-// Scalable multi-branch architecture
-// Secure data isolation between branches
-// Flexible role-based permissions
-// Simplified user management

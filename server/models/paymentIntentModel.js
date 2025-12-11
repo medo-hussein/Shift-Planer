@@ -46,4 +46,12 @@ const paymentIntentSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// ============================================
+// PERFORMANCE INDEXES
+// ============================================
+// Compound index for fetching user's payment history by status
+paymentIntentSchema.index({ user_id: 1, status: 1 });
+// Index for finding payments by date range
+paymentIntentSchema.index({ createdAt: -1 });
+
 export default mongoose.model("PaymentIntent", paymentIntentSchema);

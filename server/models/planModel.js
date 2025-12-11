@@ -54,4 +54,10 @@ const planSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// ============================================
+// PERFORMANCE INDEXES
+// ============================================
+// Index for filtering active plans
+planSchema.index({ is_active: 1 });
+
 export default mongoose.model("Plan", planSchema);

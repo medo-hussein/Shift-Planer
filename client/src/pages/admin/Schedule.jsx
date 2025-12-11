@@ -9,7 +9,7 @@ import apiClient from "../../api/apiClient";
 import { 
   Plus, X, Clock, MapPin, FileText, Trash2, Save, 
   AlertCircle, Lock, CheckSquare, Square, Info, 
-  Sparkles, Loader2, RotateCcw, Mic, MicOff 
+  Sparkles, Loader2, RotateCcw, Mic, MicOff, Languages
 } from "lucide-react";
 import { Alert } from "../../utils/alertService.js";
 import Button from "../../utils/Button"; 
@@ -32,8 +32,9 @@ export default function Schedule() {
   const [aiPreview, setAiPreview] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // ✅ Voice Input State
+  // ✅ Voice Input State (With Language Toggle)
   const [isListening, setIsListening] = useState(false);
+  const [micLang, setMicLang] = useState('ar-EG'); 
   const recognitionRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -193,6 +194,7 @@ export default function Schedule() {
     }
   };
 
+  // ✅ handleSubmit (Fixed Timezone Issue)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isReadOnly) return; 
@@ -201,14 +203,19 @@ export default function Schedule() {
       return Alert.warning(t("schedule.validation.requiredFields"));
     }
 
+    // ✅ FIX: Create Date objects directly from input value
+    const start = new Date(formData.start_date_time);
+    const end = new Date(formData.end_date_time);
+
     try {
       show();
+      
       if (selectedShiftId) {
         await shiftService.updateShift(selectedShiftId, {
           employee_id: formData.employee_ids[0],
           title: formData.title,
-          start_date_time: formData.start_date_time,
-          end_date_time: formData.end_date_time,
+          start_date_time: start, // ✅ Send Date object
+          end_date_time: end,     // ✅ Send Date object
           shift_type: formData.shift_type,
           location: formData.location,
           notes: formData.notes
@@ -218,14 +225,16 @@ export default function Schedule() {
         if (formData.employee_ids.length === 1) {
           await shiftService.createShift({
             ...formData,
+            start_date_time: start, // ✅ Send Date object
+            end_date_time: end,     // ✅ Send Date object
             employee_id: formData.employee_ids[0]
           });
         } else {
           const shiftsArray = formData.employee_ids.map(empId => ({
             employee_id: empId,
             title: formData.title,
-            start_date_time: formData.start_date_time,
-            end_date_time: formData.end_date_time,
+            start_date_time: start, // ✅ Send Date object
+            end_date_time: end,     // ✅ Send Date object
             shift_type: formData.shift_type,
             location: formData.location,
             notes: formData.notes
@@ -234,6 +243,7 @@ export default function Schedule() {
         }
         Alert.success(t("schedule.success.created"));
       }
+
       handleCloseModal();
       fetchData();
     } catch (err) {
@@ -274,7 +284,6 @@ export default function Schedule() {
       return;
     }
 
-    // Check browser support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -282,7 +291,7 @@ export default function Schedule() {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
+    recognition.lang = micLang; // ✅ Use selected language
     recognition.interimResults = true;
     recognition.continuous = true;
 
@@ -291,18 +300,14 @@ export default function Schedule() {
     };
 
     recognition.onresult = (event) => {
-      let interimTranscript = '';
       let finalTranscript = '';
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
         }
       }
       
-      // Update text area with new text (appending if needed)
       if (finalTranscript) {
           setAiCommand(prev => prev + (prev ? " " : "") + finalTranscript);
       }
@@ -330,7 +335,6 @@ export default function Schedule() {
     
     try {
       setIsGenerating(true); 
-      // Get user timezone to ensure AI understands "9 AM" correctly
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       const res = await apiClient.post("/api/shifts/ai-generate", { 
@@ -386,15 +390,12 @@ export default function Schedule() {
         .dark .fc-timegrid-cell { border-color: rgb(51, 65, 85); background-color: rgb(30, 41, 59); }
         .dark .fc-toolbar { color: rgb(226, 232, 240); }
         
-        /* Voice Pulse Animation */
         @keyframes pulse-ring {
             0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-        .animate-pulse-ring {
-            animation: pulse-ring 1.5s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
-        }
+        .animate-pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.25, 0.8, 0.25, 1) infinite; }
       `}</style>
       
       {/* Header */}
@@ -416,7 +417,6 @@ export default function Schedule() {
         </div>
 
         <div className="flex gap-2">
-            {/* ✅ AI Assistant Button */}
             <button 
                 onClick={() => setShowAIModal(true)}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-medium transition shadow-sm active:scale-95"
@@ -702,20 +702,14 @@ export default function Schedule() {
               {!aiPreview ? (
                 <div className="space-y-4">
                   <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-800">
-                      <p className="text-sm text-purple-800 dark:text-purple-300 font-medium mb-1">
-                        {t("schedule.ai.howItWorks")}
-                      </p>
-                      <p className="text-xs text-purple-600 dark:text-purple-400">
-                        {t("schedule.ai.description")}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-2 italic">
-                        {t("schedule.ai.example")}
-                      </p>
+                      <p className="text-sm text-purple-800 dark:text-purple-300 font-medium mb-1">{t("schedule.ai.howItWorks")}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400">{t("schedule.ai.description")}</p>
+                      <p className="text-xs text-slate-500 mt-2 italic">{t("schedule.ai.example")}</p>
                   </div>
                   
                   <div className="relative">
                       <textarea
-                        className="w-full p-4 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-700 dark:text-white resize-none text-base pr-12"
+                        className="w-full p-4 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-700 dark:text-white resize-none text-base pr-20" // Increased padding for 2 buttons
                         rows={4}
                         placeholder={t("schedule.ai.commandPlaceholder")}
                         value={aiCommand}
@@ -723,13 +717,23 @@ export default function Schedule() {
                         disabled={isGenerating}
                       ></textarea>
                       
+                      {/* ✅ Language Toggle */}
+                      <button 
+                        onClick={() => setMicLang(prev => prev === 'ar-EG' ? 'en-US' : 'ar-EG')}
+                        className="absolute bottom-3 right-14 h-9 px-3 rounded-full flex items-center gap-1.5 text-xs font-bold transition-all duration-200 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 shadow-sm"
+                        title={t("schedule.voice.switchLanguage")}
+                      >
+                         <Languages size={14} className="text-purple-500" />
+                         {micLang === 'ar-EG' ? 'AR' : 'EN'}
+                      </button>
+
                       {/* ✅ Microphone Button */}
                       <button 
                         onClick={toggleListening}
-                        className={`absolute bottom-3 right-3 p-2 rounded-full transition-all duration-300 shadow-md ${
+                        className={`absolute bottom-3 right-3 h-9 w-9 flex items-center justify-center rounded-full transition-all duration-300 shadow-md ${
                             isListening 
                             ? "bg-red-500 text-white animate-pulse-ring" 
-                            : "bg-gray-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-600"
+                            : "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50"
                         }`}
                         title={isListening ? t("schedule.voice.stopListening") : t("schedule.voice.startListening")}
                       >
@@ -761,6 +765,7 @@ export default function Schedule() {
                         <CheckSquare className="text-emerald-500" size={18}/>
                         {t("schedule.ai.previewTitle", { count: aiPreview.length })}
                     </h4>
+                    {/* <button onClick={() => setAiPreview(null)} className="text-xs text-red-500 hover:underline">{t("schedule.ai.discard")}</button> */}
                   </div>
                   
                   <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 max-h-80 overflow-y-auto space-y-4 custom-scrollbar">

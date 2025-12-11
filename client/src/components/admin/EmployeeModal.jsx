@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, User, Mail, Phone, Briefcase, Lock, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const EmployeeModal = ({ employee, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (employee) {
@@ -35,19 +37,19 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
+    if (!formData.name.trim()) newErrors.name = t("admines.employees.form.errors.nameRequired");
+    if (!formData.email.trim()) newErrors.email = t("admines.employees.form.errors.emailRequired");
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t("admines.employees.form.errors.emailInvalid");
 
-    if (!employee && !formData.password) newErrors.password = "Password is required";
-    else if (!employee && formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    if (!employee && !formData.password) newErrors.password = t("admines.employees.form.errors.passwordRequired");
+    else if (!employee && formData.password.length < 6) newErrors.password = t("admines.employees.form.errors.passwordLength");
 
-    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    if (!formData.phone.trim()) newErrors.phone = t("admines.employees.form.errors.phoneRequired");
     else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = "Enter a valid phone number";
+      newErrors.phone = t("admines.employees.form.errors.phoneInvalid");
     }
 
-    if (!formData.position.trim()) newErrors.position = "Position is required";
+    if (!formData.position.trim()) newErrors.position = t("admines.employees.form.errors.positionRequired");
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -83,10 +85,10 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
-                {employee ? 'Edit Employee' : 'Add New Employee'}
+                {employee ? t("admines.employees.form.editTitle") : t("admines.employees.form.addTitle")}
               </h2>
               <p className="text-xs text-gray-600 dark:text-slate-400">
-                {employee ? 'Update employee information' : 'Add a new team member'}
+                {employee ? t("admines.employees.form.editSubtitle") : t("admines.employees.form.addSubtitle")}
               </p>
             </div>
           </div>
@@ -104,7 +106,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             {/* Name */}
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Full Name *
+                {t("admines.employees.form.labels.fullName")} *
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500" size={16} />
@@ -113,7 +115,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="John Doe"
+                  placeholder={t("admines.employees.form.placeholders.name")}
                   className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 dark:border-slate-600 ${errors.name ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
                     }`}
                 />
@@ -124,7 +126,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             {/* Email */}
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Email Address *
+                {t("admines.employees.form.labels.email")} *
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500" size={16} />
@@ -133,7 +135,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="employee@example.com"
+                  placeholder={t("admines.employees.form.placeholders.email")}
                   className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 dark:border-slate-600 disabled:dark:bg-slate-600 ${errors.email ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
                     }`}
                   disabled={!!employee}
@@ -146,7 +148,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             {!employee && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Password *
+                  {t("admines.employees.form.labels.password")} *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500" size={16} />
@@ -155,7 +157,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="••••••••"
+                    placeholder={t("admines.employees.form.placeholders.password")}
                     className={`w-full pl-9 pr-9 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 dark:border-slate-600 ${errors.password ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
                       }`}
                   />
@@ -174,7 +176,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             {/* Phone */}
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Phone Number *
+                {t("admines.employees.form.labels.phone")} *
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500" size={16} />
@@ -183,7 +185,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+1 234 567 8900"
+                  placeholder={t("admines.employees.form.placeholders.phone")}
                   className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 dark:border-slate-600 ${errors.phone ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
                     }`}
                 />
@@ -194,7 +196,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
             {/* Position */}
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Position *
+                {t("admines.employees.form.labels.position")} *
               </label>
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500" size={16} />
@@ -203,7 +205,7 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
                   name="position"
                   value={formData.position}
                   onChange={handleChange}
-                  placeholder="e.g., Manager, Cashier, Sales"
+                  placeholder={t("admines.employees.form.placeholders.position")}
                   className={`w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 dark:border-slate-600 ${errors.position ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
                     }`}
                 />
@@ -219,13 +221,13 @@ const EmployeeModal = ({ employee, onClose, onSubmit }) => {
               onClick={onClose}
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-sm"
             >
-              Cancel
+              {t("admines.employees.form.buttons.cancel")}
             </button>
             <button
               type="submit"
               className="flex-1 px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors text-sm"
             >
-              {employee ? 'Update Employee' : 'Add Employee'}
+              {employee ? t("admines.employees.form.buttons.update") : t("admines.employees.form.buttons.add")}
             </button>
           </div>
         </form>

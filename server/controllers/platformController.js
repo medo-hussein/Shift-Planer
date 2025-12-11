@@ -48,7 +48,7 @@ export const getPlatformDashboard = async (req, res) => {
   }
 };
 
-// @desc    Get All Companies (Paginated)
+// @desc    Get All Companies (Paginated with Enriched Data + Filtering)
 // @route   GET /api/platform/companies
 // @access  Platform Owner
 export const getAllCompanies = async (req, res) => {
@@ -56,24 +56,117 @@ export const getAllCompanies = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || "";
+    const planFilter = req.query.plan || ""; // Filter by plan_name
+    const statusFilter = req.query.status || ""; // Filter by isActive
     const skip = (page - 1) * limit;
 
-    const query = {};
+    // Build match query
+    const matchQuery = {};
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      matchQuery.name = { $regex: search, $options: "i" };
+    }
+    if (planFilter) {
+      matchQuery["subscription.plan_name"] = planFilter;
+    }
+    if (statusFilter === "active") {
+      matchQuery.isActive = true;
+    } else if (statusFilter === "inactive") {
+      matchQuery.isActive = false;
     }
 
-    const [companies, total] = await Promise.all([
-      Company.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      Company.countDocuments(query)
+    // Aggregation pipeline for enriched data
+    const pipeline = [
+      { $match: matchQuery },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "revenues",
+          localField: "_id",
+          foreignField: "company_id",
+          as: "revenues"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: { companyId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$company", "$$companyId"] } } },
+            { $count: "total" }
+          ],
+          as: "userCount"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$company", "$$companyId"] },
+                    { $eq: ["$role", "super_admin"] }
+                  ]
+                }
+              }
+            },
+            { $project: { name: 1, email: 1 } },
+            { $limit: 1 }
+          ],
+          as: "superAdmin"
+        }
+      },
+      {
+        $addFields: {
+          totalRevenue: {
+            $sum: {
+              $map: {
+                input: { $filter: { input: "$revenues", as: "r", cond: { $eq: ["$$r.status", "completed"] } } },
+                as: "rev",
+                in: "$$rev.amount"
+              }
+            }
+          },
+          employeeCount: { $ifNull: [{ $arrayElemAt: ["$userCount.total", 0] }, 0] },
+          superAdmin: { $arrayElemAt: ["$superAdmin", 0] }
+        }
+      },
+      {
+        $project: {
+          revenues: 0,
+          userCount: 0,
+          verificationToken: 0,
+          verificationExpires: 0
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    // Count pipeline
+    const countPipeline = [
+      { $match: matchQuery },
+      { $count: "total" }
+    ];
+
+    const [companies, countResult] = await Promise.all([
+      Company.aggregate(pipeline),
+      Company.aggregate(countPipeline)
     ]);
+
+    const total = countResult[0]?.total || 0;
+
+    // Get available plans for filter dropdown
+    const availablePlans = await Company.distinct("subscription.plan_name");
 
     res.json({
       success: true,
       data: companies,
+      filters: {
+        plans: availablePlans.filter(p => p) // Remove nulls
+      },
       pagination: {
         page,
         limit,
@@ -82,6 +175,7 @@ export const getAllCompanies = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error("[getAllCompanies] Error:", error);
     res.status(500).json({ message: error.message });
   }
 };

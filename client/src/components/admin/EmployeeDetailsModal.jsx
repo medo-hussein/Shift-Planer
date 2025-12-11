@@ -16,11 +16,13 @@ import {
   Shield
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 const EmployeeDetailsModal = ({ employee, onClose }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const { show: showLoader, hide: hideLoader } = useLoading();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchEmployeeDetails();
@@ -33,7 +35,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
       const response = await employeesService.getEmployee(employee._id);
       setDetails(response.data.data);
     } catch (error) {
-      toast.error("Failed to fetch employee details");
+      toast.error(t("admins.employeeDetails.errors.fetchFailed"));
       console.error("Error:", error);
     } finally {
       setLoading(false);
@@ -42,7 +44,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Never";
+    if (!dateString) return t("s.employeeDetails.never");
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -51,6 +53,12 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getStatusText = (status) => {
+    return status === 'present' 
+      ? t("admins.employeeDetails.attendance.present") 
+      : t("admins.employeeDetails.attendance.absent");
   };
 
   if (loading) {
@@ -102,7 +110,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
                 : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
             }`}>
               {profile?.is_active ? <CheckCircle size={12} /> : <XCircle size={12} />}
-              {profile?.is_active ? 'Active' : 'Inactive'}
+              {profile?.is_active ? t("admins.employeeDetails.status.active") : t("admins.employeeDetails.status.inactive")}
             </div>
             
             <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 rounded-full text-xs font-medium">
@@ -117,14 +125,16 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <User size={14} />
-              Basic Information
+              {t("admins.employeeDetails.sections.basicInfo")}
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Mail size={12} className="text-gray-400 dark:text-slate-500" />
-                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Email</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">
+                    {t("admins.employeeDetails.fields.email")}
+                  </p>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.email}</p>
               </div>
@@ -132,15 +142,21 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Phone size={12} className="text-gray-400 dark:text-slate-500" />
-                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Phone</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">
+                    {t("admins.employeeDetails.fields.phone")}
+                  </p>
                 </div>
-                <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.phone || 'Not provided'}</p>
+                <p className="text-sm text-gray-900 dark:text-slate-100">
+                  {profile?.phone || t("admins.employeeDetails.notProvided")}
+                </p>
               </div>
               
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Briefcase size={12} className="text-gray-400 dark:text-slate-500" />
-                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Position</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">
+                    {t("admins.employeeDetails.fields.position")}
+                  </p>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-slate-100">{profile?.position}</p>
               </div>
@@ -148,7 +164,9 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Building size={12} className="text-gray-400 dark:text-slate-500" />
-                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">Branch ID</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-400">
+                    {t("admins.employeeDetails.fields.branchId")}
+                  </p>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-slate-100 truncate">{employee.branch_admin_id}</p>
               </div>
@@ -159,14 +177,16 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <BarChart3 size={14} />
-              Statistics
+              {t("admins.employeeDetails.sections.statistics")}
             </h3>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/20 to-blue-100 dark:to-blue-900/10 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-1">Total Shifts</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-1">
+                      {t("admins.employeeDetails.stats.totalShifts")}
+                    </p>
                     <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{statistics?.total_shifts || 0}</p>
                   </div>
                   <Clock size={16} className="text-blue-600 dark:text-blue-400" />
@@ -176,7 +196,9 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
               <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/20 to-emerald-100 dark:to-emerald-900/10 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mb-1">Upcoming Shifts</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mb-1">
+                      {t("admins.employeeDetails.stats.upcomingShifts")}
+                    </p>
                     <p className="text-lg font-bold text-emerald-900 dark:text-emerald-300">{upcoming_shifts?.length || 0}</p>
                   </div>
                   <Calendar size={16} className="text-emerald-600 dark:text-emerald-400" />
@@ -189,17 +211,21 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <Shield size={14} />
-              Account Information
+              {t("admins.employeeDetails.sections.accountInfo")}
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
-                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Member Since</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                  {t("admins.employeeDetails.account.memberSince")}
+                </p>
                 <p className="text-sm text-gray-900 dark:text-slate-100">{formatDate(profile?.createdAt)}</p>
               </div>
               
               <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
-                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Last Login</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                  {t("admins.employeeDetails.account.lastLogin")}
+                </p>
                 <p className="text-sm text-gray-900 dark:text-slate-100">{formatDate(profile?.lastLogin)}</p>
               </div>
             </div>
@@ -210,10 +236,10 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                 <Clock size={14} />
-                Recent Attendance
+                {t("admins.employeeDetails.sections.recentAttendance")}
               </h3>
               <span className="text-xs text-gray-500 dark:text-slate-400">
-                {attendance_history?.length || 0} records
+                {attendance_history?.length || 0} {t("admins.employeeDetails.records")}
               </span>
             </div>
             
@@ -223,8 +249,12 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-gray-100 dark:bg-slate-600">
-                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">Date</th>
-                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">Status</th>
+                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                          {t("admins.employeeDetails.table.date")}
+                        </th>
+                        <th className="py-2 px-3 text-left font-medium text-gray-600 dark:text-slate-300">
+                          {t("admins.employeeDetails.table.status")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -239,7 +269,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
                                 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
                                 : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                             }`}>
-                              {record.status === 'present' ? 'Present' : 'Absent'}
+                              {getStatusText(record.status)}
                             </span>
                           </td>
                         </tr>
@@ -251,7 +281,9 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
             ) : (
               <div className="text-center py-6 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <Clock size={24} className="text-gray-400 dark:text-slate-500 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 dark:text-slate-400">No attendance records found</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">
+                  {t("admins.employeeDetails.noAttendanceRecords")}
+                </p>
               </div>
             )}
           </div>
@@ -264,7 +296,7 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
               onClick={onClose}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors text-sm"
             >
-              Close
+              {t("admins.employeeDetails.closeButton")}
             </button>
           </div>
         </div>

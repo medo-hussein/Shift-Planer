@@ -45,11 +45,11 @@ export const googleAuthCallbackController = async (req, res) => {
     // Handle OAuth errors
     if (error) {
       console.error('Google OAuth error:', error);
-      return res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent('Google authentication failed')}`);
+      return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Google authentication failed')}`);
     }
 
     if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent('Authorization code not provided')}`);
+      return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Authorization code not provided')}`);
     }
 
     // Exchange code for tokens
@@ -79,7 +79,7 @@ export const googleAuthCallbackController = async (req, res) => {
 
   } catch (error) {
     console.error('Google auth callback error:', error);
-    return res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
+    return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
   }
 };
 

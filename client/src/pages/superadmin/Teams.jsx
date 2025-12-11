@@ -147,7 +147,7 @@ export default function Teams() {
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen" onClick={() => setActiveMenu(null)}>
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex md:justify-between md:items-center md:flex-row mb-8 flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("teams.title")}</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">{t("teams.subtitle")}</p>

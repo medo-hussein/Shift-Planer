@@ -5,7 +5,8 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import ReactMarkdown from "react-markdown";
 import { reportService } from "../../api/services/admin/reportService";
-import {Alert} from "../../utils/alertService.js";
+import { Alert } from "../../utils/alertService.js";
+import { useTranslation } from "react-i18next";
 
 function cleanInlineMarkdown(text) {
   if (!text) return "";
@@ -15,7 +16,6 @@ function cleanInlineMarkdown(text) {
     .replace(/(\*\*|__)(.+?)\1/g, "$2")
     .replace(/(\*|_)(.+?)\1/g, "$2");
 }
-
 
 function parseMarkdownForPDF(markdown) {
   if (!markdown) return [];
@@ -28,7 +28,7 @@ function parseMarkdownForPDF(markdown) {
 
     const headingMatch = trimmed.match(/^(#+)\s+(.*)$/);
     if (headingMatch) {
-      const level = headingMatch[1].length; 
+      const level = headingMatch[1].length;
       const text = cleanInlineMarkdown(headingMatch[2]);
 
       if (level === 1) blocks.push({ type: "h1", text });
@@ -50,7 +50,6 @@ function parseMarkdownForPDF(markdown) {
   return blocks;
 }
 
-// Render blocks inside jsPDF
 function renderMarkdownIntoPDF(doc, blocks, xPos, yPos, align) {
   blocks.forEach((block) => {
     if (block.type === "h1") {
@@ -91,6 +90,8 @@ function renderMarkdownIntoPDF(doc, blocks, xPos, yPos, align) {
 }
 
 export default function ReportDetailsModal({ report, onClose }) {
+  const { t } = useTranslation();
+  
   if (!report) return null;
 
   const { data, type, title } = report;
@@ -107,7 +108,7 @@ export default function ReportDetailsModal({ report, onClose }) {
       setAiSummary(res.data.data.ai_summary);
     } catch (err) {
       console.error(err);
-      Alert.error("Failed to generate AI analysis. Try later.");
+      Alert.error(t("admin.reports.errors.aiAnalysisFailed"));
     } finally {
       setIsAnalyzing(false);
     }
@@ -118,36 +119,35 @@ export default function ReportDetailsModal({ report, onClose }) {
 
     if (type === "attendance" && data.by_employee) {
       sheetData = data.by_employee.map((emp) => ({
-        Employee: emp.employee?.name || "N/A",
-        Email: emp.employee?.email || "N/A",
-        "Total Hours": emp.total_worked_hours || 0,
-        Overtime: emp.overtime_hours || 0,
-        "Late Count": emp.late_count || 0,
-        "Attendance Rate": emp.attendance_rate ? `${emp.attendance_rate}%` : "0%",
+        [t("admin.reports.tableHeaders.employee")]: emp.employee?.name || t("admin.common.notAvailable"),
+        [t("admin.reports.tableHeaders.email")]: emp.employee?.email || t("admin.common.notAvailable"),
+        [t("admin.reports.tableHeaders.totalHours")]: emp.total_worked_hours || 0,
+        [t("admin.reports.tableHeaders.overtime")]: emp.overtime_hours || 0,
+        [t("admin.reports.tableHeaders.lateCount")]: emp.late_count || 0,
+        [t("admin.reports.tableHeaders.attendanceRate")]: emp.attendance_rate ? `${emp.attendance_rate}%` : "0%",
       }));
     } else if (type === "performance" && data.employees) {
       sheetData = data.employees.map((emp) => ({
-        Employee: emp.employee?.name || "N/A",
-        Score: emp.performance_score != null ? `${emp.performance_score}%` : "0%",
-        "Attendance Rate": emp.attendance?.rate != null ? `${emp.attendance.rate}%` : "0%",
-        "Tasks Rate": emp.shifts?.completion_rate != null ? `${emp.shifts.completion_rate}%` : "0%",
+        [t("admin.reports.tableHeaders.employee")]: emp.employee?.name || t("admin.common.notAvailable"),
+        [t("admin.reports.tableHeaders.score")]: emp.performance_score != null ? `${emp.performance_score}%` : "0%",
+        [t("admin.reports.tableHeaders.attendanceRate")]: emp.attendance?.rate != null ? `${emp.attendance.rate}%` : "0%",
+        [t("admin.reports.tableHeaders.tasksRate")]: emp.shifts?.completion_rate != null ? `${emp.shifts.completion_rate}%` : "0%",
       }));
     } else if (type === "shift") {
       sheetData = [
-        { Metric: "Total Shifts", Value: data.total_shifts || 0 },
-        { Metric: "Completed", Value: data.by_status?.completed || 0 },
-        { Metric: "Scheduled", Value: data.by_status?.scheduled || 0 },
-        { Metric: "In Progress", Value: data.by_status?.in_progress || 0 },
+        { [t("admin.reports.metrics.totalShifts")]: data.total_shifts || 0 },
+        { [t("admin.reports.metrics.completed")]: data.by_status?.completed || 0 },
+        { [t("admin.reports.metrics.scheduled")]: data.by_status?.scheduled || 0 },
+        { [t("admin.reports.metrics.inProgress")]: data.by_status?.in_progress || 0 },
       ];
     }
 
     const worksheet = XLSX.utils.json_to_sheet(sheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
-    XLSX.writeFile(workbook, `${(title || "Report").replace(/\s+/g, "_")}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, t("admin.reports.sheetName"));
+    XLSX.writeFile(workbook, `${(title || t("admin.reports.defaultTitle")).replace(/\s+/g, "_")}.xlsx`);
   };
 
-  // Export PDF
   const handleExportPDF = async () => {
     try {
       document.body.style.cursor = "wait";
@@ -157,7 +157,7 @@ export default function ReportDetailsModal({ report, onClose }) {
       const fontUrl =
         "https://raw.githubusercontent.com/google/fonts/main/ofl/amiri/Amiri-Regular.ttf";
       const fontResponse = await fetch(fontUrl);
-      if (!fontResponse.ok) throw new Error("Failed to fetch font");
+      if (!fontResponse.ok) throw new Error(t("admin.reports.errors.fontFailed"));
 
       const fontBlob = await fontResponse.blob();
       const reader = new FileReader();
@@ -176,19 +176,19 @@ export default function ReportDetailsModal({ report, onClose }) {
 
         // Title + Date
         doc.setFontSize(22);
-        doc.text(title || "Report Details", xPos, 22, { align });
+        doc.text(title || t("admin.reports.defaultTitle"), xPos, 22, { align });
 
         doc.setFontSize(10);
         const dateText = isArabic
-          ? `تاريخ التقرير: ${new Date().toLocaleDateString("ar-EG")}`
-          : `Generated on: ${new Date().toLocaleDateString("en-US")}`;
+          ? `${t("admin.reports.generatedDate")}: ${new Date().toLocaleDateString("ar-EG")}`
+          : `${t("admin.reports.generatedDate")}: ${new Date().toLocaleDateString("en-US")}`;
         doc.text(dateText, xPos, 30, { align });
 
         let yPos = 45;
 
-        // -------- AI Summary --------
+        // AI Summary
         if (aiSummary) {
-          const aiTitle = isArabic ? "ملخص التحليل الذكي" : "AI Smart Analysis";
+          const aiTitle = isArabic ? t("admin.reports.aiSummary.ar") : t("admin.reports.aiSummary.en");
           doc.setFontSize(16);
           doc.text(aiTitle, xPos, yPos, { align });
           yPos += 10;
@@ -198,24 +198,36 @@ export default function ReportDetailsModal({ report, onClose }) {
           yPos += 8;
         }
 
-        // -------- Table Section --------
+        // Table Section
         let tableHead = [];
         let tableBody = [];
 
         if (type === "attendance" && data.by_employee) {
           if (isArabic) {
-            tableHead = [["معدل الحضور", "تأخير", "إضافي", "ساعات العمل", "الموظف"]];
+            tableHead = [[
+              t("admin.reports.attendanceTable.ar.rate"),
+              t("admin.reports.attendanceTable.ar.late"),
+              t("admin.reports.attendanceTable.ar.overtime"),
+              t("admin.reports.attendanceTable.ar.hours"),
+              t("admin.reports.attendanceTable.ar.employee"),
+            ]];
             tableBody = data.by_employee.map((emp) => [
               emp.attendance_rate ? `${emp.attendance_rate}%` : "0%",
               emp.late_count || 0,
               emp.overtime_hours || 0,
               emp.total_worked_hours || 0,
-              emp.employee?.name || "غير معروف",
+              emp.employee?.name || t("admin.reports.unknown"),
             ]);
           } else {
-            tableHead = [["Employee", "Hours", "Overtime", "Lateness", "Rate"]];
+            tableHead = [[
+              t("admin.reports.attendanceTable.en.employee"),
+              t("admin.reports.attendanceTable.en.hours"),
+              t("admin.reports.attendanceTable.en.overtime"),
+              t("admin.reports.attendanceTable.en.late"),
+              t("admin.reports.attendanceTable.en.rate"),
+            ]];
             tableBody = data.by_employee.map((emp) => [
-              emp.employee?.name || "Unknown",
+              emp.employee?.name || t("admin.reports.unknown"),
               emp.total_worked_hours || 0,
               emp.overtime_hours || 0,
               emp.late_count || 0,
@@ -224,7 +236,12 @@ export default function ReportDetailsModal({ report, onClose }) {
           }
         } else if (type === "performance" && data.employees) {
           if (isArabic) {
-            tableHead = [["المهام المنجزة", "الالتزام", "التقييم", "الموظف"]];
+            tableHead = [[
+              t("admin.reports.performanceTable.ar.tasks"),
+              t("admin.reports.performanceTable.ar.attendance"),
+              t("admin.reports.performanceTable.ar.score"),
+              t("admin.reports.performanceTable.ar.employee"),
+            ]];
             tableBody = data.employees.map((emp) => [
               emp.shifts?.completion_rate != null
                 ? `${emp.shifts.completion_rate}%`
@@ -233,12 +250,17 @@ export default function ReportDetailsModal({ report, onClose }) {
               emp.performance_score != null
                 ? `${emp.performance_score}%`
                 : "0%",
-              emp.employee?.name || "غير معروف",
+              emp.employee?.name || t("admin.reports.unknown"),
             ]);
           } else {
-            tableHead = [["Employee", "Score", "Attendance", "Tasks"]];
+            tableHead = [[
+              t("admin.reports.performanceTable.en.employee"),
+              t("admin.reports.performanceTable.en.score"),
+              t("admin.reports.performanceTable.en.attendance"),
+              t("admin.reports.performanceTable.en.tasks"),
+            ]];
             tableBody = data.employees.map((emp) => [
-              emp.employee?.name || "Unknown",
+              emp.employee?.name || t("admin.reports.unknown"),
               emp.performance_score != null ? `${emp.performance_score}%` : "0%",
               emp.attendance?.rate != null ? `${emp.attendance.rate}%` : "0%",
               emp.shifts?.completion_rate != null
@@ -248,20 +270,26 @@ export default function ReportDetailsModal({ report, onClose }) {
           }
         } else if (type === "shift") {
           if (isArabic) {
-            tableHead = [["القيمة", "المقياس"]];
+            tableHead = [[
+              t("admin.reports.shiftTable.ar.value"),
+              t("admin.reports.shiftTable.ar.metric"),
+            ]];
             tableBody = [
-              [data.total_shifts || 0, "إجمالي الشفتات"],
-              [data.by_status?.completed || 0, "مكتملة"],
-              [data.by_status?.scheduled || 0, "مجدولة"],
-              [data.by_status?.in_progress || 0, "جارية"],
+              [data.total_shifts || 0, t("admin.reports.shiftTable.ar.totalShifts")],
+              [data.by_status?.completed || 0, t("admin.reports.shiftTable.ar.completed")],
+              [data.by_status?.scheduled || 0, t("admin.reports.shiftTable.ar.scheduled")],
+              [data.by_status?.in_progress || 0, t("admin.reports.shiftTable.ar.inProgress")],
             ];
           } else {
-            tableHead = [["Metric", "Value"]];
+            tableHead = [[
+              t("admin.reports.shiftTable.en.metric"),
+              t("admin.reports.shiftTable.en.value"),
+            ]];
             tableBody = [
-              ["Total Shifts", data.total_shifts || 0],
-              ["Completed", data.by_status?.completed || 0],
-              ["Scheduled", data.by_status?.scheduled || 0],
-              ["In Progress", data.by_status?.in_progress || 0],
+              [t("admin.reports.shiftTable.en.totalShifts"), data.total_shifts || 0],
+              [t("admin.reports.shiftTable.en.completed"), data.by_status?.completed || 0],
+              [t("admin.reports.shiftTable.en.scheduled"), data.by_status?.scheduled || 0],
+              [t("admin.reports.shiftTable.en.inProgress"), data.by_status?.in_progress || 0],
             ];
           }
         }
@@ -288,29 +316,36 @@ export default function ReportDetailsModal({ report, onClose }) {
           });
         }
 
-        doc.save(`${(title || "Report").replace(/\s+/g, "_")}.pdf`);
+        doc.save(`${(title || t("admin.reports.defaultTitle")).replace(/\s+/g, "_")}.pdf`);
         document.body.style.cursor = "default";
       };
     } catch (err) {
       console.error("PDF Error:", err);
       document.body.style.cursor = "default";
-      alert("Failed to export PDF.");
+      alert(t("admin.reports.errors.pdfFailed"));
     }
   };
-
 
   const renderAttendanceDetails = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Hours" value={data.total_worked_hours || 0} color="blue" />
+        <StatCard 
+          label={t("admin.reports.stats.totalHours")} 
+          value={data.total_worked_hours || 0} 
+          color="blue" 
+        />
         <StatCard
-          label="Present"
+          label={t("admin.reports.stats.present")}
           value={data.summary?.present || data.present_count || 0}
           color="emerald"
         />
-        <StatCard label="Late" value={data.late_count || 0} color="amber" />
+        <StatCard 
+          label={t("admin.reports.stats.late")} 
+          value={data.late_count || 0} 
+          color="amber" 
+        />
         <StatCard
-          label="Attendance Rate"
+          label={t("admin.reports.stats.attendanceRate")}
           value={`${data.attendance_rate || 0}%`}
           color="purple"
         />
@@ -318,13 +353,18 @@ export default function ReportDetailsModal({ report, onClose }) {
 
       {data.by_employee && (
         <TableContainer
-          title="Employee Breakdown"
-          headers={["Employee", "Hours", "Overtime", "Lateness"]}
+          title={t("admin.reports.tables.employeeBreakdown")}
+          headers={[
+            t("admin.reports.tableHeaders.employee"),
+            t("admin.reports.tableHeaders.hours"),
+            t("admin.reports.tableHeaders.overtime"),
+            t("admin.reports.tableHeaders.lateness"),
+          ]}
         >
           {data.by_employee.map((emp, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="p-3 font-medium text-gray-900">
-                {emp.employee?.name || "N/A"}
+                {emp.employee?.name || t("admin.common.notAvailable")}
               </td>
               <td className="p-3">{emp.total_worked_hours}h</td>
               <td className="p-3 text-green-600">{emp.overtime_hours}h</td>
@@ -339,9 +379,21 @@ export default function ReportDetailsModal({ report, onClose }) {
   const renderShiftDetails = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Shifts" value={data.total_shifts || 0} color="slate" />
-        <StatCard label="Completed" value={data.by_status?.completed || 0} color="green" />
-        <StatCard label="Scheduled" value={data.by_status?.scheduled || 0} color="blue" />
+        <StatCard 
+          label={t("admin.reports.stats.totalShifts")} 
+          value={data.total_shifts || 0} 
+          color="slate" 
+        />
+        <StatCard 
+          label={t("admin.reports.stats.completed")} 
+          value={data.by_status?.completed || 0} 
+          color="green" 
+        />
+        <StatCard 
+          label={t("admin.reports.stats.scheduled")} 
+          value={data.by_status?.scheduled || 0} 
+          color="blue" 
+        />
       </div>
     </div>
   );
@@ -350,12 +402,12 @@ export default function ReportDetailsModal({ report, onClose }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <StatCard
-          label="Avg Performance"
+          label={t("admin.reports.stats.avgPerformance")}
           value={`${data.averages?.avg_performance || 0}%`}
           color="purple"
         />
         <StatCard
-          label="Avg Attendance"
+          label={t("admin.reports.stats.avgAttendance")}
           value={`${data.averages?.avg_attendance || 0}%`}
           color="blue"
         />
@@ -363,13 +415,18 @@ export default function ReportDetailsModal({ report, onClose }) {
 
       {data.employees && (
         <TableContainer
-          title="Performance Ranking"
-          headers={["Employee", "Score", "Attendance", "Tasks"]}
+          title={t("admin.reports.tables.performanceRanking")}
+          headers={[
+            t("admin.reports.tableHeaders.employee"),
+            t("admin.reports.tableHeaders.score"),
+            t("admin.reports.tableHeaders.attendance"),
+            t("admin.reports.tableHeaders.tasks"),
+          ]}
         >
           {data.employees.map((emp, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="p-3 font-medium text-gray-900">
-                {emp.employee?.name || "N/A"}
+                {emp.employee?.name || t("admin.common.notAvailable")}
               </td>
               <td className="p-3">
                 <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-bold text-xs">
@@ -413,7 +470,7 @@ export default function ReportDetailsModal({ report, onClose }) {
             <div className="flex justify-between items-start mb-3 relative z-10">
               <div className="flex items-center gap-2 text-indigo-900">
                 <Sparkles size={20} className="text-purple-600" />
-                <h3 className="font-bold text-lg">AI Smart Analysis</h3>
+                <h3 className="font-bold text-lg">{t("admin.reports.aiSmartAnalysis")}</h3>
               </div>
 
               <div className="flex items-center gap-2">
@@ -425,8 +482,8 @@ export default function ReportDetailsModal({ report, onClose }) {
                     className="bg-transparent border-none outline-none text-sm text-indigo-700 font-medium cursor-pointer appearance-none pr-1"
                     disabled={isAnalyzing}
                   >
-                    <option value="ar">العربية</option>
-                    <option value="en">English</option>
+                    <option value="ar">{t("admin.reports.languages.arabic")}</option>
+                    <option value="en">{t("admin.reports.languages.english")}</option>
                   </select>
                 </div>
 
@@ -437,12 +494,12 @@ export default function ReportDetailsModal({ report, onClose }) {
                 >
                   {isAnalyzing ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" /> Analyzing...
+                      <Loader2 size={16} className="animate-spin" /> {t("admin.reports.analyzing")}
                     </>
                   ) : aiSummary ? (
-                    "✨ Regenerate"
+                    `✨ ${t("admin.reports.regenerate")}`
                   ) : (
-                    "✨ Generate Insights"
+                    `✨ ${t("admin.reports.generateInsights")}`
                   )}
                 </button>
               </div>
@@ -466,8 +523,7 @@ export default function ReportDetailsModal({ report, onClose }) {
                 </div>
               ) : (
                 <p className="text-sm text-indigo-800/70 italic">
-                  Click to generate an intelligent analysis with insights, trends &
-                  recommendations.
+                  {t("admin.reports.aiDescription")}
                 </p>
               )}
             </div>
@@ -489,13 +545,13 @@ export default function ReportDetailsModal({ report, onClose }) {
               onClick={handleExportPDF}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition text-sm font-medium"
             >
-              <FileText size={16} /> PDF
+              <FileText size={16} /> {t("admin.reports.export.pdf")}
             </button>
             <button
               onClick={handleExportExcel}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
             >
-              <FileSpreadsheet size={16} /> Excel
+              <FileSpreadsheet size={16} /> {t("admin.reports.export.excel")}
             </button>
           </div>
 
@@ -503,7 +559,7 @@ export default function ReportDetailsModal({ report, onClose }) {
             onClick={onClose}
             className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
           >
-            Close
+            {t("admin.reports.close")}
           </button>
         </div>
       </div>

@@ -36,7 +36,7 @@ const ShiftDetailsModal = ({ shift, onClose, formatTime, getStatusColor, onSwapR
   const isFutureShift = new Date(shift.start_date_time) > new Date();
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fadeIn dark:bg-black/80">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-60 p-4 animate-fadeIn dark:bg-black/80">
       <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden transform transition-all scale-100">
         
         {/* Header */}
@@ -313,7 +313,7 @@ const MySchedule = () => {
         
         {todayStatus && (
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div className="text-right">
+            <div className="md:text-right">
               <p className="text-sm text-gray-500 dark:text-slate-400">{t("mySchedule.todayStatus")}</p>
               <p className={`font-semibold ${
                 todayStatus.clocked_in ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-400'

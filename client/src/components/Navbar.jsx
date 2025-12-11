@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { Bell, User, Menu, X, Check, Megaphone, Moon, Sun, Home } from "lucide-react";
 import routes from "../routes/routesConfig";
 import { NavLink, useNavigate } from "react-router";
@@ -22,6 +22,26 @@ export default function Navbar({ role }) {
   const items = routes[role] || [];
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(e.target)
+      ) {
+        setOpenNotificationMenu(false);
+      }
+
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setOpenProfileMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
 
   const changeLanguage = (lang) => {
@@ -76,8 +96,8 @@ export default function Navbar({ role }) {
   return (
     <div className="w-full shadow bg-white dark:bg-slate-900 sticky top-0 z-50">
       {/* Top Bar */}
-      <div className="w-full flex items-center justify-between px-4 md:px-10 py-3 border-b border-gray-200 dark:border-slate-700">
-        <div className="flex items-center gap-2">
+      <div className="w-full flex items-center justify-between gap-4 px-4 md:px-10 py-3 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center">
           <button
             className="md:hidden p-2 dark:text-white"
             onClick={() => setOpenMobileMenu(!openMobileMenu)}
@@ -86,9 +106,9 @@ export default function Navbar({ role }) {
           </button>
           {
             theme === "light" ? (
-              <img src="/icons/lightLogo.png" alt="Logo" className="lg:w-30 w-20" />
+              <img src="/icons/lightLogo.png" alt="Logo" className="lg:w-30 w-25" />
             ) : (
-              <img src="/icons/darkLogo.png" alt="Logo" className="lg:w-30 w-20" />
+              <img src="/icons/darkLogo.png" alt="Logo" className="lg:w-30 w-25" />
             )
           }
         </div>
@@ -107,7 +127,7 @@ export default function Navbar({ role }) {
 
           <button
             onClick={() => navigate("/")}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
+            className="hidden md:block p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
             title={t("navbar.homeTitle")}
           >
             <Home className="w-6 h-6" />
@@ -135,10 +155,13 @@ export default function Navbar({ role }) {
           )}
 
           {/* Notifications */}
-          <div className="relative">
+          <div                 
+          ref={notificationRef}
+          className="relative">
             <button
-              onClick={() => {
-                setOpenNotificationMenu(!openNotificationMenu);
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenNotificationMenu((prev) => !prev);
                 setOpenProfileMenu(false);
               }}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-[#112D4E] dark:hover:text-slate-200 transition relative group"
@@ -153,7 +176,10 @@ export default function Navbar({ role }) {
             </button>
 
             {openNotificationMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeIn">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 mt-2 md:w-80 w-60 bg-white dark:bg-slate-800 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeIn">
+
                 <div className="p-3 border-b border-gray-50 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-700/50">
                   <h3 className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
                     {t("navbar.notifications")}
@@ -213,11 +239,14 @@ export default function Navbar({ role }) {
           </div>
 
           {/* Profile Menu */}
-          <div className="relative">
+          <div 
+          ref={profileRef}
+          className="relative">
             <button
               className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full dark:text-slate-300"
-              onClick={() => {
-                setOpenProfileMenu(!openProfileMenu);
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenProfileMenu((prev) => !prev);
                 setOpenNotificationMenu(false);
               }}
             >
@@ -237,7 +266,9 @@ export default function Navbar({ role }) {
               </div>
             </button>
             {openProfileMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 shadow-lg rounded-lg z-50">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 shadow-lg rounded-lg z-50">
                 <ul className="flex flex-col">
                   <li className="px-4 py-2 text-gray-800 dark:text-slate-200 font-semibold">
                     {userRole}
@@ -277,16 +308,30 @@ export default function Navbar({ role }) {
 
       {/* Mobile Navigation */}
       {openMobileMenu && (
-        <div className="md:hidden bg-[#1d2931] dark:bg-slate-900 text-white px-6 py-3">
-          <select
-            value={i18n.language}
-            onChange={(e) => changeLanguage(e.target.value)}
-            className="mb-4 border border-slate-600 dark:border-slate-500 rounded-lg px-2 py-1 text-sm bg-slate-800 text-white"
-          >
-            <option value="en">EN</option>
-            <option value="ar">AR</option>
-          </select>
-          <ul className="flex flex-col gap-4">
+        <div className="md:hidden bg-[#1d2931] dark:bg-slate-900 text-white px-4 py-4">
+
+          <div className="flex items-center justify-between mb-6 px-2">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 px-2 py-2 text-slate-300 hover:text-[#BBE1FA] transition rounded-lg hover:bg-slate-800"
+              title={t("navbar.homeTitle")}
+            >
+              <Home className="w-5 h-5" />
+              <span>Home</span>
+            </button>
+
+            <select
+              value={i18n.language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="border border-slate-600 dark:border-slate-500 rounded-lg px-3 py-2 text-sm bg-slate-800 text-white"
+            >
+              <option value="en">EN</option>
+              <option value="ar">AR</option>
+            </select>
+          </div>
+
+          {/* Navigation Links */}
+          <ul className="flex flex-col gap-1">
             {items.filter(item => !item.hidden).map((item) => {
               const Icon = item.icon;
               return (
@@ -295,7 +340,9 @@ export default function Navbar({ role }) {
                     to={item.path}
                     onClick={() => setOpenMobileMenu(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 hover:text-[#BBE1FA] transition py-2 ${isActive ? "text-[#BBE1FA] font-semibold" : ""
+                      `flex items-center gap-3 px-3 py-3 rounded-lg transition ${isActive
+                        ? "text-[#BBE1FA] font-semibold bg-slate-800"
+                        : "text-slate-300 hover:text-[#BBE1FA] hover:bg-slate-800"
                       }`
                     }
                   >

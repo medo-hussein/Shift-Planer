@@ -4,7 +4,7 @@ import { useLoading } from "../../contexts/LoaderContext";
 import { useToast } from "../../hooks/useToast";
 import {
     Search, MoreVertical, Shield, ShieldOff,
-    Building2, Calendar, CreditCard, Users
+    Building2, Calendar, CreditCard, Users, DollarSign, Mail, User, Filter, X
 } from "lucide-react";
 
 export default function Companies() {
@@ -13,18 +13,22 @@ export default function Companies() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCompanies, setTotalCompanies] = useState(0);
+    const [planFilter, setPlanFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
+    const [availablePlans, setAvailablePlans] = useState([]);
     const { show, hide } = useLoading();
     const { addToast } = useToast();
 
     const fetchCompanies = async () => {
         try {
             show();
-            // Debounce search is handled by useEffect dependency naturally if we were strictly reacting
-            // But here we might want to debounce the actual call if search changes rapidly
-            const res = await platformService.getAllCompanies(page, 9, search); // Limit 9 for grid 3x3
+            const res = await platformService.getAllCompanies(page, 9, search, planFilter, statusFilter);
             setCompanies(res.data.data);
             setTotalPages(res.data.pagination.pages);
             setTotalCompanies(res.data.pagination.total);
+            if (res.data.filters?.plans) {
+                setAvailablePlans(res.data.filters.plans);
+            }
         } catch (err) {
             console.error("Error fetching companies:", err);
             addToast("Failed to load companies", "error");
@@ -36,14 +40,14 @@ export default function Companies() {
     // Debounce search effect
     useEffect(() => {
         const timer = setTimeout(() => {
-            setPage(1); // Reset to page 1 on search
+            setPage(1);
             fetchCompanies();
         }, 500);
         return () => clearTimeout(timer);
         // eslint-disable-next-line
-    }, [search]);
+    }, [search, planFilter, statusFilter]);
 
-    // Fetch on page change (skip if triggered by search reset to avoid double fetch)
+    // Fetch on page change
     useEffect(() => {
         fetchCompanies();
         // eslint-disable-next-line
@@ -53,8 +57,6 @@ export default function Companies() {
         try {
             await platformService.toggleCompanyStatus(id);
             addToast(`Company ${currentStatus ? 'deactivated' : 'activated'} successfully`, "success");
-
-            // Update local state
             setCompanies(prev => prev.map(c =>
                 c._id === id ? { ...c, isActive: !c.isActive } : c
             ));
@@ -64,10 +66,19 @@ export default function Companies() {
         }
     };
 
+    const clearFilters = () => {
+        setPlanFilter("");
+        setStatusFilter("");
+        setSearch("");
+    };
+
+    const hasActiveFilters = planFilter || statusFilter || search;
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 lg:p-10 font-sans text-slate-800 dark:text-slate-200">
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Companies</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">
@@ -87,6 +98,46 @@ export default function Companies() {
                 </div>
             </div>
 
+            {/* Filters Row */}
+            <div className="flex flex-wrap gap-3 mb-6 items-center">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <Filter size={16} />
+                    <span className="text-sm font-medium">Filters:</span>
+                </div>
+
+                <select
+                    value={planFilter}
+                    onChange={(e) => setPlanFilter(e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                    <option value="">All Plans</option>
+                    {availablePlans.map(plan => (
+                        <option key={plan} value={plan}>{plan}</option>
+                    ))}
+                </select>
+
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+
+                {hasActiveFilters && (
+                    <button
+                        onClick={clearFilters}
+                        className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                    >
+                        <X size={14} />
+                        Clear
+                    </button>
+                )}
+            </div>
+
+            {/* Company Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {companies.map((company) => (
                     <div key={company._id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 hover:shadow-md transition-all duration-300 group">
@@ -105,21 +156,33 @@ export default function Companies() {
                                 </div>
                             </div>
 
-                            <div className="relative">
-                                <button
-                                    onClick={() => handleToggleStatus(company._id, company.isActive)}
-                                    className={`p-2 rounded-lg transition ${company.isActive
-                                        ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
-                                        : "text-red-600 bg-red-50 hover:bg-red-100"
-                                        }`}
-                                    title={company.isActive ? "Deactivate Company" : "Activate Company"}
-                                >
-                                    {company.isActive ? <ShieldCheck size={20} /> : <ShieldOff size={20} />}
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => handleToggleStatus(company._id, company.isActive)}
+                                className={`p-2 rounded-lg transition ${company.isActive
+                                    ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                                    : "text-red-600 bg-red-50 hover:bg-red-100"
+                                    }`}
+                                title={company.isActive ? "Deactivate Company" : "Activate Company"}
+                            >
+                                {company.isActive ? <ShieldCheck size={20} /> : <ShieldOff size={20} />}
+                            </button>
                         </div>
 
+                        {/* Super Admin Info */}
+                        {company.superAdmin && (
+                            <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                    <User size={12} /> Super Admin
+                                </div>
+                                <div className="font-medium text-sm text-slate-800 dark:text-slate-200">{company.superAdmin.name}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <Mail size={10} /> {company.superAdmin.email}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-3 border-t border-slate-50 dark:border-slate-700 pt-4">
+                            {/* Plan */}
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <CreditCard size={16} /> Plan
@@ -129,21 +192,33 @@ export default function Companies() {
                                 </span>
                             </div>
 
+                            {/* Total Revenue */}
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <Building2 size={16} /> Branches
+                                    <DollarSign size={16} /> Revenue
                                 </span>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">
-                                    Max {company.subscription?.maxBranches || 1}
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {(company.totalRevenue || 0).toLocaleString()} EGP
                                 </span>
                             </div>
 
+                            {/* Employees Usage */}
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <Users size={16} /> Employees
                                 </span>
                                 <span className="font-medium text-slate-700 dark:text-slate-200">
-                                    Max {company.subscription?.maxUsers || 5}
+                                    {company.employeeCount || 0} / {company.subscription?.maxUsers || 5}
+                                </span>
+                            </div>
+
+                            {/* Branches */}
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                    <Building2 size={16} /> Max Branches
+                                </span>
+                                <span className="font-medium text-slate-700 dark:text-slate-200">
+                                    {company.subscription?.maxBranches || 1}
                                 </span>
                             </div>
                         </div>
@@ -192,8 +267,8 @@ export default function Companies() {
                                 key={p}
                                 onClick={() => setPage(p)}
                                 className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${page === p
-                                        ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                                        : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                                    ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                                    : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                                     }`}
                             >
                                 {p}

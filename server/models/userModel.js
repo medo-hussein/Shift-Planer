@@ -4,24 +4,24 @@ import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { 
-      type: String, 
+    name: {
+      type: String,
       required: true,
-      trim: true 
+      trim: true
     },
 
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true, 
+    email: {
+      type: String,
+      required: true,
+      unique: true,
       lowercase: true,
-      trim: true 
+      trim: true
     },
 
-    password: { 
-      type: String, 
+    password: {
+      type: String,
       required: true,
-      minlength: 6 
+      minlength: 6
     },
 
     role: {
@@ -51,8 +51,8 @@ const userSchema = new mongoose.Schema(
       ref: "User"
     },
 
-    phone: { 
-      type: String, 
+    phone: {
+      type: String,
       trim: true,
       default: ""
     },
@@ -62,17 +62,17 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
 
-    position: { 
-      type: String, 
+    position: {
+      type: String,
       trim: true
     },
 
     // ✅ الاعتماد الوحيد في قاعدة البيانات (Snake Case)
-    is_active: { 
-      type: Boolean, 
-      default: true 
+    is_active: {
+      type: Boolean,
+      default: true
     },
-    
+
 
 
     lastLogin: {
@@ -85,15 +85,15 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpire: Date,
 
     // Email verification fields
-    email_verified: { 
-      type: Boolean, 
-      default: false 
+    email_verified: {
+      type: Boolean,
+      default: false
     },
-    email_verification_token: { 
-      type: String 
+    email_verification_token: {
+      type: String
     },
-    email_verification_expires: { 
-      type: Date 
+    email_verification_expires: {
+      type: Date
     },
 
     // OTP fields for phone verification
@@ -109,28 +109,40 @@ const userSchema = new mongoose.Schema(
     },
 
     // Google OAuth fields
-    googleId: { 
-      type: String, 
-      unique: true, 
-      sparse: true 
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true
     },
-    authProvider: { 
-      type: String, 
-      enum: ['local', 'google'], 
-      default: 'local' 
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local'
     },
-    googleProfilePicture: { 
-      type: String 
+    googleProfilePicture: {
+      type: String
     },
-    googleAccessToken: { 
-      type: String 
+    googleAccessToken: {
+      type: String
     },
-    googleRefreshToken: { 
-      type: String 
+    googleRefreshToken: {
+      type: String
     }
   },
-  { timestamps: true } // ✅ This automatically adds createdAt and updatedAt
+  { timestamps: true }
 );
+
+// ============================================
+// PERFORMANCE INDEXES
+// ============================================
+// Index for finding users by company and role (e.g., employees of a company)
+userSchema.index({ company: 1, role: 1 });
+// Index for finding users under a super_admin
+userSchema.index({ super_admin_id: 1, role: 1 });
+// Index for finding users under a branch admin
+userSchema.index({ branch_admin_id: 1 });
+// Index for filtering active users
+userSchema.index({ is_active: 1 });
 
 // Hash password
 userSchema.pre("save", async function (next) {
@@ -150,7 +162,7 @@ userSchema.pre("save", async function (next) {
     this.position = undefined;
     this.super_admin_id = undefined;
   }
-  
+
   if (this.role === "admin") {
     this.branch_admin_id = undefined;
   }
@@ -173,42 +185,42 @@ userSchema.methods.updateLastLogin = async function () {
 };
 
 // Email verification methods
-userSchema.methods.verifyEmail = function() {
+userSchema.methods.verifyEmail = function () {
   this.email_verified = true;
   this.email_verification_token = undefined;
   this.email_verification_expires = undefined;
   return this.save();
 };
 
-userSchema.methods.isEmailVerificationRequired = function() {
+userSchema.methods.isEmailVerificationRequired = function () {
   return !this.email_verified && this.email_verification_expires && this.email_verification_expires > Date.now();
 };
 
-userSchema.methods.generateEmailVerificationToken = function() {
+userSchema.methods.generateEmailVerificationToken = function () {
   const verificationToken = crypto.randomBytes(32).toString('hex');
-  
+
   this.email_verification_token = crypto.createHash('sha256').update(verificationToken).digest('hex');
   this.email_verification_expires = Date.now() + 10 * 60 * 1000; // 10 minutes
-  
+
   return verificationToken; // Return unhashed token for email
 };
 
 // Phone OTP methods
-userSchema.methods.generatePhoneOTP = function() {
+userSchema.methods.generatePhoneOTP = function () {
   const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
   this.phone_otp = otp;
   this.phone_otp_expires = Date.now() + 10 * 60 * 1000; // 10 minutes
   return otp;
 };
 
-userSchema.methods.verifyPhoneOTP = function(enteredOTP) {
+userSchema.methods.verifyPhoneOTP = function (enteredOTP) {
   if (!this.phone_otp || !this.phone_otp_expires) {
     return false;
   }
-  
+
   const isMatch = this.phone_otp === enteredOTP;
   const isExpired = this.phone_otp_expires < Date.now();
-  
+
   if (isMatch && !isExpired) {
     this.phone_verified = true;
     this.phone_otp = undefined;
@@ -216,18 +228,18 @@ userSchema.methods.verifyPhoneOTP = function(enteredOTP) {
     this.save();
     return true;
   }
-  
+
   return false;
 };
 
-userSchema.methods.isPhoneOTPValid = function() {
+userSchema.methods.isPhoneOTPValid = function () {
   return this.phone_otp && this.phone_otp_expires && this.phone_otp_expires > Date.now();
 };
 
 // Branch management methods
 userSchema.methods.getBranchEmployees = async function () {
   if (this.role !== "admin") throw new Error('Admin access required');
-  
+
   return mongoose.model("User").find({
     branch_admin_id: this._id,
     role: "employee"
@@ -236,26 +248,26 @@ userSchema.methods.getBranchEmployees = async function () {
 
 userSchema.methods.getBranchAdmin = async function () {
   if (this.role !== "employee") throw new Error('Employee access required');
-  
+
   return mongoose.model("User").findById(this.branch_admin_id)
     .select('name email branch_name phone');
 };
 
 // Static methods
-userSchema.statics.getAllBranches = function() {
-  return this.find({ role: "admin" }) 
+userSchema.statics.getAllBranches = function () {
+  return this.find({ role: "admin" })
     .select('-password')
     .sort({ createdAt: -1 });
 };
 
-userSchema.statics.getSystemStats = async function() {
+userSchema.statics.getSystemStats = async function () {
   const totalBranches = await this.countDocuments({ role: "admin" });
   const totalEmployees = await this.countDocuments({ role: "employee" });
-  const activeBranches = await this.countDocuments({ 
-    role: "admin", 
-    is_active: true 
+  const activeBranches = await this.countDocuments({
+    role: "admin",
+    is_active: true
   });
-  
+
   return {
     total_branches: totalBranches,
     total_employees: totalEmployees,
@@ -265,12 +277,12 @@ userSchema.statics.getSystemStats = async function() {
 };
 
 // Auto-generate branch name if not provided
-userSchema.statics.generateBranchName = function(adminName) {
+userSchema.statics.generateBranchName = function (adminName) {
   return `${adminName}'s Branch - ${Date.now()}`;
 };
 
 // Virtual for full profile
-userSchema.virtual('profile').get(function() {
+userSchema.virtual('profile').get(function () {
   const profile = {
     id: this._id,
     name: this.name,
