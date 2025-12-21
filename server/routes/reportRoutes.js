@@ -15,7 +15,7 @@ import {
   shareReport,
   deleteReport,
   getDashboardStats,
-  generateAIAnalysis // ✅ Added import for AI analysis
+  generateAIAnalysis // Added import for AI analysis
 } from "../controllers/reportController.js";
 
 const router = express.Router();
@@ -28,7 +28,7 @@ router.post("/attendance", adminOrAbove, generateAttendanceReport);
 router.post("/shift", adminOrAbove, generateShiftReport);
 router.post("/performance", adminOrAbove, generatePerformanceReport);
 
-// ✅ New Route: Generate AI Analysis for a report
+// New Route: Generate AI Analysis for a report
 router.post("/:id/analyze", generateAIAnalysis);
 
 // Report sharing and management (Admin and Super Admin only)

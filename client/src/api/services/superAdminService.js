@@ -15,7 +15,6 @@ export const superAdminService = {
   getBranchEmployees: (branchAdminId) =>
     apiClient.get(`/api/users/branch/employees`, { params: { branch_admin_id: branchAdminId } }),
 
-  // ✅ الإضافات الجديدة لإدارة الموظفين (إضافة، تعديل، حذف)
   createEmployee: (data) => apiClient.post("/api/users/employees", data),
   updateEmployee: (id, data) => apiClient.put(`/api/users/${id}`, data),
   deleteEmployee: (id) => apiClient.delete(`/api/users/${id}`),

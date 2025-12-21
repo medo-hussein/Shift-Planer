@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLoading } from "../../contexts/LoaderContext";
 import { employeesService } from "../../api/services/admin/employeesService";
 import {
   Search,
@@ -29,6 +28,7 @@ import AttendanceModal from "../../components/admin/AttendanceModal";
 import Swal from "sweetalert2";
 import {Alert} from "../../utils/alertService.js" ;
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -46,16 +46,13 @@ const Employees = () => {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const { show: showLoader, hide: hideLoader } = useLoading();
   const actionsMenuRef = useRef({});
   const { t } = useTranslation();
 
   // Fetch employees
   const fetchEmployees = async (page = 1) => {
     try {
-      setLoading(true);
-      showLoader();
-      
+      setLoading(true);      
       const params = {
         page,
         limit: 10
@@ -80,7 +77,6 @@ const Employees = () => {
       Alert.error(t("admin.employees.errors.fetchFailed"));
     } finally {
       setLoading(false);
-      hideLoader();
     }
   };
 
@@ -175,7 +171,7 @@ const Employees = () => {
   // Handle create employee
   const handleCreateEmployee = async (employeeData) => {
     try {
-      showLoader();
+      setLoading(true);
       await employeesService.createEmployee(employeeData);
       Alert.success(t("admin.employees.success.created"));
       setShowCreateModal(false);
@@ -185,14 +181,14 @@ const Employees = () => {
       Alert.error(errorMsg);
       console.error("Create error:", error);
     } finally {
-      hideLoader();
+      setLoading(false);
     }
   };
 
   // Handle update employee
   const handleUpdateEmployee = async (employeeId, data) => {
     try {
-      showLoader();
+      setLoading(true);
       await employeesService.updateEmployee(employeeId, data);
       Alert.success(t("admin.employees.success.updated"));
       setShowCreateModal(false);
@@ -204,7 +200,7 @@ const Employees = () => {
       Alert.error(errorMsg);
       console.error("Update error:", error);
     } finally {
-      hideLoader();
+      setLoading(false);
     }
   };
 
@@ -213,11 +209,8 @@ const Employees = () => {
     const newStatus = !currentStatus;
     
     const result = await Swal.fire({
-      title: t("admin.employees.statusChange.title"),
-      text: t("admin.employees.statusChange.message", { 
-        action: newStatus ? t("admin.employees.actions.activate") : t("admin.employees.actions.deactivate"), 
-        name: employeeName 
-      }),
+      title: "Change Status",
+      text:` Are you sure you want to ${newStatus ?  "Activate" : "Deactivate"} ${employeeName}`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: newStatus ? '#10b981' : '#d33',
@@ -231,8 +224,7 @@ const Employees = () => {
     
     if (result.isConfirmed) {
       try {
-        showLoader();
-        
+        setLoading(true);
         await employeesService.toggleEmployeeStatus(employeeId, { is_active: newStatus });
         
         setEmployees(prev => prev.map(emp => 
@@ -250,37 +242,34 @@ const Employees = () => {
         ));
         
         applyFilters();
-        Alert.success(t("admin.employees.statusChange.success", { 
-          name: employeeName, 
-          action: newStatus ? t("admin.employees.actions.activated") : t("admin.employees.actions.deactivated") 
-        }));
+        Alert.success(` ${employeeName} ${newStatus ? "Activated" : "Deactivated"} Successfully`);
         
         setShowActionsMenu(null);
       } catch (error) {
-        Alert.error(error.response?.data?.message || t("admin.employees.errors.toggleFailed"));
+        Alert.error(error.response?.data?.message || "  Change Status Failed");
         console.error("Toggle status error:", error);
       } finally {
-        hideLoader();
+        setLoading(false);
       }
     }
   };
 
   // Handle delete employee
   const handleDeleteEmployee = async (employeeId, employeeName) => {
-    const result = await Alert.confirm(t("admin.employees.confirmDelete", { name: employeeName }));
+    const result = await Alert.confirm(`Are you sure you want to delete ${employeeName} ?`);
     
     if (result.isConfirmed) {
       try {
-        showLoader();
+        setLoading(true);
         await employeesService.deleteEmployee(employeeId);
         setEmployees(prev => prev.filter(emp => emp._id !== employeeId));
-        Alert.success(t("admin.employees.success.deleted", { name: employeeName }));
+        Alert.success(`${employeeName} Deleted Successfully`);
         applyFilters();
         
       } catch (error) {
-        Alert.error(error.response?.data?.message || t("admin.employees.errors.deleteFailed"));
+        Alert.error(error.response?.data?.message || "Delete Failed");
       } finally {
-        hideLoader();
+        setLoading(false);
       }
     }
     setShowActionsMenu(null);
@@ -368,6 +357,8 @@ const Employees = () => {
         };
     }
   };
+
+  if(loading) return <DashboardSkeleton />
 
   return (
 <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-3 sm:p-4 lg:p-6 font-sans dark:text-slate-100">

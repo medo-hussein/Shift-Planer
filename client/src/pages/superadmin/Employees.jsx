@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { 
   ArrowRightLeft, Building, Search, Briefcase, 
   Mail, Phone, MapPin, X, MoreVertical,
@@ -8,13 +7,15 @@ import {
 } from "lucide-react";
 import {Alert} from "../../utils/alertService.js";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function Employees() {
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState("");
   const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [loading, setLoading] = useState(true);
+
   // Modal States
   const [modalType, setModalType] = useState(null); // 'transfer' | 'create' | 'edit'
   const [activeMenu, setActiveMenu] = useState(null);
@@ -35,32 +36,36 @@ export default function Employees() {
     employeeName: "", 
     newBranchAdminId: "" 
   });
-
-  const { show, hide } = useLoading();
   const { t } = useTranslation();
 
-  // 1. Fetch Branches
+  // Fetch Branches
   useEffect(() => {
     const fetchBranches = async () => {
       try {
+        setLoading(true);
         const res = await superAdminService.getAllBranches({ limit: 100 }); // Get all for dropdowns
         setBranches(res.data.data || []);
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error(err);
+      }
+      finally { 
+        setLoading(false);
+      }
     };
     fetchBranches();
   }, []);
 
-  // 2. Fetch Employees when Branch Selected
+  // Fetch Employees when Branch Selected
   const fetchEmployees = async () => {
     if (!selectedBranch) return;
     try {
-      show();
+      setLoading(true)
       const res = await superAdminService.getBranchEmployees(selectedBranch);
       setEmployees(res.data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
-      hide();
+      setLoading(false)
     }
   };
 
@@ -77,14 +82,14 @@ export default function Employees() {
     if(!confirmREsult.isConfirmed) return;
     
     try {
-      show();
+      setLoading(true);
       await superAdminService.deleteEmployee(id);
       Alert.success(t("employees.alerts.deleteSuccess"));
       fetchEmployees();
     } catch (err) {
       Alert.error(t("employees.alerts.deleteFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -92,7 +97,7 @@ export default function Employees() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      show();
+      setLoading(true);
       if (modalType === 'edit') {
         await superAdminService.updateEmployee(formData.id, formData);
         Alert.success(t("employees.alerts.updateSuccess"));
@@ -109,7 +114,7 @@ export default function Employees() {
     } catch (err) {
       Alert.error(err.response?.data?.message || t("employees.alerts.operationFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -117,7 +122,7 @@ export default function Employees() {
   const handleTransfer = async (e) => {
     e.preventDefault();
     try {
-      show();
+      setLoading(true);
       await superAdminService.transferEmployee({
         employeeId: transferData.employeeId,
         newBranchAdminId: transferData.newBranchAdminId
@@ -128,7 +133,7 @@ export default function Employees() {
     } catch (err) {
       Alert.error(err.response?.data?.message || t("employees.alerts.transferFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -170,6 +175,7 @@ export default function Employees() {
   );
 
   const currentBranchName = branches.find(b => b._id === selectedBranch)?.branch_name || t("employees.unknownBranch");
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen" onClick={() => setActiveMenu(null)}>
@@ -181,7 +187,7 @@ export default function Employees() {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t("employees.subtitle")}</p>
         </div>
         
-        {/* ✅ New Add Button */}
+        {/*New Add Button */}
         <button 
           onClick={openCreate}
           disabled={!selectedBranch}

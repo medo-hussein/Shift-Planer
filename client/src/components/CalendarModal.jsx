@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, X } from 'lucide-react';
 import Button from '../utils/Button';
 import { useTranslation } from 'react-i18next';
 
@@ -13,9 +13,9 @@ const CalendarModal = ({
     getStatusColor
 }) => {
     const { t, i18n } = useTranslation();
-    
+
     // Weekday names based on current language
-    const weekdays = i18n.language === 'ar' 
+    const weekdays = i18n.language === 'ar'
         ? ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت']
         : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -55,7 +55,7 @@ const CalendarModal = ({
     if (!showCalendarView) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-6 border-b">
@@ -65,7 +65,7 @@ const CalendarModal = ({
                         className="text-gray-400 hover:text-gray-600 transition-colors"
                         aria-label={t("calendarModal.close")}
                     >
-                        <ChevronLeft size={24} />
+                        <X size={24} />
                     </button>
                 </div>
 
@@ -80,14 +80,16 @@ const CalendarModal = ({
                             setSelectedMonth(newMonth);
                         }}
                     >
-                        <ChevronLeft size={16} />
-                        {t("calendarModal.previous")}
+                        <div className='flex gap-1'>
+                            <ChevronLeft size={16} />
+                            {t("calendarModal.previous")}
+                        </div>
                     </Button>
 
-                    <h3 className="text-lg font-semibold text-gray-900">
-                        {selectedMonth.toLocaleDateString(i18n.language, { 
-                            month: 'long', 
-                            year: 'numeric' 
+                    <h3 className="text-sm md:text-lg font-semibold text-gray-900">
+                        {selectedMonth.toLocaleDateString(i18n.language, {
+                            month: 'long',
+                            year: 'numeric'
                         })}
                     </h3>
 
@@ -100,8 +102,10 @@ const CalendarModal = ({
                             setSelectedMonth(newMonth);
                         }}
                     >
-                        {t("calendarModal.next")}
-                        <ChevronRight size={16} />
+                        <div className='flex gap-1'>
+                            {t("calendarModal.next")}
+                            <ChevronRight size={16} />
+                        </div>
                     </Button>
                 </div>
 
@@ -127,12 +131,12 @@ const CalendarModal = ({
                                 <div
                                     key={index}
                                     className={`min-h-[100px] p-2 border rounded-lg ${isToday ? 'border-sky-500 bg-sky-50' :
-                                            isCurrentMonth ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
+                                        isCurrentMonth ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between mb-1">
                                         <span className={`text-sm font-medium ${isToday ? 'text-sky-700' :
-                                                isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                                            isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
                                             }`}>
                                             {day.date.getDate()}
                                         </span>

@@ -1,6 +1,6 @@
 import Shift from "../models/shiftModel.js";
 import User from "../models/userModel.js";
-import { parseShiftCommand } from "../services/aiService.js"; // ✅ 1. استيراد خدمة الذكاء الاصطناعي
+import { parseShiftCommand } from "../services/aiService.js";
 
 const MS_IN_24H = 24 * 60 * 60 * 1000;
 
@@ -18,7 +18,10 @@ const validateStartEnd = (startISO, endISO) => {
     const end = parseDateWithValidation(endISO, "end_date_time");
 
     if (start >= end) {
-      return { ok: false, message: "start_date_time must be before end_date_time" };
+      return {
+        ok: false,
+        message: "start_date_time must be before end_date_time",
+      };
     }
     if (end - start > MS_IN_24H) {
       return { ok: false, message: "Shift cannot exceed 24 hours" };
@@ -35,30 +38,40 @@ export const createShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
+    const tenantOwnerId =
+      userRole === "super_admin" ? adminId : req.user.super_admin_id;
 
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only admins can create shifts" 
+        message: "Only admins can create shifts",
       });
     }
 
-    const { employee_id, start_date_time, end_date_time, title, description, shift_type, location, notes } = req.body;
+    const {
+      employee_id,
+      start_date_time,
+      end_date_time,
+      title,
+      description,
+      shift_type,
+      location,
+      notes,
+    } = req.body;
 
     // Validate required fields
     if (!employee_id || !start_date_time || !end_date_time) {
       return res.status(400).json({
         success: false,
-        message: "Employee ID, start date, and end date are required"
+        message: "Employee ID, start date, and end date are required",
       });
     }
 
     const validation = validateStartEnd(start_date_time, end_date_time);
     if (!validation.ok) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: validation.message 
+        message: validation.message,
       });
     }
     const { start, end } = validation;
@@ -66,38 +79,38 @@ export const createShift = async (req, res) => {
     // Check employee exists and belongs to this admin (if admin)
     const employee = await User.findById(employee_id);
     if (!employee) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Employee not found" 
+        message: "Employee not found",
       });
     }
 
     if (employee.role !== "employee") {
       return res.status(400).json({
         success: false,
-        message: "Shifts can only be assigned to employees"
+        message: "Shifts can only be assigned to employees",
       });
     }
 
     if (!employee.is_active) {
       return res.status(400).json({
         success: false,
-        message: "Cannot assign shift to inactive employee"
+        message: "Cannot assign shift to inactive employee",
       });
     }
-    
+
     if (employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-       return res.status(403).json({
-          success: false,
-          message: "Employee does not belong to your system"
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Employee does not belong to your system",
+      });
     }
     // Check permissions (Admin can only assign shifts to their own branch employees)
     if (userRole === "admin") {
       if (employee.branch_admin_id?.toString() !== adminId.toString()) {
         return res.status(403).json({
           success: false,
-          message: "Employee does not belong to your branch"
+          message: "Employee does not belong to your branch",
         });
       }
     }
@@ -117,9 +130,9 @@ export const createShift = async (req, res) => {
           existing_shift: {
             id: overlapping._id,
             start: overlapping.start_date_time,
-            end: overlapping.end_date_time
-          }
-        }
+            end: overlapping.end_date_time,
+          },
+        },
       });
     }
 
@@ -143,13 +156,13 @@ export const createShift = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Shift created successfully",
-      data: populated
+      data: populated,
     });
   } catch (err) {
     console.error("createShift error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -159,37 +172,39 @@ export const getBranchShifts = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
+    const tenantOwnerId =
+      userRole === "super_admin" ? adminId : req.user.super_admin_id;
 
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only admins can view branch shifts" 
+        message: "Only admins can view branch shifts",
       });
     }
 
-    const { 
-      start: startISO, 
-      end: endISO, 
-      page = 1, 
+    const {
+      start: startISO,
+      end: endISO,
+      page = 1,
       limit = 50,
       employee_id,
-      status
+      status,
     } = req.query;
 
     // Build query based on user role
     let query = {
-      super_admin_id: tenantOwnerId 
+      super_admin_id: tenantOwnerId,
     };
 
     if (userRole === "admin") {
-      const employees = await User.find({ 
+      const employees = await User.find({
         branch_admin_id: adminId,
         role: "employee",
-        super_admin_id: tenantOwnerId
+        super_admin_id: tenantOwnerId,
+        is_active: true, // Only active employees
       });
-      const employeeIds = employees.map(emp => emp._id);
-      
+      const employeeIds = employees.map((emp) => emp._id);
+
       query.employee_id = { $in: employeeIds };
     }
 
@@ -200,12 +215,12 @@ export const getBranchShifts = async (req, res) => {
         const employee = await User.findOne({
           _id: employee_id,
           branch_admin_id: adminId,
-          super_admin_id: tenantOwnerId
+          super_admin_id: tenantOwnerId,
         });
         if (!employee) {
-          return res.status(403).json({ 
+          return res.status(403).json({
             success: false,
-            message: "Employee not found in your branch" 
+            message: "Employee not found in your branch",
           });
         }
       }
@@ -222,13 +237,13 @@ export const getBranchShifts = async (req, res) => {
       try {
         const start = parseDateWithValidation(startISO, "start date");
         const end = parseDateWithValidation(endISO, "end date");
-        
+
         query.start_date_time = { $lt: end };
         query.end_date_time = { $gt: start };
       } catch (error) {
         return res.status(400).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       }
     }
@@ -249,14 +264,14 @@ export const getBranchShifts = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        total_pages: Math.ceil(total / limit)
-      }
+        total_pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error("getBranchShifts error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -266,26 +281,26 @@ export const getMyShifts = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = req.user.super_admin_id; 
+    const tenantOwnerId = req.user.super_admin_id;
 
     if (userRole !== "employee") {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only employees can view their shifts" 
+        message: "Only employees can view their shifts",
       });
     }
 
-    const { 
-      start: startISO, 
-      end: endISO, 
-      page = 1, 
+    const {
+      start: startISO,
+      end: endISO,
+      page = 1,
       limit = 50,
-      status
+      status,
     } = req.query;
 
-    const query = { 
+    const query = {
       employee_id: userId,
-      super_admin_id: tenantOwnerId
+      super_admin_id: tenantOwnerId,
     };
 
     // Add status filter
@@ -298,13 +313,13 @@ export const getMyShifts = async (req, res) => {
       try {
         const start = parseDateWithValidation(startISO, "start date");
         const end = parseDateWithValidation(endISO, "end date");
-        
+
         query.start_date_time = { $lt: end };
         query.end_date_time = { $gt: start };
       } catch (error) {
         return res.status(400).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       }
     }
@@ -324,14 +339,14 @@ export const getMyShifts = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        total_pages: Math.ceil(total / limit)
-      }
+        total_pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error("getMyShifts error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -341,35 +356,49 @@ export const updateShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
+    const tenantOwnerId =
+      userRole === "super_admin" ? adminId : req.user.super_admin_id;
     const { id } = req.params;
 
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only admins can update shifts" 
+        message: "Only admins can update shifts",
       });
     }
 
-    const { start_date_time, end_date_time, employee_id, title, description, shift_type, location, notes, status } = req.body;
+    const {
+      start_date_time,
+      end_date_time,
+      employee_id,
+      title,
+      description,
+      shift_type,
+      location,
+      notes,
+      status,
+    } = req.body;
 
     const shift = await Shift.findOne({
       _id: id,
-      super_admin_id: tenantOwnerId 
+      super_admin_id: tenantOwnerId,
     });
-    
+
     if (!shift) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Shift not found or not authorized" // رسالة تجمع بين عدم الوجود وعدم الصلاحية
+        message: "Shift not found or not authorized",
       });
     }
 
-    // Check permissions (Admin must be the creator, Super Admin passes the ownership check above)
-    if (userRole === "admin" && shift.created_by_admin_id.toString() !== adminId.toString()) {
-      return res.status(403).json({ 
+    // Check permissions
+    if (
+      userRole === "admin" &&
+      shift.created_by_admin_id.toString() !== adminId.toString()
+    ) {
+      return res.status(403).json({
         success: false,
-        message: "Not authorized to update this shift" 
+        message: "Not authorized to update this shift",
       });
     }
 
@@ -379,37 +408,40 @@ export const updateShift = async (req, res) => {
     if (employee_id && employee_id !== finalEmployee) {
       const newEmp = await User.findById(employee_id);
       if (!newEmp) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "Employee not found" 
+          message: "Employee not found",
         });
       }
 
       if (newEmp.role !== "employee") {
         return res.status(400).json({
           success: false,
-          message: "Shifts can only be assigned to employees"
+          message: "Shifts can only be assigned to employees",
         });
       }
 
       if (!newEmp.is_active) {
         return res.status(400).json({
           success: false,
-          message: "Cannot assign shift to inactive employee"
-        });
-      }
-      
-      if (newEmp.super_admin_id?.toString() !== tenantOwnerId.toString()) {
-        return res.status(403).json({
-           success: false,
-           message: "New employee does not belong to your system"
+          message: "Cannot assign shift to inactive employee",
         });
       }
 
-      if (userRole === "admin" && newEmp.branch_admin_id?.toString() !== adminId.toString()) {
+      if (newEmp.super_admin_id?.toString() !== tenantOwnerId.toString()) {
         return res.status(403).json({
           success: false,
-          message: "New employee does not belong to your branch"
+          message: "New employee does not belong to your system",
+        });
+      }
+
+      if (
+        userRole === "admin" &&
+        newEmp.branch_admin_id?.toString() !== adminId.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "New employee does not belong to your branch",
         });
       }
 
@@ -426,9 +458,9 @@ export const updateShift = async (req, res) => {
 
       const validation = validateStartEnd(startISO, endISO);
       if (!validation.ok) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: validation.message 
+          message: validation.message,
         });
       }
 
@@ -453,9 +485,9 @@ export const updateShift = async (req, res) => {
           existing_shift: {
             id: overlapping._id,
             start: overlapping.start_date_time,
-            end: overlapping.end_date_time
-          }
-        }
+            end: overlapping.end_date_time,
+          },
+        },
       });
     }
 
@@ -479,62 +511,75 @@ export const updateShift = async (req, res) => {
     return res.json({
       success: true,
       message: "Shift updated successfully",
-      data: populated
+      data: populated,
     });
   } catch (err) {
     console.error("updateShift error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
 
-// DELETE SHIFT (Admin only)
+// DELETE SHIFT (Admin only) - ✅ FIX: PREVENT DELETING ACTIVE SHIFTS
 export const deleteShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
+    const tenantOwnerId =
+      userRole === "super_admin" ? adminId : req.user.super_admin_id;
     const { id } = req.params;
+
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only admins can delete shifts" 
+        message: "Only admins can delete shifts",
       });
     }
 
     const shift = await Shift.findOne({
       _id: id,
-      super_admin_id: tenantOwnerId
+      super_admin_id: tenantOwnerId,
     });
-    
+
     if (!shift) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Shift not found or not authorized" 
+        message: "Shift not found or not authorized",
       });
     }
 
-    // Check permissions (Admin must be the creator, Super Admin passes the ownership check above)
-    if (userRole === "admin" && shift.created_by_admin_id.toString() !== adminId.toString()) {
-      return res.status(403).json({ 
+    // Check permissions (Admin must be the creator)
+    if (
+      userRole === "admin" &&
+      shift.created_by_admin_id.toString() !== adminId.toString()
+    ) {
+      return res.status(403).json({
         success: false,
-        message: "Not authorized to delete this shift" 
+        message: "Not authorized to delete this shift",
       });
+    }
+
+    // ✅✅✅ NEW CHECK: Prevent deleting active shifts
+    if (shift.status === 'in_progress') {
+        return res.status(400).json({ 
+            success: false,
+            message: "⚠️ Cannot delete this shift! The employee is currently Clocked In." 
+        });
     }
 
     await shift.deleteOne();
 
-    return res.json({ 
+    return res.json({
       success: true,
-      message: "Shift deleted successfully" 
+      message: "Shift deleted successfully",
     });
   } catch (err) {
     console.error("deleteShift error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -544,12 +589,13 @@ export const createBulkShifts = async (req, res) => {
   try {
     const adminId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = userRole === "super_admin" ? adminId : req.user.super_admin_id; 
+    const tenantOwnerId =
+      userRole === "super_admin" ? adminId : req.user.super_admin_id;
 
     if (!["super_admin", "admin"].includes(userRole)) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only admins can create bulk shifts" 
+        message: "Only admins can create bulk shifts",
       });
     }
 
@@ -558,33 +604,41 @@ export const createBulkShifts = async (req, res) => {
     if (!shifts || !Array.isArray(shifts) || shifts.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Shifts array is required and cannot be empty"
+        message: "Shifts array is required and cannot be empty",
       });
     }
 
     const results = {
       successful: [],
-      failed: []
+      failed: [],
     };
 
     for (const [index, shiftData] of shifts.entries()) {
       try {
         // Validate required fields
-        if (!shiftData.employee_id || !shiftData.start_date_time || !shiftData.end_date_time) {
+        if (
+          !shiftData.employee_id ||
+          !shiftData.start_date_time ||
+          !shiftData.end_date_time
+        ) {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Missing required fields: employee_id, start_date_time, or end_date_time"
+            error:
+              "Missing required fields: employee_id, start_date_time, or end_date_time",
           });
           continue;
         }
 
-        const validation = validateStartEnd(shiftData.start_date_time, shiftData.end_date_time);
+        const validation = validateStartEnd(
+          shiftData.start_date_time,
+          shiftData.end_date_time
+        );
         if (!validation.ok) {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: validation.message
+            error: validation.message,
           });
           continue;
         }
@@ -597,7 +651,7 @@ export const createBulkShifts = async (req, res) => {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Employee not found"
+            error: "Employee not found",
           });
           continue;
         }
@@ -606,7 +660,7 @@ export const createBulkShifts = async (req, res) => {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Shifts can only be assigned to employees"
+            error: "Shifts can only be assigned to employees",
           });
           continue;
         }
@@ -615,25 +669,28 @@ export const createBulkShifts = async (req, res) => {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Cannot assign shift to inactive employee"
+            error: "Cannot assign shift to inactive employee",
           });
           continue;
         }
-        
+
         if (employee.super_admin_id?.toString() !== tenantOwnerId.toString()) {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Employee does not belong to your system"
+            error: "Employee does not belong to your system",
           });
           continue;
         }
         // Check permissions for employee
-        if (userRole === "admin" && employee.branch_admin_id?.toString() !== adminId.toString()) {
+        if (
+          userRole === "admin" &&
+          employee.branch_admin_id?.toString() !== adminId.toString()
+        ) {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Employee does not belong to your branch"
+            error: "Employee does not belong to your branch",
           });
           continue;
         }
@@ -650,7 +707,7 @@ export const createBulkShifts = async (req, res) => {
           results.failed.push({
             index,
             employee_id: shiftData.employee_id,
-            error: "Shift overlaps with existing shift"
+            error: "Shift overlaps with existing shift",
           });
           continue;
         }
@@ -673,12 +730,11 @@ export const createBulkShifts = async (req, res) => {
           .populate("created_by_admin_id", "name branch_name");
 
         results.successful.push(populated);
-
       } catch (error) {
         results.failed.push({
           index,
           employee_id: shiftData.employee_id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -686,48 +742,56 @@ export const createBulkShifts = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: `Bulk shift creation completed: ${results.successful.length} successful, ${results.failed.length} failed`,
-      data: results
+      data: results,
     });
   } catch (err) {
     console.error("createBulkShifts error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
 
-// ✅ GENERATE SHIFTS FROM AI (NEW)
+// GENERATE SHIFTS FROM AI
 export const generateShiftsFromAI = async (req, res) => {
   try {
     const adminId = req.user._id;
-    // ✅ استقبال المنطقة الزمنية من الطلب (إضافة timeZone)
-    const { command, timeZone } = req.body; 
-    
+    const { command, timeZone } = req.body;
+
     // 1. Get branch employees to send to AI
-    const employees = await User.find({ 
+    const employees = await User.find({
       branch_admin_id: adminId,
       role: "employee",
-      is_active: true
+      is_active: true,
     }).select("_id name");
 
     if (employees.length === 0) {
-      return res.status(400).json({ success: false, message: "No active employees found in your branch." });
+      return res.status(400).json({
+        success: false,
+        message: "No active employees found in your branch.",
+      });
     }
 
-    // 2. Call AI service (تمرير timeZone للدالة)
-    const suggestedShifts = await parseShiftCommand(command, employees, new Date(), timeZone);
+    const suggestedShifts = await parseShiftCommand(
+      command,
+      employees,
+      new Date(),
+      timeZone
+    );
 
     // 3. Return suggestions
     return res.json({
       success: true,
       message: "AI generated suggestions successfully",
-      data: suggestedShifts
+      data: suggestedShifts,
     });
-
   } catch (err) {
     console.error("generateShiftsFromAI error:", err);
-    return res.status(500).json({ success: false, message: "Failed to generate shifts. Try rephrasing." });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate shifts. Try rephrasing.",
+    });
   }
 };
 
@@ -736,11 +800,11 @@ export const getTodayShifts = async (req, res) => {
   try {
     const userId = req.user._id;
     const userRole = req.user.role;
-    const tenantOwnerId = req.user.super_admin_id; 
+    const tenantOwnerId = req.user.super_admin_id;
     if (userRole !== "employee") {
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "Only employees can view today's shifts" 
+        message: "Only employees can view today's shifts",
       });
     }
 
@@ -751,25 +815,25 @@ export const getTodayShifts = async (req, res) => {
     const shifts = await Shift.find({
       employee_id: userId,
       super_admin_id: tenantOwnerId,
-      start_date_time: { 
+      start_date_time: {
         $gte: today,
-        $lt: tomorrow 
-      }
+        $lt: tomorrow,
+      },
     })
-    .populate("created_by_admin_id", "name branch_name")
-    .sort({ start_date_time: 1 });
+      .populate("created_by_admin_id", "name branch_name")
+      .sort({ start_date_time: 1 });
 
     return res.json({
       success: true,
       data: shifts,
       date: today,
-      total: shifts.length
+      total: shifts.length,
     });
   } catch (err) {
     console.error("getTodayShifts error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };

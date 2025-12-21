@@ -80,7 +80,7 @@ const reportSchema = new mongoose.Schema({
     default: false 
   },
 
-  // ✅ New field to store the AI-generated text summary
+  // New field to store the AI-generated text summary
   ai_summary: {
     type: String,
     default: ""

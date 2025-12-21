@@ -3,7 +3,6 @@ import Report from "../models/reportModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Shift from "../models/shiftModel.js";
 
-// GET SUPER ADMIN DASHBOARD STATS (يتم فلترتها الآن بناءً على المالك)
 export const getSuperAdminDashboard = async (req, res) => {
   try {
     const superAdminId = req.user._id;
@@ -11,47 +10,47 @@ export const getSuperAdminDashboard = async (req, res) => {
     // 1. Get branch admins owned by this Super Admin
     const ownedAdmins = await User.find({
       role: "admin",
-      super_admin_id: superAdminId
-    }).select('_id is_active');
-    const ownedAdminIdsArray = ownedAdmins.map(id => id._id);
+      super_admin_id: superAdminId,
+    }).select("_id is_active");
+    const ownedAdminIdsArray = ownedAdmins.map((id) => id._id);
 
     // 2. Get employees associated with these branch admins
     const ownedEmployeeIds = await User.find({
       role: "employee",
-      branch_admin_id: { $in: ownedAdminIdsArray }
-    }).select('_id');
-    const ownedEmployeeIdsArray = ownedEmployeeIds.map(id => id._id);
+      branch_admin_id: { $in: ownedAdminIdsArray },
+    }).select("_id");
+    const ownedEmployeeIdsArray = ownedEmployeeIds.map((id) => id._id);
 
     const [
       totalBranches,
       totalEmployees,
       totalShifts,
       recentAdmins,
-      systemReports
+      systemReports,
     ] = await Promise.all([
       // Total branches managed by this SA
       User.countDocuments({
         role: "admin",
-        super_admin_id: superAdminId
+        super_admin_id: superAdminId,
       }),
 
       // Total employees under supervision of owned branches
       User.countDocuments({
         role: "employee",
-        branch_admin_id: { $in: ownedAdminIdsArray }
+        branch_admin_id: { $in: ownedAdminIdsArray },
       }),
 
       // Total shifts created by owned branch admins
       Shift.countDocuments({
-        created_by_admin_id: { $in: ownedAdminIdsArray }
+        created_by_admin_id: { $in: ownedAdminIdsArray },
       }),
 
       // Recent branch admins owned by this SA
       User.find({
         role: "admin",
-        super_admin_id: superAdminId
+        super_admin_id: superAdminId,
       })
-        .select('name email branch_name createdAt is_active')
+        .select("name email branch_name createdAt is_active")
         .sort({ createdAt: -1 })
         .limit(5),
 
@@ -59,16 +58,20 @@ export const getSuperAdminDashboard = async (req, res) => {
       Report.countDocuments({
         generated_by_admin_id: { $in: ownedAdminIdsArray },
         created_at: {
-          $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        }
-      })
+          $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
+      }),
     ]);
 
     // Calculate active branches
-    const activeBranches = ownedAdmins.filter(admin => admin.is_active).length;
+    const activeBranches = ownedAdmins.filter(
+      (admin) => admin.is_active
+    ).length;
 
     // Get total attendance records for owned employees
-    const totalAttendanceRecords = await Attendance.countDocuments({ user_id: { $in: ownedEmployeeIdsArray } });
+    const totalAttendanceRecords = await Attendance.countDocuments({
+      user_id: { $in: ownedEmployeeIdsArray },
+    });
 
     // Get today's attendance records for owned employees
     const today = new Date();
@@ -76,7 +79,7 @@ export const getSuperAdminDashboard = async (req, res) => {
 
     const todayAttendanceCount = await Attendance.countDocuments({
       user_id: { $in: ownedEmployeeIdsArray },
-      date: { $gte: today }
+      date: { $gte: today },
     });
 
     const stats = {
@@ -85,25 +88,25 @@ export const getSuperAdminDashboard = async (req, res) => {
         active_branches: activeBranches,
         total_employees: totalEmployees,
         total_shifts: totalShifts,
-        total_attendance_records: totalAttendanceRecords
+        total_attendance_records: totalAttendanceRecords,
       },
       today: {
         attendance_today: todayAttendanceCount,
-        reports_generated_today: systemReports
+        reports_generated_today: systemReports,
       },
-      recent_branches: recentAdmins
+      recent_branches: recentAdmins,
     };
 
     return res.json({
       success: true,
       message: "Super admin dashboard data retrieved successfully",
-      data: stats
+      data: stats,
     });
   } catch (err) {
     console.error("getSuperAdminDashboard error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -112,14 +115,13 @@ export const getSuperAdminDashboard = async (req, res) => {
 export const createBranchAdmin = async (req, res) => {
   try {
     const superAdminId = req.user._id;
-    // ✅ التعديل 1: إضافة phone هنا
     const { name, email, password, branch_name, phone } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required"
+        message: "Name, email and password are required",
       });
     }
 
@@ -128,35 +130,36 @@ export const createBranchAdmin = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email already exists"
+        message: "Email already exists",
       });
     }
 
-    // 🔍 ENFORCE SUBSCRIPTION LIMITS (Max Branches)
-    const superAdmin = await User.findById(superAdminId).populate('company');
+    // ENFORCE SUBSCRIPTION LIMITS (Max Branches)
+    const superAdmin = await User.findById(superAdminId).populate("company");
 
     if (!superAdmin) {
       console.error(" [createBranchAdmin] SuperAdmin not found in DB");
     } else {
-
     }
 
     if (!superAdmin || !superAdmin.company) {
       console.error(" [createBranchAdmin] Company is missing!");
-      return res.status(404).json({ success: false, message: "Company not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Company not found" });
     }
 
     const company = superAdmin.company;
     const currentBranches = await User.countDocuments({
       role: "admin",
-      super_admin_id: superAdminId
+      super_admin_id: superAdminId,
     });
 
     if (currentBranches >= company.subscription.maxBranches) {
       return res.status(403).json({
         success: false,
         error: "LIMIT_EXCEEDED",
-        message: `You have reached the limit of ${company.subscription.maxBranches} branches for your ${company.subscription.plan_name} plan. Please upgrade to add more.`
+        message: `You have reached the limit of ${company.subscription.maxBranches} branches for your ${company.subscription.plan_name} plan. Please upgrade to add more.`,
       });
     }
 
@@ -170,9 +173,9 @@ export const createBranchAdmin = async (req, res) => {
       password,
       role: "admin",
       branch_name: finalBranchName,
-      phone: phone || "", // ✅ التعديل 2: حفظ رقم الهاتف
+      phone: phone || "",
       is_active: true,
-      super_admin_id: superAdminId
+      super_admin_id: superAdminId,
     });
 
     return res.status(201).json({
@@ -183,18 +186,18 @@ export const createBranchAdmin = async (req, res) => {
         name: admin.name,
         email: admin.email,
         branch_name: admin.branch_name,
-        phone: admin.phone, // إرجاع الهاتف في الرد
+        phone: admin.phone,
         role: admin.role,
         is_active: admin.is_active,
         created_at: admin.createdAt,
-        super_admin_id: admin.super_admin_id
-      }
+        super_admin_id: admin.super_admin_id,
+      },
     });
   } catch (err) {
     console.error("createBranchAdmin error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -207,48 +210,47 @@ export const getAllBranches = async (req, res) => {
 
     let query = {
       role: "admin",
-      super_admin_id: superAdminId
+      super_admin_id: superAdminId,
     };
 
     // Add filters
     if (is_active !== undefined) {
-      query.is_active = is_active === 'true';
+      query.is_active = is_active === "true";
     }
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { branch_name: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { branch_name: { $regex: search, $options: "i" } },
       ];
     }
 
     const admins = await User.find(query)
-      .select('-password -resetPasswordToken -resetPasswordExpire')
+      .select("-password -resetPasswordToken -resetPasswordExpire")
       .sort({ created_at: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
     const total = await User.countDocuments(query);
 
-    // Get employee counts for each branch (للفروع المملوكة فقط)
     const branchesWithStats = await Promise.all(
       admins.map(async (admin) => {
         const employeeCount = await User.countDocuments({
           branch_admin_id: admin._id,
-          role: "employee"
+          role: "employee",
         });
 
         const activeEmployeeCount = await User.countDocuments({
           branch_admin_id: admin._id,
           role: "employee",
-          is_active: true
+          is_active: true,
         });
 
         return {
           ...admin.toObject(),
           employee_count: employeeCount,
-          active_employee_count: activeEmployeeCount
+          active_employee_count: activeEmployeeCount,
         };
       })
     );
@@ -260,14 +262,14 @@ export const getAllBranches = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        total_pages: Math.ceil(total / limit)
-      }
+        total_pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error("getAllBranches error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -282,53 +284,48 @@ export const getBranchDetails = async (req, res) => {
     const branchAdmin = await User.findOne({
       _id: branchId,
       role: "admin",
-      super_admin_id: superAdminId
-    })
-      .select('-password -resetPasswordToken -resetPasswordExpire');
+      super_admin_id: superAdminId,
+    }).select("-password -resetPasswordToken -resetPasswordExpire");
 
     if (!branchAdmin) {
       return res.status(404).json({
         success: false,
-        message: "Branch not found or not owned by you"
+        message: "Branch not found or not owned by you",
       });
     }
 
     const branchAdminId = branchAdmin._id;
 
-    const [
-      totalEmployees,
-      activeEmployees,
-      totalShifts,
-      todayAttendance
-    ] = await Promise.all([
-      User.countDocuments({
-        branch_admin_id: branchAdminId,
-        role: "employee"
-      }),
-      User.countDocuments({
-        branch_admin_id: branchAdminId,
-        role: "employee",
-        is_active: true
-      }),
-      Shift.countDocuments({
-        created_by_admin_id: branchAdminId
-      }),
-      Attendance.countDocuments({
-        user_id: {
-          $in: await User.find({
-            branch_admin_id: branchAdminId
-          }).select('_id')
-        },
-        date: { $gte: new Date().setHours(0, 0, 0, 0) }
-      })
-    ]);
+    const [totalEmployees, activeEmployees, totalShifts, todayAttendance] =
+      await Promise.all([
+        User.countDocuments({
+          branch_admin_id: branchAdminId,
+          role: "employee",
+        }),
+        User.countDocuments({
+          branch_admin_id: branchAdminId,
+          role: "employee",
+          is_active: true,
+        }),
+        Shift.countDocuments({
+          created_by_admin_id: branchAdminId,
+        }),
+        Attendance.countDocuments({
+          user_id: {
+            $in: await User.find({
+              branch_admin_id: branchAdminId,
+            }).select("_id"),
+          },
+          date: { $gte: new Date().setHours(0, 0, 0, 0) },
+        }),
+      ]);
 
     // Get recent employees
     const recentEmployees = await User.find({
       branch_admin_id: branchAdminId,
-      role: "employee"
+      role: "employee",
     })
-      .select('name email position is_active created_at')
+      .select("name email position is_active created_at")
       .sort({ created_at: -1 })
       .limit(5);
 
@@ -338,21 +335,21 @@ export const getBranchDetails = async (req, res) => {
         total_employees: totalEmployees,
         active_employees: activeEmployees,
         total_shifts: totalShifts,
-        today_attendance: todayAttendance
+        today_attendance: todayAttendance,
       },
-      recent_employees: recentEmployees
+      recent_employees: recentEmployees,
     };
 
     return res.json({
       success: true,
       message: "Branch details retrieved successfully",
-      data: branchDetails
+      data: branchDetails,
     });
   } catch (err) {
     console.error("getBranchDetails error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -362,18 +359,17 @@ export const updateBranchAdmin = async (req, res) => {
   try {
     const superAdminId = req.user._id;
     const { branchId } = req.params;
-    // ✅ التعديل 3: إضافة phone هنا لاستقبال التحديث
     const { name, email, branch_name, is_active, phone } = req.body;
 
     const branchAdmin = await User.findOne({
       _id: branchId,
-      super_admin_id: superAdminId
+      super_admin_id: superAdminId,
     });
 
     if (!branchAdmin || branchAdmin.role !== "admin") {
       return res.status(404).json({
         success: false,
-        message: "Branch admin not found or not owned by you"
+        message: "Branch admin not found or not owned by you",
       });
     }
 
@@ -383,7 +379,7 @@ export const updateBranchAdmin = async (req, res) => {
       if (existing) {
         return res.status(400).json({
           success: false,
-          message: "Email already exists"
+          message: "Email already exists",
         });
       }
       branchAdmin.email = email;
@@ -393,23 +389,24 @@ export const updateBranchAdmin = async (req, res) => {
     if (name) branchAdmin.name = name;
     if (branch_name) branchAdmin.branch_name = branch_name;
     if (is_active !== undefined) branchAdmin.is_active = is_active;
-    if (phone) branchAdmin.phone = phone; // ✅ التعديل 4: تحديث الهاتف
+    if (phone) branchAdmin.phone = phone;
 
     await branchAdmin.save();
 
-    const updatedAdmin = await User.findById(branchId)
-      .select('-password -resetPasswordToken -resetPasswordExpire');
+    const updatedAdmin = await User.findById(branchId).select(
+      "-password -resetPasswordToken -resetPasswordExpire"
+    );
 
     return res.json({
       success: true,
       message: "Branch admin updated successfully",
-      data: updatedAdmin
+      data: updatedAdmin,
     });
   } catch (err) {
     console.error("updateBranchAdmin error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -421,11 +418,14 @@ export const getSystemReports = async (req, res) => {
     const { type, start_date, end_date, page = 1, limit = 10 } = req.query;
 
     // Get branch admin IDs owned by this SA
-    const ownedAdminIds = await User.find({ role: "admin", super_admin_id: superAdminId }).select('_id');
-    const ownedAdminIdsArray = ownedAdminIds.map(id => id._id);
+    const ownedAdminIds = await User.find({
+      role: "admin",
+      super_admin_id: superAdminId,
+    }).select("_id");
+    const ownedAdminIdsArray = ownedAdminIds.map((id) => id._id);
 
     let query = {
-      generated_by_admin_id: { $in: ownedAdminIdsArray }
+      generated_by_admin_id: { $in: ownedAdminIdsArray },
     };
 
     // Add filters
@@ -434,13 +434,13 @@ export const getSystemReports = async (req, res) => {
     if (start_date && end_date) {
       query.created_at = {
         $gte: new Date(start_date),
-        $lte: new Date(end_date)
+        $lte: new Date(end_date),
       };
     }
 
     const reports = await Report.find(query)
-      .populate('generated_by_admin_id', 'name branch_name')
-      .populate('employee_id', 'name email position')
+      .populate("generated_by_admin_id", "name branch_name")
+      .populate("employee_id", "name email position")
       .sort({ created_at: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -454,14 +454,14 @@ export const getSystemReports = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        total_pages: Math.ceil(total / limit)
-      }
+        total_pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error("getSystemReports error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -475,7 +475,7 @@ export const transferEmployee = async (req, res) => {
     if (!employeeId || !newBranchAdminId) {
       return res.status(400).json({
         success: false,
-        message: "Employee ID and new branch admin ID are required"
+        message: "Employee ID and new branch admin ID are required",
       });
     }
 
@@ -483,12 +483,12 @@ export const transferEmployee = async (req, res) => {
     const newBranchAdmin = await User.findOne({
       _id: newBranchAdminId,
       role: "admin",
-      super_admin_id: superAdminId
+      super_admin_id: superAdminId,
     });
     if (!newBranchAdmin) {
       return res.status(404).json({
         success: false,
-        message: "New branch admin not found or not owned by you"
+        message: "New branch admin not found or not owned by you",
       });
     }
 
@@ -497,17 +497,19 @@ export const transferEmployee = async (req, res) => {
     if (!employee || employee.role !== "employee") {
       return res.status(404).json({
         success: false,
-        message: "Employee not found"
+        message: "Employee not found",
       });
     }
 
     // Verify current branch admin ownership
-    const currentAdmin = await User.findById(employee.branch_admin_id).select('super_admin_id');
+    const currentAdmin = await User.findById(employee.branch_admin_id).select(
+      "super_admin_id"
+    );
 
     if (currentAdmin?.super_admin_id?.toString() !== superAdminId.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Employee does not belong to a system managed by you"
+        message: "Employee does not belong to a system managed by you",
       });
     }
 
@@ -518,8 +520,8 @@ export const transferEmployee = async (req, res) => {
     await employee.save();
 
     const updatedEmployee = await User.findById(employeeId)
-      .select('-password -resetPasswordToken -resetPasswordExpire')
-      .populate('branch_admin_id', 'name branch_name');
+      .select("-password -resetPasswordToken -resetPasswordExpire")
+      .populate("branch_admin_id", "name branch_name");
 
     return res.json({
       success: true,
@@ -527,14 +529,14 @@ export const transferEmployee = async (req, res) => {
       data: {
         employee: updatedEmployee,
         previous_branch: oldBranchAdminId,
-        new_branch: newBranchAdminId
-      }
+        new_branch: newBranchAdminId,
+      },
     });
   } catch (err) {
     console.error("transferEmployee error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };

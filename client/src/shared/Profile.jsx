@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authService } from "../api/services/authService";
-import { useLoading } from "../contexts/LoaderContext";
+import { dashboardService } from "../api/services/admin/dashboardService";
+import LocationMapModal from "../components/admin/LocationMapModal";
 import {
   User,
   Mail,
@@ -10,20 +11,23 @@ import {
   Clock,
   Camera,
   Save,
+  MapPin,
 } from "lucide-react";
 import { Alert } from "../utils/alertService.js";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../utils/DashboardSkeleton.jsx";
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({ name: "", phone: "" });
-  const { show, hide } = useLoading();
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
 
   // Fetch Data
   const fetchProfile = async () => {
     try {
-      show();
+      setLoading(true)
       const res = await authService.getProfile();
       const data = res.data.data || res.data;
       setProfile(data);
@@ -34,7 +38,7 @@ export default function Profile() {
     } catch (err) {
       console.error(err);
     } finally {
-      hide();
+      setLoading(false)
     }
   };
 
@@ -46,7 +50,7 @@ export default function Profile() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      show();
+      setLoading(true);
       await authService.updateProfile(formData);
       setProfile({ ...profile, ...formData });
       window.dispatchEvent(
@@ -56,7 +60,29 @@ export default function Profile() {
     } catch (err) {
       Alert.error(t("profile.alerts.updateFailed"));
     } finally {
-      hide();
+      setLoading(false)
+    }
+  };
+
+  // Save new location
+  const handleSaveLocation = async (locationData) => {
+    try {
+      setLoading(true);
+      await dashboardService.updateBranchLocation(locationData);
+      
+      // Update local state
+      setProfile(prev => ({
+        ...prev,
+        branch_location: locationData
+      }));
+      
+      Alert.success("Branch location updated successfully");
+      setIsMapOpen(false);
+    } catch (err) {
+      console.error(err);
+      Alert.error("Failed to update location");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,7 +95,7 @@ export default function Profile() {
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
       try {
-        show();
+        setLoading(true);
         const base64Image = reader.result;
 
         await authService.updateProfile({ ...formData, avatar: base64Image });
@@ -78,7 +104,7 @@ export default function Profile() {
       } catch (err) {
         Alert.error(t("profile.alerts.imageUploadFailed"));
       } finally {
-        hide();
+        setLoading(false);
       }
     };
   };
@@ -91,7 +117,8 @@ export default function Profile() {
       default: return role.replace("_", " ").toUpperCase();
     }
   };
-
+  
+  if(loading) return <DashboardSkeleton />
   if (!profile) return null;
 
   return (
@@ -184,9 +211,32 @@ export default function Profile() {
                 />
               </div>
             </div>
+
+            {/* ✅ Location Settings Section - Visible only to Admin */}
+            {profile.role === 'admin' && (
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                  <MapPin size={20} className="text-blue-600 dark:text-blue-400" />
+                  Location Settings (Geofencing)
+                </h3>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                    {profile.branch_location?.lat 
+                      ? "✅ Branch location is set. Employees can only clock in within the specified radius."
+                      : "⚠️ Branch location not set. Please set it to enable geofencing attendance."}
+                  </p>
+                  <button
+                    onClick={() => setIsMapOpen(true)}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {profile.branch_location?.lat ? "Update Location" : "Set Location Now"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* 3. Main Content (Form Only - No Password Button) */}
+          {/* 3. Main Content */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-slate-700 pb-4">
@@ -229,6 +279,14 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* ✅ Map Modal */}
+      <LocationMapModal 
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        currentLocation={profile.branch_location}
+        onSave={handleSaveLocation}
+      />
     </div>
   );
 }

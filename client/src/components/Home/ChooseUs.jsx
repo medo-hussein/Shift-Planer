@@ -1,5 +1,5 @@
 import React from "react";
-import dudes from "/images/home/dudes.jpg";
+import dudes from "/images/home/Hero.jpg";
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

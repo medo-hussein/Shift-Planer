@@ -1,26 +1,26 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { employeeService } from "../../api/services/employeeService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { FileText, Calendar, Eye, Clock } from "lucide-react";
-import ReportDetailsModal from "../superadmin/ReportDetailsModal"; // Reuse Modal
+import ReportDetailsModal from "../superadmin/ReportDetailsModal";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function MyReports() {
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
-  const { show, hide } = useLoading();
   const { t, i18n } = useTranslation();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        show();
+        setLoading(true)
         const res = await employeeService.getMyReports();
         setReports(res.data.data || []); 
       } catch (err) { 
         console.error(err); 
       } finally { 
-        hide(); 
+        setLoading(false)
       }
     };
     fetch();
@@ -44,6 +44,7 @@ export default function MyReports() {
     }
   };
 
+  if(loading) return <DashboardSkeleton />;
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">

@@ -1,42 +1,42 @@
-# 🚀 Tadbir - AI-Powered Workforce Management System
+# Tadbir - AI-Powered Workforce Management System
 
 ![Project Banner](client/public/images/home/computer.jpg) 
 > **Tadbir** is a comprehensive SaaS solution designed to streamline workforce management. It combines intelligent scheduling, automated time tracking, and AI-driven insights to boost productivity and reduce administrative overhead.
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 🤖 AI Smart Scheduler (Powered by Gemini)
+### AI Smart Scheduler (Powered by Gemini)
 - **Voice & Text Commands:** Create complex schedules using natural language (e.g., *"Create morning shifts for Ahmed next week"*).
 - **Auto-Correction:** Handles timezone differences and date parsing automatically.
 - **Smart Preview:** Review and edit AI-suggested shifts before publishing.
 
-### 🔄 Advanced Shift Swapping
+### Advanced Shift Swapping
 - **Conflict Detection:** Prevents employees from accepting swaps if they are already scheduled.
 - **Direct & Open Swaps:** Employees can trade directly with a colleague or post an open request.
 - **Shift-for-Shift:** Supports mutual exchange of shifts in a single transaction.
 - **Approval Workflow:** Admins have full control to approve or reject swaps.
 
-### ⏱️ Time Tracking & Attendance
+### Time Tracking & Attendance
 - **Geolocation Check-in:** Secure clock-in/out with location tracking.
 - **Live Status:** Real-time dashboard showing who is present, late, or on break.
 - **Break Management:** Track break durations and calculate net working hours.
 - **Smart Overtime:** Automated calculation of overtime based on shift types (Regular vs. Holiday).
 
-### 📊 Analytics & Reports
+### Analytics & Reports
 - **AI Insights:** Generates qualitative summaries of performance and attendance trends using Gemini AI.
 - **Export Options:** Download reports as PDF or Excel.
 - **Detailed Metrics:** Track attendance rates, punctuality scores, and shift completion rates.
 
-### 💰 Subscription & Payments
+### Subscription & Payments
 - **Multi-Tenancy:** Supports multiple companies with different subscription plans.
 - **Payment Gateway:** Integrated with **Paymob** for secure transactions.
 - **Plan Management:** Dynamic limits on branches and employees based on the plan.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework:** React 19 (Vite)
@@ -56,7 +56,7 @@
 - **Payments:** Paymob API
 
 
-## 🚀 Getting Started
+## Getting Started
 
 Follow these steps to run the project locally.
 
@@ -113,7 +113,7 @@ npm run dev
 npm run dev
 ```
 
-## 4. 🌍 Production Deployment
+## 4. Production Deployment
 
 ### Google OAuth Configuration
 When deploying to production (e.g., Vercel), you MUST add your production callback URL to the **Authorized redirect URIs** in your [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
@@ -131,7 +131,7 @@ Ensure the following variables are set in your Vercel project settings:
 **Frontend Project:**
 - `VITE_API_URL`: `https://your-backend-domain.app`
 - `VITE_FRONTEND_URL`: `https://your-frontend-domain.app`
-## 🔒 Security Features
+## Security Features
 - RBAC: Role-Based Access Control (Platform Owner, Super Admin, Branch Admin, Employee).
 
 - Data Isolation: Strict tenant isolation ensuring companies cannot access each other's data.
@@ -140,8 +140,8 @@ Ensure the following variables are set in your Vercel project settings:
 
 - Validation: Robust input validation using Mongoose and Zod logic.
 
-## 🤝 Contributing
+## Contributing
 - Contributions are welcome! Please fork the repository and create a pull request.
 
-## 📄 License
+## License
 - This project is licensed under the MIT License.

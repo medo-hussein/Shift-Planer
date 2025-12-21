@@ -67,13 +67,50 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
-    // ✅ الاعتماد الوحيد في قاعدة البيانات (Snake Case)
     is_active: {
       type: Boolean,
       default: true
     },
 
+    // ================================================
+    // NEW: Payroll Information (Wage System)
+    // ================================================
+    hourly_rate: {
+      type: Number,
+      default: 0, // 0 means not set
+      min: 0
+    },
+    currency: {
+      type: String,
+      default: "EGP",
+      trim: true
+    },
+    // ================================================
 
+    // ================================================
+    // NEW: Branch Location for Geofencing
+    // ================================================
+    branch_location: {
+      lat: {
+        type: Number,
+        default: null
+      },
+      lng: {
+        type: Number,
+        default: null
+      },
+      radius: {
+        type: Number,
+        default: 200, 
+        min: 10
+      },
+      address: {
+        type: String,
+        trim: true,
+        default: ""
+      }
+    },
+    // ================================================
 
     lastLogin: {
       type: Date,
@@ -291,17 +328,18 @@ userSchema.virtual('profile').get(function () {
     phone: this.phone,
     avatar: this.avatar,
     position: this.position,
-    is_active: this.is_active, // مصدر الحقيقة
+    is_active: this.is_active,
     lastLogin: this.lastLogin,
     email_verified: this.email_verified,
     phone_verified: this.phone_verified,
-    createdAt: this.createdAt, // ✅ تأكيد إرسال createdAt
+    createdAt: this.createdAt,
     super_admin_id: this.super_admin_id
   };
 
   // Add branch info for admin
   if (this.role === "admin") {
     profile.branch_name = this.branch_name;
+    profile.branch_location = this.branch_location;
   }
 
   // Add branch info for employee

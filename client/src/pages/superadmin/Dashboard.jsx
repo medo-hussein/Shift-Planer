@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
-import { useLoading } from "../../contexts/LoaderContext";
-import { useAuth } from "../../contexts/AuthContext"; 
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router";
-import { 
-  Building2, Users, Calendar, CheckCircle2, 
-  RotateCcw, ArrowRight, Plus, FileText, 
-  TrendingUp, Zap 
+import {
+  Building2, Users, Calendar, CheckCircle2,
+  RotateCcw, ArrowRight, Plus, FileText,
+  TrendingUp, Zap
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-  const { show, hide } = useLoading();
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
   const fetchStats = async () => {
     try {
-      show();
+      setLoading(true);
       const res = await superAdminService.getDashboardStats();
-      setStats(res.data.data); 
+      setStats(res.data.data);
     } catch (err) {
       console.error("Error fetching stats:", err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -33,6 +33,7 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
+  if (loading) return <DashboardSkeleton />;
   if (!stats) return null;
 
   const { overview, recent_branches } = stats;
@@ -58,7 +59,7 @@ export default function Dashboard() {
             </h1>
             <p className="text-blue-100 dark:text-slate-300 text-lg max-w-2xl">
               {t("superDashboard.hero.description")}{" "}
-              <span className="font-bold text-white">{overview?.active_branches} {t("superDashboard.hero.activeBranches")}</span>
+              <span className="font-bold text-white">{overview?.active_branches} <span className="me-1">{t("superDashboard.hero.activeBranches")}</span></span>
               {t("superDashboard.hero.runningSmoothly")}
             </p>
             
@@ -84,176 +85,175 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 2. Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard 
-          title={t("superDashboard.stats.totalBranches")}
-          value={overview?.total_branches} 
-          icon={<Building2 />} 
-          color="blue"
-        />
-        <StatCard 
-          title={t("superDashboard.stats.activeBranches")}
-          value={overview?.active_branches} 
-          icon={<CheckCircle2 />} 
-          color="emerald"
-        />
-        <StatCard 
-          title={t("superDashboard.stats.totalEmployees")}
-          value={overview?.total_employees} 
-          icon={<Users />} 
-          color="purple"
-        />
-        <StatCard 
-          title={t("superDashboard.stats.totalShifts")}
-          value={overview?.total_shifts} 
-          icon={<Calendar />} 
-          color="orange"
-        />
-      </div>
-
-      {/* 3. Main Content Layout (Split View) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Recent Branches Table */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-end mb-2">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-              {t("superDashboard.recentBranches.title")}
-            </h2>
-            <button 
-              onClick={() => navigate('/teams')}
-              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-all hover:gap-2"
-            >
-              {t("superDashboard.buttons.viewAllBranches")} <ArrowRight size={16} />
-            </button>
+          {/* 2. Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <StatCard
+              title={t("superDashboard.stats.totalBranches")}
+              value={overview?.total_branches}
+              icon={<Building2 />}
+              color="blue"
+            />
+            <StatCard
+              title={t("superDashboard.stats.activeBranches")}
+              value={overview?.active_branches}
+              icon={<CheckCircle2 />}
+              color="emerald"
+            />
+            <StatCard
+              title={t("superDashboard.stats.totalEmployees")}
+              value={overview?.total_employees}
+              icon={<Users />}
+              color="purple"
+            />
+            <StatCard
+              title={t("superDashboard.stats.totalShifts")}
+              value={overview?.total_shifts}
+              icon={<Calendar />}
+              color="orange"
+            />
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-600">
-                  <tr>
-                    <th className="px-6 py-4">{t("superDashboard.table.branchName")}</th>
-                    <th className="px-6 py-4">{t("superDashboard.table.admin")}</th>
-                    <th className="px-6 py-4">{t("superDashboard.table.joinedDate")}</th>
-                    <th className="px-6 py-4">{t("superDashboard.table.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                  {recent_branches?.length > 0 ? (
-                    recent_branches.map((branch) => (
-                      <tr key={branch._id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                              {branch.branch_name.charAt(0)}
-                            </div>
-                            <div className="font-semibold text-slate-800 dark:text-slate-100">{branch.branch_name}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">{branch.name}</span>
-                            <span className="text-slate-400 dark:text-slate-500 text-xs">{branch.email}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                           {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString(i18n.language) : t("superDashboard.table.notAvailable")}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                            branch.is_active 
-                              ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800" 
-                              : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800"
-                          }`}>
-                            {branch.is_active 
-                              ? t("superDashboard.table.statusActive") 
-                              : t("superDashboard.table.statusInactive")
-                            }
-                          </span>
-                        </td>
+          {/* 3. Main Content Layout (Split View) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Left Column: Recent Branches Table */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex justify-between items-end mb-2">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                  {t("superDashboard.recentBranches.title")}
+                </h2>
+                <button
+                  onClick={() => navigate('/teams')}
+                  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-all hover:gap-2"
+                >
+                  {t("superDashboard.buttons.viewAllBranches")} <ArrowRight size={16} />
+                </button>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-600">
+                      <tr>
+                        <th className="px-6 py-4">{t("superDashboard.table.branchName")}</th>
+                        <th className="px-6 py-4">{t("superDashboard.table.admin")}</th>
+                        <th className="px-6 py-4">{t("superDashboard.table.joinedDate")}</th>
+                        <th className="px-6 py-4">{t("superDashboard.table.status")}</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                        {t("superDashboard.table.noBranchesFound")}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+                      {recent_branches?.length > 0 ? (
+                        recent_branches.map((branch) => (
+                          <tr key={branch._id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition group">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                                  {branch.branch_name.charAt(0)}
+                                </div>
+                                <div className="font-semibold text-slate-800 dark:text-slate-100">{branch.branch_name}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="text-slate-700 dark:text-slate-300 font-medium">{branch.name}</span>
+                                <span className="text-slate-400 dark:text-slate-500 text-xs">{branch.email}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
+                              {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString(i18n.language) : t("superDashboard.table.notAvailable")}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${branch.is_active
+                                ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800"
+                                : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800"
+                                }`}>
+                                {branch.is_active
+                                  ? t("superDashboard.table.statusActive")
+                                  : t("superDashboard.table.statusInactive")
+                                }
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                            {t("superDashboard.table.noBranchesFound")}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Quick Actions & Summary */}
+            <div className="space-y-6">
+
+              {/* Quick Actions Card */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 text-lg">
+                  {t("superDashboard.quickActions.title")}
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/teams')}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition group text-left"
+                  >
+                    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition">
+                      <Plus size={20} />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-700 dark:text-slate-300">
+                        {t("superDashboard.quickActions.addBranch")}
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        {t("superDashboard.quickActions.onboardAdmin")}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/reports')}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-600 hover:border-purple-200 dark:hover:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition group text-left"
+                  >
+                    <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white dark:group-hover:bg-purple-600 transition">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-700 dark:text-slate-300">
+                        {t("superDashboard.quickActions.systemReports")}
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        {t("superDashboard.quickActions.viewAnalytics")}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Mini Summary Card (Visual Balance) */}
+              <div className="bg-[#1d2931] dark:bg-slate-700 rounded-2xl shadow-lg p-6 text-white dark:text-slate-100 relative overflow-hidden">
+                <div className="relative z-10">
+                  <h3 className="font-bold text-lg mb-2">{t("superDashboard.proTip.title")} 💡</h3>
+                  <p className="text-slate-300 dark:text-slate-400 text-sm leading-relaxed">
+                    {t("superDashboard.proTip.description")}
+                  </p>
+                </div>
+                <div className="absolute -bottom-6 -right-6 bg-white/5 w-32 h-32 rounded-full blur-2xl"></div>
+              </div>
+
             </div>
           </div>
         </div>
-
-        {/* Right Column: Quick Actions & Summary */}
-        <div className="space-y-6">
-          
-          {/* Quick Actions Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 text-lg">
-              {t("superDashboard.quickActions.title")}
-            </h3>
-            <div className="space-y-3">
-              <button 
-                onClick={() => navigate('/teams')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition group text-left"
-              >
-                <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition">
-                  <Plus size={20} />
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">
-                    {t("superDashboard.quickActions.addBranch")}
-                  </div>
-                  <div className="text-xs text-slate-400 dark:text-slate-500">
-                    {t("superDashboard.quickActions.onboardAdmin")}
-                  </div>
-                </div>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reports')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-600 hover:border-purple-200 dark:hover:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition group text-left"
-              >
-                <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg group-hover:bg-purple-600 group-hover:text-white dark:group-hover:bg-purple-600 transition">
-                  <FileText size={20} />
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-700 dark:text-slate-300">
-                    {t("superDashboard.quickActions.systemReports")}
-                  </div>
-                  <div className="text-xs text-slate-400 dark:text-slate-500">
-                    {t("superDashboard.quickActions.viewAnalytics")}
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Mini Summary Card (Visual Balance) */}
-          <div className="bg-[#1d2931] dark:bg-slate-700 rounded-2xl shadow-lg p-6 text-white dark:text-slate-100 relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="font-bold text-lg mb-2">{t("superDashboard.proTip.title")} 💡</h3>
-              <p className="text-slate-300 dark:text-slate-400 text-sm leading-relaxed">
-                {t("superDashboard.proTip.description")}
-              </p>
-            </div>
-            <div className="absolute -bottom-6 -right-6 bg-white/5 w-32 h-32 rounded-full blur-2xl"></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
   );
 }
 
 // --- Modern Stat Card Component ---
 function StatCard({ title, value, icon, color }) {
   const { t } = useTranslation();
-  
+
   const colors = {
     blue: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 ring-blue-100 dark:ring-blue-900",
     emerald: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-900",

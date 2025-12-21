@@ -1,10 +1,10 @@
 import express from "express";
-import { 
-  protect, 
-  employeeOnly, 
-  adminOnly, 
+import {
+  protect,
+  employeeOnly,
+  adminOnly,
   adminOrAbove,
-  checkEmployeeAccess 
+  checkEmployeeAccess
 } from "../middleware/authMiddleware.js";
 import {
   clockIn,
@@ -14,7 +14,8 @@ import {
   getMyAttendance,
   getBranchAttendance,
   getAttendanceSummary,
-  getEmployeeAttendance
+  getEmployeeAttendance,
+  getPayrollReport
 } from "../controllers/attendanceController.js";
 
 const router = express.Router();
@@ -32,6 +33,7 @@ router.get("/my-summary", employeeOnly, getAttendanceSummary);
 
 // Admin only routes (branch attendance management)
 router.get("/branch", adminOnly, getBranchAttendance);
+router.get("/payroll", adminOnly, getPayrollReport); // 💰 New Route
 router.get("/employee/:employeeId", adminOnly, checkEmployeeAccess, getEmployeeAttendance);
 
 export default router;

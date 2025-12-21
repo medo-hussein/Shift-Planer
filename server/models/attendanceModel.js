@@ -89,10 +89,8 @@ attendanceSchema.pre("save", function(next) {
     const SPECIAL_SHIFT_TYPES = ['overtime', 'holiday', 'weekend', 'emergency'];
 
     if (SPECIAL_SHIFT_TYPES.includes(this.shift_type)) {
-        // الحالة الأولى: شيفت خاص، كل الساعات تحسب كأوفر تايم
         this.overtime = this.total_hours;
     } else {
-        // الحالة الثانية: شيفت عادي، الزيادة عن 8 ساعات فقط هي الأوفر تايم
         const STANDARD_WORK_HOURS = 8;
         
         if (this.total_hours > STANDARD_WORK_HOURS) {
@@ -113,22 +111,8 @@ attendanceSchema.pre("save", function(next) {
     });
   }
   
-  // Auto-calculate status based on time
-  if (this.check_in) {
-    const checkInHour = this.check_in.getHours();
-    const checkInMinute = this.check_in.getMinutes();
-    
-    // Late rule: After 9:15 AM)
-    if (checkInHour > 9 || (checkInHour === 9 && checkInMinute > 15)) {
-      this.status = "late";
-      this.late_minutes = (checkInHour - 9) * 60 + (checkInMinute - 15);
-    } else {
-      // Only set to 'present' if not already set to something specific like 'leave'
-      if (this.status !== 'leave' && this.status !== 'half_day') {
-        this.status = "present";
-      }
-    }
-  }
+  // REMOVED: Old logic that forced "Late" status after 9:15 AM
+  // The status is now determined by the Controller based on the actual shift time.
   
   next();
 });

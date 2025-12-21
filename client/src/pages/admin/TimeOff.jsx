@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { leaveService } from "../../api/services/admin/leaveService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { 
   Calendar, Clock, CheckCircle, XCircle, Plus, X, History, Inbox 
 } from "lucide-react";
 import {Alert} from "../../utils/alertService.js";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function TimeOff() {
   const [activeTab, setActiveTab] = useState("incoming"); // incoming | my_history
+  const [loading, setLoading] = useState(true);
+
   
   // Data States
   const [employeeRequests, setEmployeeRequests] = useState([]);
@@ -21,13 +23,12 @@ export default function TimeOff() {
     leave_type: "vacation", start_date: "", end_date: "", reason: ""
   });
 
-  const { show, hide } = useLoading();
   const { t } = useTranslation();
 
   // Fetch Data based on active tab
   const fetchData = async () => {
     try {
-      show();
+      setLoading(true);
       if (activeTab === "incoming") {
         const res = await leaveService.getEmployeeRequests(statusFilter);
         setEmployeeRequests(res.data.data || []);
@@ -38,7 +39,7 @@ export default function TimeOff() {
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -58,21 +59,21 @@ export default function TimeOff() {
     if (note === null) return;
 
     try {
-      show();
+      setLoading(true);
       await leaveService.updateRequestStatus(id, status, note);
       fetchData();
       Alert.success(t("timeOff.requestStatusSuccess", { status: t(`timeOff.status.${status}`) }));
     } catch (err) {
       Alert.error(t("timeOff.actionFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      show();
+      setLoading(true);
       await leaveService.submitRequest(formData);
       Alert.success(t("timeOff.requestSentSuccess"));
       setIsModalOpen(false);
@@ -81,7 +82,7 @@ export default function TimeOff() {
     } catch (err) {
       Alert.error(err.response?.data?.message || t("timeOff.submitFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -96,6 +97,8 @@ export default function TimeOff() {
   const getLeaveTypeTranslation = (type) => {
     return t(`timeOff.leaveTypes.${type}`);
   };
+
+  if(loading) return <DashboardSkeleton />
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen dark:text-slate-100">

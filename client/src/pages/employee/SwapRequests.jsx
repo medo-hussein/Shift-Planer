@@ -1,34 +1,34 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { employeeService } from "../../api/services/employeeService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { Alert } from "../../utils/alertService"; 
 import { 
   ArrowRightLeft, CheckCircle, XCircle, Clock, 
-  Calendar, User, AlertCircle, AlertTriangle, Eye // ✅ 1. Import Eye Icon
+  Calendar, AlertCircle, AlertTriangle, Eye 
 } from "lucide-react";
 import Button from "../../utils/Button";
-import ShiftDetailsModal from "../../components/employee/ShiftDetailsModal"; // ✅ 2. Import Modal
+import ShiftDetailsModal from "../../components/employee/ShiftDetailsModal"; 
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function SwapRequests() {
   const [activeTab, setActiveTab] = useState("incoming"); // incoming | outgoing
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
-  
-  // ✅ 3. State for Modal
-  const [selectedShiftForDetails, setSelectedShiftForDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const { show, hide } = useLoading();
+  
+  // State for Modal
+  const [selectedShiftForDetails, setSelectedShiftForDetails] = useState(null);
 
   const fetchRequests = async () => {
     try {
-      show();
+      setLoading(true);
       const res = await employeeService.getMySwapRequests();
       setIncomingRequests(res.data.data.incoming || []);
       setOutgoingRequests(res.data.data.outgoing || []);
     } catch (err) {
       console.error(err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -43,7 +43,7 @@ export default function SwapRequests() {
     }
 
     try {
-      show();
+      setLoading(true);
       if (action === "accept") {
         await employeeService.acceptSwapRequest(id);
         Alert.success("Request accepted! Waiting for manager approval.");
@@ -55,7 +55,7 @@ export default function SwapRequests() {
     } catch (err) {
       Alert.error(err.response?.data?.message || "Action failed");
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -76,7 +76,7 @@ export default function SwapRequests() {
       </span>
     );
   };
-
+  if(loading) return <DashboardSkeleton />;
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Shift Swaps</h1>
@@ -141,7 +141,7 @@ export default function SwapRequests() {
                                 <p>
                                     <strong>Shift:</strong> {formatDate(req.shift_id.start_date_time)} ({formatTime(req.shift_id.start_date_time)} - {formatTime(req.shift_id.end_date_time)})
                                 </p>
-                                {/* ✅ 4. View Details Button */}
+                                {/* View Details Button */}
                                 <button 
                                     onClick={() => setSelectedShiftForDetails(req.shift_id)}
                                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -200,7 +200,7 @@ export default function SwapRequests() {
         )}
       </div>
 
-      {/* ✅ 5. Render Modal */}
+      {/* Render Modal */}
       {selectedShiftForDetails && (
         <ShiftDetailsModal 
             shift={selectedShiftForDetails} 

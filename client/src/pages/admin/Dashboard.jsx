@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { dashboardService } from "../../api/services/admin/dashboardService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router";
 import {
@@ -18,19 +17,19 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [statsData, setStatsData] = useState(null);
-  const { show, hide } = useLoading();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
     try {
-      show();
-
+      setLoading(true)
       // Fetch both endpoints in parallel
       const [dashboardRes, statsRes] = await Promise.all([
         dashboardService.getDashboard(),
@@ -42,7 +41,7 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -50,6 +49,7 @@ export default function AdminDashboard() {
     fetchAllData();
   }, []);
 
+  if(loading) return <DashboardSkeleton />;
   if (!dashboardData || !statsData) return null;
 
   const { branch: dashboardBranch, today, recent_employees } = dashboardData;

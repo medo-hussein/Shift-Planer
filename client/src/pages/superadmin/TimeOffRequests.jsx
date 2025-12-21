@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
-import { useLoading } from "../../contexts/LoaderContext";
 import {
   CheckCircle, XCircle, Calendar,
   FileText, User, AlertCircle,
@@ -8,6 +7,7 @@ import {
 } from "lucide-react";
 import { Alert } from "../../utils/alertService.js";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function TimeOffRequests() {
   const [requests, setRequests] = useState([]);
@@ -17,12 +17,13 @@ export default function TimeOffRequests() {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6;
 
-  const { show, hide } = useLoading();
   const { t, i18n } = useTranslation();
+  const [loading, setLoading] = useState(true);
+
 
   const fetchRequests = async () => {
     try {
-      show();
+      setLoading(true)
       const res = await superAdminService.getLeaveRequests(statusFilter, page, limit);
       setRequests(res.data.data || []);
 
@@ -32,7 +33,7 @@ export default function TimeOffRequests() {
     } catch (err) {
       console.error(t("timeOffRequests.errors.fetchFailed"), err);
     } finally {
-      hide();
+      setLoading(false)
     }
   };
 
@@ -59,14 +60,14 @@ export default function TimeOffRequests() {
     if (!isConfirmed) return;
 
     try {
-      show();
+      setLoading(true)
       await superAdminService.updateLeaveStatus(requestId, newStatus, note);
       Alert.success(t(`timeOffRequests.alerts.${newStatus}Success`));
       fetchRequests();
     } catch (err) {
       Alert.error(err.response?.data?.message || t("timeOffRequests.alerts.actionFailed"));
     } finally {
-      hide();
+      setLoading(false)
     }
   };
 
@@ -86,7 +87,7 @@ export default function TimeOffRequests() {
       default: return status;
     }
   };
-
+  if(loading) return <DashboardSkeleton />
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
 

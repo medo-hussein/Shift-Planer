@@ -9,6 +9,7 @@ import {
 import {Alert} from "../../utils/alertService.js";
 import ReportDetailsModal from "../superadmin/ReportDetailsModal"; 
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
@@ -19,13 +20,15 @@ export default function Reports() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6; 
+  const [loading, setLoading] = useState(true);
+  
 
   const { show, hide } = useLoading();
   const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
-      show();
+      setLoading(true);
       const params = { 
         page, 
         limit, 
@@ -41,7 +44,7 @@ export default function Reports() {
     } catch (err) {
       console.error("Failed to fetch reports", err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -58,14 +61,14 @@ export default function Reports() {
     if(!confirmResult.isConfirmed) return;
 
     try {
-      show();
+      setLoading(true);
       await reportService.delete(id);
       fetchData();
       Alert.success(t("reports.deleteSuccess")); 
     } catch (err) {
       Alert.error(t("reports.deleteFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -101,7 +104,7 @@ export default function Reports() {
 
     return null;
   };
-
+  if(loading) return <DashboardSkeleton />;
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen font-sans dark:text-slate-100">
       

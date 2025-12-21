@@ -4,12 +4,9 @@ import {
   getGoogleUserProfile,
   findOrCreateGoogleUser,
   verifyGoogleIdToken,
-  unlinkGoogleAccount
-} from '../services/googleAuthService.js';
-import {
-  generateAccessToken,
-  generateRefreshToken
-} from '../utils/token.js';
+  unlinkGoogleAccount,
+} from "../services/googleAuthService.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 
 /**
  * Get Google OAuth URL for authentication
@@ -17,20 +14,20 @@ import {
 export const getGoogleAuthUrlController = async (req, res) => {
   try {
     const authUrl = getGoogleAuthUrl();
-    
+
     return res.json({
       success: true,
       data: {
         authUrl,
-        message: 'Use this URL to authenticate with Google'
-      }
+        message: "Use this URL to authenticate with Google",
+      },
     });
   } catch (error) {
-    console.error('Get Google auth URL error:', error);
+    console.error("Get Google auth URL error:", error);
     return res.status(500).json({
       success: false,
-      error: 'SERVER_ERROR',
-      message: 'Failed to generate Google authentication URL'
+      error: "SERVER_ERROR",
+      message: "Failed to generate Google authentication URL",
     });
   }
 };
@@ -44,12 +41,24 @@ export const googleAuthCallbackController = async (req, res) => {
 
     // Handle OAuth errors
     if (error) {
-      console.error('Google OAuth error:', error);
-      return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Google authentication failed')}`);
+      console.error("Google OAuth error:", error);
+      return res.redirect(
+        `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }/auth/error?message=${encodeURIComponent(
+          "Google authentication failed"
+        )}`
+      );
     }
 
     if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Authorization code not provided')}`);
+      return res.redirect(
+        `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }/auth/error?message=${encodeURIComponent(
+          "Authorization code not provided"
+        )}`
+      );
     }
 
     // Exchange code for tokens
@@ -66,20 +75,23 @@ export const googleAuthCallbackController = async (req, res) => {
     const refreshToken = generateRefreshToken(user);
 
     // Set refresh token in cookies
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     // Redirect to frontend with success
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const redirectUrl = `${frontendUrl}/auth/success?token=${accessToken}`;
     return res.redirect(redirectUrl);
-
   } catch (error) {
-    console.error('Google auth callback error:', error);
-    return res.redirect(`${process.env.FRONTEND_URL||"http://localhost:5173"}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
+    console.error("Google auth callback error:", error);
+    return res.redirect(
+      `${
+        process.env.FRONTEND_URL || "http://localhost:5173"
+      }/auth/error?message=${encodeURIComponent("Authentication failed")}`
+    );
   }
 };
 
@@ -93,8 +105,8 @@ export const googleSignInController = async (req, res) => {
     if (!idToken) {
       return res.status(400).json({
         success: false,
-        error: 'MISSING_ID_TOKEN',
-        message: 'Google ID token is required'
+        error: "MISSING_ID_TOKEN",
+        message: "Google ID token is required",
       });
     }
 
@@ -103,8 +115,8 @@ export const googleSignInController = async (req, res) => {
 
     // Create mock tokens object for consistency
     const tokens = {
-      access_token: 'id_token_flow', // ID token flow doesn't provide access token
-      refresh_token: null
+      access_token: "id_token_flow", // ID token flow doesn't provide access token
+      refresh_token: null,
     };
 
     // Find or create user
@@ -115,15 +127,15 @@ export const googleSignInController = async (req, res) => {
     const refreshToken = generateRefreshToken(user);
 
     // Set refresh token in cookies
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return res.json({
       success: true,
-      message: 'Google authentication successful',
+      message: "Google authentication successful",
       accessToken,
       user: {
         id: user._id,
@@ -134,16 +146,15 @@ export const googleSignInController = async (req, res) => {
         emailVerified: user.emailVerified,
         isActive: user.isActive,
         googleProfilePicture: user.googleProfilePicture,
-        company: user.company
-      }
+        company: user.company,
+      },
     });
-
   } catch (error) {
-    console.error('Google sign-in error:', error);
+    console.error("Google sign-in error:", error);
     return res.status(500).json({
       success: false,
-      error: 'SERVER_ERROR',
-      message: 'Google authentication failed'
+      error: "SERVER_ERROR",
+      message: "Google authentication failed",
     });
   }
 };
@@ -159,8 +170,8 @@ export const linkGoogleAccountController = async (req, res) => {
     if (!idToken) {
       return res.status(400).json({
         success: false,
-        error: 'MISSING_ID_TOKEN',
-        message: 'Google ID token is required'
+        error: "MISSING_ID_TOKEN",
+        message: "Google ID token is required",
       });
     }
 
@@ -168,12 +179,14 @@ export const linkGoogleAccountController = async (req, res) => {
     const googleProfile = await verifyGoogleIdToken(idToken);
 
     // Check if Google account is already linked
-    const existingGoogleUser = await User.findOne({ googleId: googleProfile.id });
+    const existingGoogleUser = await User.findOne({
+      googleId: googleProfile.id,
+    });
     if (existingGoogleUser) {
       return res.status(400).json({
         success: false,
-        error: 'GOOGLE_ACCOUNT_ALREADY_LINKED',
-        message: 'This Google account is already linked to another user'
+        error: "GOOGLE_ACCOUNT_ALREADY_LINKED",
+        message: "This Google account is already linked to another user",
       });
     }
 
@@ -182,31 +195,30 @@ export const linkGoogleAccountController = async (req, res) => {
       userId,
       {
         googleId: googleProfile.id,
-        authProvider: 'google',
+        authProvider: "google",
         googleProfilePicture: googleProfile.picture,
-        emailVerified: true // Google emails are verified
+        emailVerified: true, // Google emails are verified
       },
       { new: true }
     );
 
     return res.json({
       success: true,
-      message: 'Google account linked successfully',
+      message: "Google account linked successfully",
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         authProvider: user.authProvider,
-        googleProfilePicture: user.googleProfilePicture
-      }
+        googleProfilePicture: user.googleProfilePicture,
+      },
     });
-
   } catch (error) {
-    console.error('Link Google account error:', error);
+    console.error("Link Google account error:", error);
     return res.status(500).json({
       success: false,
-      error: 'SERVER_ERROR',
-      message: 'Failed to link Google account'
+      error: "SERVER_ERROR",
+      message: "Failed to link Google account",
     });
   }
 };
@@ -222,38 +234,37 @@ export const unlinkGoogleAccountController = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Google account unlinked successfully',
+      message: "Google account unlinked successfully",
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        authProvider: user.authProvider
-      }
+        authProvider: user.authProvider,
+      },
     });
-
   } catch (error) {
-    console.error('Unlink Google account error:', error);
-    
-    if (error.message === 'User not found') {
+    console.error("Unlink Google account error:", error);
+
+    if (error.message === "User not found") {
       return res.status(404).json({
         success: false,
-        error: 'USER_NOT_FOUND',
-        message: 'User not found'
+        error: "USER_NOT_FOUND",
+        message: "User not found",
       });
     }
 
-    if (error.message === 'User is not linked with Google account') {
+    if (error.message === "User is not linked with Google account") {
       return res.status(400).json({
         success: false,
-        error: 'NOT_LINKED_WITH_GOOGLE',
-        message: 'User is not linked with Google account'
+        error: "NOT_LINKED_WITH_GOOGLE",
+        message: "User is not linked with Google account",
       });
     }
 
     return res.status(500).json({
       success: false,
-      error: 'SERVER_ERROR',
-      message: 'Failed to unlink Google account'
+      error: "SERVER_ERROR",
+      message: "Failed to unlink Google account",
     });
   }
 };
@@ -265,13 +276,15 @@ export const getGoogleAuthStatusController = async (req, res) => {
   try {
     const userId = req.user.id; // From authentication middleware
 
-    const user = await User.findById(userId).select('authProvider googleId googleProfilePicture emailVerified');
+    const user = await User.findById(userId).select(
+      "authProvider googleId googleProfilePicture emailVerified"
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'USER_NOT_FOUND',
-        message: 'User not found'
+        error: "USER_NOT_FOUND",
+        message: "User not found",
       });
     }
 
@@ -281,16 +294,15 @@ export const getGoogleAuthStatusController = async (req, res) => {
         isGoogleLinked: !!user.googleId,
         authProvider: user.authProvider,
         googleProfilePicture: user.googleProfilePicture,
-        emailVerified: user.emailVerified
-      }
+        emailVerified: user.emailVerified,
+      },
     });
-
   } catch (error) {
-    console.error('Get Google auth status error:', error);
+    console.error("Get Google auth status error:", error);
     return res.status(500).json({
       success: false,
-      error: 'SERVER_ERROR',
-      message: 'Failed to get Google authentication status'
+      error: "SERVER_ERROR",
+      message: "Failed to get Google authentication status",
     });
   }
 };

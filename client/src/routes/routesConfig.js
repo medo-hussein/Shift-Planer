@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import {
   LayoutDashboard,
+  DollarSign, // 💰
   Users,
   UserCog,
   CalendarDays,
@@ -12,6 +13,7 @@ import {
   Building2,
   FileText,
   ArrowRightLeft,
+  MessageSquare,
 } from "lucide-react";
 
 // ============================================
@@ -27,6 +29,7 @@ const PaymentCallback = lazy(() => import("../pages/shared/PaymentCallback"));
 const PlatformDashboard = lazy(() => import("../pages/platform/Dashboard"));
 const CompaniesPage = lazy(() => import("../pages/platform/Companies"));
 const PlansPage = lazy(() => import("../pages/platform/Plans"));
+const MessagesPage = lazy(() => import("../pages/platform/Messages"));
 
 // Super Admin Pages
 const SA_Dashboard = lazy(() => import("../pages/superadmin/Dashboard"));
@@ -44,6 +47,7 @@ const A_TimeTracking = lazy(() => import("../pages/admin/TimeTracking"));
 const A_TimeOff = lazy(() => import("../pages/admin/TimeOff"));
 const A_Reports = lazy(() => import("../pages/admin/Reports"));
 const SwapApprovals = lazy(() => import("../pages/admin/SwapApprovals"));
+const PayrollPage = lazy(() => import("../pages/admin/Payroll")); // 💰 New Page (Corrected Path)
 
 // Employee Pages
 const E_Dashboard = lazy(() => import("../pages/employee/Dashboard"));
@@ -52,6 +56,7 @@ const E_TimeTracking = lazy(() => import("../pages/employee/TimeTracking"));
 const E_TimeOff = lazy(() => import("../pages/employee/TimeOffRequests"));
 const E_Reports = lazy(() => import("../pages/employee/MyReports"));
 const E_SwapRequests = lazy(() => import("../pages/employee/SwapRequests"));
+const E_Payslip = lazy(() => import("../pages/employee/Payslip")); // 💰 New Page
 
 const routes = {
 
@@ -59,6 +64,7 @@ const routes = {
     { path: "/dashboard", element: PlatformDashboard, label: "Dashboard", icon: LayoutDashboard },
     { path: "/companies", element: CompaniesPage, label: "Companies", icon: Building2 },
     { path: "/plans", element: PlansPage, label: "Plans", icon: FileText },
+    { path: "/messages", element: MessagesPage, label: "Messages", icon: MessageSquare },
     { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
     { path: "/payment/callback", element: PaymentCallback, label: "Payment Verification", icon: CreditCard, hidden: true },
   ],
@@ -82,6 +88,7 @@ const routes = {
     { path: "/time-tracking", element: A_TimeTracking, label: "Time Tracking", icon: Clock },
     { path: "/time-off", element: A_TimeOff, label: "Time Off", icon: Plane },
     { path: "/reports", element: A_Reports, label: "Reports", icon: BarChart3 },
+    { path: "/payroll", element: PayrollPage, label: "Payroll", icon: DollarSign }, // 💰 New Route
     { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
   ],
 
@@ -91,8 +98,9 @@ const routes = {
     { path: "/swaps", element: E_SwapRequests, label: "Shift Swaps", icon: ArrowRightLeft }, // ✅ New Route for Employee
     { path: "/time-tracking", element: E_TimeTracking, label: "Time Tracking", icon: Clock },
     { path: "/time-off", element: E_TimeOff, label: "Time Off Requests", icon: Plane },
-    { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3 },
-    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern },
+    { path: "/reports", element: E_Reports, label: "My Reports", icon: BarChart3, translationKey: "myReports.title" },
+    { path: "/payslip", element: E_Payslip, label: "My Payslip", icon: DollarSign, translationKey: "payslip.title" }, // 💰 New Item
+    { path: "/profile", element: SharedProfile, label: "Profile", icon: FingerprintPattern, translationKey: "navbar.profile" },
   ]
 };
 

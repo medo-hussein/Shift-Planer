@@ -7,7 +7,6 @@ const ShiftDetailsModal = ({ shift, onClose }) => {
 
   if (!shift) return null;
 
-  // تنسيق التاريخ والوقت
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString(i18n.language, {
       weekday: 'long',

@@ -1,4 +1,3 @@
-// client/src/api/services/authService.js
 import apiClient from "../apiClient";
 
 export const authService = {

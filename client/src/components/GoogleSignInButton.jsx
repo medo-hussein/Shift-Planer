@@ -1,5 +1,4 @@
-// Google Sign-In Button Component
-// Renders and manages Google Sign-In button
+
 import React, { useEffect } from 'react';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useTranslation } from 'react-i18next';

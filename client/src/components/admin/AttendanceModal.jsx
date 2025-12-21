@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useLoading } from "../../contexts/LoaderContext";
 import { employeesService } from "../../api/services/admin/employeesService";
 import {
   X,
@@ -12,7 +11,6 @@ import { useTranslation } from "react-i18next";
 const AttendanceModal = ({ employee, onClose }) => {
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { show: showLoader, hide: hideLoader } = useLoading();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -22,7 +20,6 @@ const AttendanceModal = ({ employee, onClose }) => {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      showLoader();
       const response = await employeesService.getEmployeeAttendance(employee._id);
       setAttendanceData(response.data);
     } catch (error) {
@@ -30,7 +27,6 @@ const AttendanceModal = ({ employee, onClose }) => {
       console.error("Error:", error);
     } finally {
       setLoading(false);
-      hideLoader();
     }
   };
 
@@ -45,7 +41,7 @@ const AttendanceModal = ({ employee, onClose }) => {
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return t("admin.shared.unavailable");
+    if (!timeString) return t("---");
 
     const date = new Date(timeString);
 

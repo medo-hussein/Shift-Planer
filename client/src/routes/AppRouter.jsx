@@ -22,6 +22,8 @@ import ResetPasswordRoute from "./ResetPasswordRoute.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import Loader from "../components/Loader.jsx";
 import CalendarModal from "../components/CalendarModal.jsx";
+import About from "../pages/Aboutus.jsx";
+import ContactUs from "../pages/Contactus.jsx";
 
 export default function AppRouter() {
   const { loading } = useAuth();
@@ -39,18 +41,6 @@ export default function AppRouter() {
 }
 
 function RoutesWrapper() {
-  // eslint-disable-next-line no-unused-vars
-  // const { isAuthenticated, userRole, status } = useAuth(); 
-
-  // 2. Handle temporary state: Token exists (isAuthenticated=true) but userRole is still null/undefined during hydration/refresh.
-  // if (isAuthenticated && userRole===null) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div>Loading user...</div>
-  //     </div>
-  //   );
-  // }
-
   return <AppRoutes />;
 }
 
@@ -61,7 +51,8 @@ function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="/test" element={<PaymentForm />} />
+
+
         {/* Public Routes */}
         <Route
           path="/"
@@ -71,6 +62,9 @@ function AppRoutes() {
             </PublicRoute>
           }
         />
+
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<ContactUs />} />
 
         <Route
           path="/login"

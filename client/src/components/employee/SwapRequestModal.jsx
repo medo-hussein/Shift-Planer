@@ -13,7 +13,7 @@ const SwapRequestModal = ({ shift, onClose, onSuccess }) => {
   const [colleagues, setColleagues] = useState([]);
   const [targetEmployeeId, setTargetEmployeeId] = useState("");
   
-  // ✅ New: Target Shift Selection (Exchange)
+  // New: Target Shift Selection (Exchange)
   const [targetShifts, setTargetShifts] = useState([]);
   const [targetShiftId, setTargetShiftId] = useState(""); 
   
@@ -34,7 +34,7 @@ const SwapRequestModal = ({ shift, onClose, onSuccess }) => {
     }
   }, [swapType]);
 
-  // 2. ✅ Fetch Target Shifts when a Colleague is selected
+  // 2. Fetch Target Shifts when a Colleague is selected
   useEffect(() => {
     if (targetEmployeeId) {
         const fetchShifts = async () => {
@@ -67,7 +67,7 @@ const SwapRequestModal = ({ shift, onClose, onSuccess }) => {
         shift_id: shift._id,
         reason: reason,
         target_employee_id: swapType === 'direct' ? targetEmployeeId : null,
-        target_shift_id: targetShiftId || null // ✅ Send target shift if selected
+        target_shift_id: targetShiftId || null // Send target shift if selected
       });
       
       Alert.success(targetShiftId ? "Exchange request sent!" : "Swap request sent!");

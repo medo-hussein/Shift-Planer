@@ -3,7 +3,7 @@ import { X, Send, Megaphone } from "lucide-react";
 import { notificationService } from "../api/services/notificationService";
 import { useLoading } from "../contexts/LoaderContext";
 import { useTranslation } from "react-i18next";
-import { Alert } from "../utils/alertService"; // ✅ 1. استيراد Alert
+import { Alert } from "../utils/alertService"; 
 
 export default function AnnouncementModal({ onClose }) {
   const [title, setTitle] = useState("");
@@ -14,21 +14,18 @@ export default function AnnouncementModal({ onClose }) {
   const handleSend = async (e) => {
     e.preventDefault();
     
-    // ✅ 2. التحقق مع رسالة تحذير شيك
     if (!title.trim() || !message.trim()) {
-        return Alert.warning("Please fill all fields"); // يمكنك إضافة مفتاح ترجمة هنا لاحقاً
+        return Alert.warning("Please fill all fields"); 
     }
 
     try {
       show();
       const res = await notificationService.sendAnnouncement({ title, message });
       
-      // ✅ 3. رسالة نجاح SweetAlert
       Alert.success(res.data.message);
       
       onClose();
     } catch (err) {
-      // ✅ 4. رسالة خطأ SweetAlert
       Alert.error(err.response?.data?.message || t("announcementModal.errors.failedToSend"));
     } finally {
       hide();

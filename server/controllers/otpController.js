@@ -13,7 +13,7 @@ export const sendOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_EMAIL",
-        message: "Please provide a valid email address"
+        message: "Please provide a valid email address",
       });
     }
 
@@ -22,7 +22,7 @@ export const sendOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "EMAIL_ALREADY_VERIFIED",
-        message: "This email is already registered and verified"
+        message: "This email is already registered and verified",
       });
     }
 
@@ -30,7 +30,7 @@ export const sendOTP = async (req, res) => {
     await OTP.deleteMany({
       email: email.toLowerCase(),
       type: "email_verification",
-      isVerified: false
+      isVerified: false,
     });
 
     // Generate new OTP
@@ -42,7 +42,7 @@ export const sendOTP = async (req, res) => {
       email: email.toLowerCase(),
       otp: otpCode,
       type: "email_verification",
-      expiresAt: expiresAt
+      expiresAt: expiresAt,
     });
 
     // Send OTP via email
@@ -53,18 +53,17 @@ export const sendOTP = async (req, res) => {
       message: "OTP sent successfully. Please check your email.",
       data: {
         email: email,
-        expires_at: expiresAt
+        expires_at: expiresAt,
       },
       // In development, you might want to return the OTP for testing
-      ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
+      ...(process.env.NODE_ENV === "development" && { otp: otpCode }),
     });
-
   } catch (error) {
     console.error("sendOTP error:", error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",
-      message: "Failed to send OTP. Please try again later."
+      message: "Failed to send OTP. Please try again later.",
     });
   }
 };
@@ -79,7 +78,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "MISSING_FIELDS",
-        message: "Email and OTP are required"
+        message: "Email and OTP are required",
       });
     }
 
@@ -89,7 +88,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_EMAIL",
-        message: "Please provide a valid email address"
+        message: "Please provide a valid email address",
       });
     }
 
@@ -98,21 +97,25 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_OTP_FORMAT",
-        message: "OTP must be 6 digits"
+        message: "OTP must be 6 digits",
       });
     }
 
     // Find valid OTP
-    const otpRecord = await OTP.findValidOTP(email.toLowerCase(), otp, "email_verification");
-    
+    const otpRecord = await OTP.findValidOTP(
+      email.toLowerCase(),
+      otp,
+      "email_verification"
+    );
+
     if (!otpRecord) {
       // ⭐ زيادة attempts إذا OTP غلط
       const failedOTP = await OTP.findOne({
         email: email.toLowerCase(),
         type: "email_verification",
-        isVerified: false
+        isVerified: false,
       });
-      
+
       if (failedOTP) {
         await failedOTP.incrementAttempts();
       }
@@ -120,7 +123,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_OTP",
-        message: "Invalid or expired OTP"
+        message: "Invalid or expired OTP",
       });
     }
 
@@ -129,7 +132,7 @@ export const verifyOTP = async (req, res) => {
       return res.status(429).json({
         success: false,
         error: "MAX_ATTEMPTS_REACHED",
-        message: "Maximum attempts reached. Please request a new OTP."
+        message: "Maximum attempts reached. Please request a new OTP.",
       });
     }
 
@@ -137,7 +140,7 @@ export const verifyOTP = async (req, res) => {
     await otpRecord.markAsVerified();
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    
+
     if (user) {
       user.email_verified = true;
       user.is_active = true;
@@ -150,16 +153,15 @@ export const verifyOTP = async (req, res) => {
       data: {
         email_verified: true,
         user_id: user?._id,
-        email: email
-      }
+        email: email,
+      },
     });
-
   } catch (error) {
     console.error("verifyOTP error:", error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",
-      message: "Failed to verify OTP. Please try again later."
+      message: "Failed to verify OTP. Please try again later.",
     });
   }
 };
@@ -175,7 +177,7 @@ export const resendOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_EMAIL",
-        message: "Please provide a valid email address"
+        message: "Please provide a valid email address",
       });
     }
 
@@ -184,7 +186,7 @@ export const resendOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "ALREADY_VERIFIED",
-        message: "Email is already verified"
+        message: "Email is already verified",
       });
     }
 
@@ -192,14 +194,14 @@ export const resendOTP = async (req, res) => {
       email: email.toLowerCase(),
       type: "email_verification",
       isVerified: false,
-      createdAt: { $gt: new Date(Date.now() - 60 * 1000) }
+      createdAt: { $gt: new Date(Date.now() - 60 * 1000) },
     });
 
     if (recentOTP) {
       return res.status(429).json({
         success: false,
         error: "RESEND_LIMIT",
-        message: "Please wait 1 minute before requesting a new OTP"
+        message: "Please wait 1 minute before requesting a new OTP",
       });
     }
 
@@ -207,7 +209,7 @@ export const resendOTP = async (req, res) => {
     await OTP.deleteMany({
       email: email.toLowerCase(),
       type: "email_verification",
-      isVerified: false
+      isVerified: false,
     });
 
     // Generate new OTP
@@ -219,7 +221,7 @@ export const resendOTP = async (req, res) => {
       email: email.toLowerCase(),
       otp: otpCode,
       type: "email_verification",
-      expiresAt: expiresAt
+      expiresAt: expiresAt,
     });
 
     // Send OTP via email
@@ -230,18 +232,17 @@ export const resendOTP = async (req, res) => {
       message: "OTP resent successfully. Please check your email.",
       data: {
         email: email,
-        expires_at: expiresAt
+        expires_at: expiresAt,
       },
       // In development, you might want to return the OTP for testing
-      ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
+      ...(process.env.NODE_ENV === "development" && { otp: otpCode }),
     });
-
   } catch (error) {
     console.error("resendOTP error:", error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",
-      message: "Failed to resend OTP. Please try again later."
+      message: "Failed to resend OTP. Please try again later.",
     });
   }
 };
@@ -257,7 +258,7 @@ export const checkVerificationStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "INVALID_EMAIL",
-        message: "Please provide a valid email address"
+        message: "Please provide a valid email address",
       });
     }
 
@@ -269,16 +270,15 @@ export const checkVerificationStatus = async (req, res) => {
         email: email,
         email_verified: user ? user.email_verified : false,
         user_exists: !!user,
-        is_active: user ? user.is_active : false
-      }
+        is_active: user ? user.is_active : false,
+      },
     });
-
   } catch (error) {
     console.error("checkVerificationStatus error:", error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",
-      message: "Failed to check verification status"
+      message: "Failed to check verification status",
     });
   }
 };
@@ -287,21 +287,20 @@ export const checkVerificationStatus = async (req, res) => {
 export const cleanupExpiredOTPs = async (req, res) => {
   try {
     const result = await OTP.cleanupExpired();
-    
+
     return res.json({
       success: true,
       message: `Cleaned up ${result.deletedCount} expired OTPs`,
       data: {
-        deleted_count: result.deletedCount
-      }
+        deleted_count: result.deletedCount,
+      },
     });
-
   } catch (error) {
     console.error("cleanupExpiredOTPs error:", error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",
-      message: "Failed to cleanup expired OTPs"
+      message: "Failed to cleanup expired OTPs",
     });
   }
 };

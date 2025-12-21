@@ -3,9 +3,10 @@ import { planService } from "../../api/services/planService";
 import { useLoading } from "../../contexts/LoaderContext";
 import { useToast } from "../../hooks/useToast";
 import {
-    Plus, Edit2, Trash2, Check, X, DollarSign,
-    Users, Building2, Shield
+    Plus, Edit2, Trash2, Check, X,
+    Users, Building2, Power
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Plans() {
     const [plans, setPlans] = useState([]);
@@ -13,6 +14,7 @@ export default function Plans() {
     const [editingPlan, setEditingPlan] = useState(null);
     const { show, hide } = useLoading();
     const { addToast } = useToast();
+    const { t, i18n } = useTranslation();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -31,7 +33,8 @@ export default function Plans() {
     const fetchPlans = async () => {
         try {
             show();
-            const data = await planService.getPlans();
+            // Use getAllPlans to see both inactive and active plans
+            const data = await planService.getAllPlans();
             setPlans(data);
         } catch (err) {
             console.error("Error fetching plans:", err);
@@ -50,7 +53,7 @@ export default function Plans() {
             setEditingPlan(plan);
             setFormData({
                 ...plan,
-                features: plan.features.join('\n') // Convert array to multiline string
+                features: plan.features.join('\n')
             });
         } else {
             setEditingPlan(null);
@@ -74,15 +77,15 @@ export default function Plans() {
             show();
             const payload = {
                 ...formData,
-                features: formData.features.split('\n').filter(f => f.trim() !== "") // Convert string back to array
+                features: formData.features.split('\n').filter(f => f.trim() !== "")
             };
 
             if (editingPlan) {
                 await planService.updatePlan(editingPlan._id, payload);
-                addToast("Plan updated successfully", "success");
+                addToast(t('platform.plans.alerts.updated'), "success");
             } else {
                 await planService.createPlan(payload);
-                addToast("Plan created successfully", "success");
+                addToast(t('platform.plans.alerts.created'), "success");
             }
             setIsModalOpen(false);
             fetchPlans();
@@ -94,58 +97,72 @@ export default function Plans() {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to deactivate this plan?")) return;
+    const handleToggleStatus = async (plan) => {
         try {
-            await planService.deletePlan(id);
-            addToast("Plan deactivated", "success");
+            await planService.togglePlanStatus(plan._id);
+            addToast(`Plan ${plan.is_active ? 'deactivated' : 'activated'}`, "success");
             fetchPlans();
         } catch (err) {
-            addToast("Failed to delete plan", "error");
+            addToast("Failed to update status", "error");
+        }
+    };
+
+    const handleDeletePermanent = async (id) => {
+        if (!window.confirm(t('platform.plans.alerts.confirmDelete'))) return;
+        try {
+            await planService.deletePlanPermanent(id);
+            addToast(t('platform.plans.alerts.deleted'), "success");
+            fetchPlans();
+        } catch (err) {
+            addToast(err.response?.data?.message || "Failed to delete plan", "error");
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 lg:p-10 font-sans text-slate-800 dark:text-slate-200">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-6 lg:p-10 font-sans text-slate-800 dark:text-slate-200" dir={i18n.dir()}>
 
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Subscription Plans</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage pricing tiers and features.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{t('platform.plans.title')}</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">{t('platform.plans.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-blue-200"
                 >
-                    <Plus size={20} /> Create Plan
+                    <Plus size={20} /> {t('platform.plans.createList')}
                 </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
-                    <div key={plan._id} className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border p-6 hover:shadow-md transition-all duration-300 relative ${!plan.is_active ? 'opacity-75 grayscale' : 'border-slate-100 dark:border-slate-700'}`}>
+                    <div key={plan._id} className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border p-6 hover:shadow-md transition-all duration-300 relative ${!plan.is_active ? 'opacity-75 grayscale bg-gray-50 dark:bg-slate-900' : 'border-slate-100 dark:border-slate-700'}`}>
 
-                        <div className="flex justify-between items-start mb-4">
+                        {/* Status Badge */}
+                        <div className={`absolute top-4 right-4 rtl:left-4 rtl:right-auto text-xs font-bold px-2 py-1 rounded-full ${plan.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>
+                            {plan.is_active ? t('platform.companies.filters.active') : t('platform.companies.filters.inactive')}
+                        </div>
+
+                        <div className="flex justify-between items-start mb-4 pr-16 rtl:pr-0 rtl:pl-16">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{plan.name}</h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">{plan.description}</p>
                             </div>
-                            <div className="text-right">
-                                <div className="text-2xl font-bold text-blue-600">
-                                    {plan.price === 0 ? "Free" : `${plan.price} ${plan.currency}`}
-                                </div>
-                                <div className="text-xs text-slate-400 dark:text-slate-400 uppercase">{plan.billing_cycle}</div>
-                            </div>
+                        </div>
+
+                        <div className="text-xl font-bold text-blue-600 mb-4">
+                            {plan.price === 0 ? t('platform.plans.card.free') : `${plan.price} ${plan.currency}`}
+                            <span className="text-xs text-slate-400 dark:text-slate-400 font-normal uppercase ml-1">/{plan.billing_cycle}</span>
                         </div>
 
                         <div className="space-y-3 border-t border-slate-50 dark:border-slate-700 pt-4 mb-6">
                             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                                 <Building2 size={16} className="text-blue-500" />
-                                <span className="font-medium">{plan.limits.max_branches} Branches</span>
+                                <span className="font-medium">{plan.limits.max_branches} {t('platform.plans.card.branches')}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                                 <Users size={16} className="text-purple-500" />
-                                <span className="font-medium">{plan.limits.max_employees} Employees</span>
+                                <span className="font-medium">{plan.limits.max_employees} {t('platform.plans.card.employees')}</span>
                             </div>
                             <div className="flex flex-col gap-1 mt-2">
                                 {plan.features.slice(0, 3).map((feature, idx) => (
@@ -154,7 +171,7 @@ export default function Plans() {
                                     </div>
                                 ))}
                                 {plan.features.length > 3 && (
-                                    <span className="text-xs text-slate-400 dark:text-slate-400 pl-5">+{plan.features.length - 3} more features</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-400 pl-5 rtl:pl-0 rtl:pr-5">+{plan.features.length - 3} {t('platform.plans.card.moreFeatures')}</span>
                                 )}
                             </div>
                         </div>
@@ -164,29 +181,39 @@ export default function Plans() {
                                 onClick={() => handleOpenModal(plan)}
                                 className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 text-sm font-medium transition"
                             >
-                                <Edit2 size={16} /> Edit
+                                <Edit2 size={16} /> {t('platform.plans.card.edit')}
                             </button>
-                            {plan.is_active && (
-                                <button
-                                    onClick={() => handleDelete(plan._id)}
-                                    className="p-2 rounded-lg border border-red-100 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-900 transition"
-                                    title="Deactivate Plan"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            )}
+
+                            {/* Toggle Status */}
+                            <button
+                                onClick={() => handleToggleStatus(plan)}
+                                className={`p-2 rounded-lg border transition ${plan.is_active
+                                    ? "border-amber-100 text-amber-500 hover:bg-amber-50"
+                                    : "border-emerald-100 text-emerald-500 hover:bg-emerald-50"}`}
+                                title={plan.is_active ? t('platform.plans.card.deactivate') : t('platform.plans.card.activate')}
+                            >
+                                <Power size={16} />
+                            </button>
+
+                            {/* Permanent Delete */}
+                            <button
+                                onClick={() => handleDeletePermanent(plan._id)}
+                                className="p-2 rounded-lg border border-red-100 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-900 transition"
+                                title={t('platform.plans.card.delete')}
+                            >
+                                <Trash2 size={16} />
+                            </button>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 z-10">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                                {editingPlan ? "Edit Plan" : "Create New Plan"}
+                                {editingPlan ? t('platform.plans.modal.editTitle') : t('platform.plans.modal.createTitle')}
                             </h2>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-300">
                                 <X size={24} />
@@ -196,42 +223,39 @@ export default function Plans() {
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Plan Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.name')}</label>
                                     <input
                                         type="text" required
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                        placeholder="e.g. Pro Plan"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Slug (Unique)</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.slug')}</label>
                                     <input
                                         type="text" required
                                         value={formData.slug}
                                         onChange={e => setFormData({ ...formData, slug: e.target.value })}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                        placeholder="e.g. pro-monthly"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.description')}</label>
                                 <textarea
                                     required
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                                     rows="2"
-                                    placeholder="Brief description of the plan..."
                                 />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Price (EGP)</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.price')}</label>
                                     <input
                                         type="number" required min="0"
                                         value={formData.price}
@@ -240,7 +264,7 @@ export default function Plans() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Billing Cycle</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.billingCycle')}</label>
                                     <select
                                         value={formData.billing_cycle}
                                         onChange={e => setFormData({ ...formData, billing_cycle: e.target.value })}
@@ -254,7 +278,7 @@ export default function Plans() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Max Branches</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.maxBranches')}</label>
                                     <input
                                         type="number" required min="1"
                                         value={formData.limits.max_branches}
@@ -263,7 +287,7 @@ export default function Plans() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Max Employees</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.maxEmployees')}</label>
                                     <input
                                         type="number" required min="1"
                                         value={formData.limits.max_employees}
@@ -274,13 +298,12 @@ export default function Plans() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Features (One per line)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('platform.plans.modal.features')}</label>
                                 <textarea
                                     value={formData.features}
                                     onChange={e => setFormData({ ...formData, features: e.target.value })}
                                     className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono text-sm"
                                     rows="5"
-                                    placeholder="Advanced Reporting&#10;Priority Support&#10;API Access"
                                 />
                             </div>
 
@@ -292,7 +315,7 @@ export default function Plans() {
                                     onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
                                     className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                                 />
-                                <label htmlFor="isActive" className="text-sm font-medium text-slate-700 dark:text-slate-200">Active Plan</label>
+                                <label htmlFor="isActive" className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('platform.plans.modal.activePlan')}</label>
                             </div>
 
                             <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -301,13 +324,13 @@ export default function Plans() {
                                     onClick={() => setIsModalOpen(false)}
                                     className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                                 >
-                                    Cancel
+                                    {t('platform.plans.modal.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-200"
                                 >
-                                    {editingPlan ? "Update Plan" : "Create Plan"}
+                                    {editingPlan ? t('platform.plans.modal.update') : t('platform.plans.modal.create')}
                                 </button>
                             </div>
                         </form>

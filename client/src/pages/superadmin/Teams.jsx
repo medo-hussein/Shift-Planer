@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { superAdminService } from "../../api/services/superAdminService";
-import { useLoading } from "../../contexts/LoaderContext";
 import { 
   Plus, Mail, Phone, Building, User, 
   MoreVertical, Edit2, Trash2, Power, X,
@@ -8,12 +7,14 @@ import {
 } from "lucide-react";
 import {Alert} from "../../utils/alertService.js"
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 export default function Teams() {
   const [branches, setBranches] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Pagination States
   const [page, setPage] = useState(1);
@@ -30,24 +31,21 @@ export default function Teams() {
     is_active: true
   });
   
-  const { show, hide } = useLoading();
   const { t, i18n } = useTranslation();
 
   // Fetch Branches with Pagination
   const fetchBranches = async () => {
     try {
-      show();
+      setLoading(true);
       const res = await superAdminService.getAllBranches({ page, limit });
-      
       setBranches(res.data.data || []);
-      
       if (res.data.pagination) {
         setTotalPages(res.data.pagination.total_pages);
       }
     } catch (err) {
       console.error(err);
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -59,7 +57,7 @@ export default function Teams() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      show();
+      setLoading(true);
       if (isEditing) {
         await superAdminService.updateBranch(formData.id, {
           name: formData.name,
@@ -80,7 +78,7 @@ export default function Teams() {
     } catch (err) {
       Alert.error(err.response?.data?.message || t("teams.alerts.operationFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -89,7 +87,7 @@ export default function Teams() {
     const result = await Alert.confirm(t("teams.alerts.confirmDelete"));
     if (!result.isConfirmed) return;
     try {
-      show();
+      setLoading(true);
       await superAdminService.deleteBranch(id);
       if (branches.length === 1 && page > 1) {
         setPage(p => p - 1);
@@ -100,14 +98,14 @@ export default function Teams() {
     } catch (err) {
       Alert.error(t("teams.alerts.deleteFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
   // Handle Toggle Status
   const handleToggleStatus = async (branch) => {
     try {
-      show();
+      setLoading(true);
       await superAdminService.updateBranch(branch._id, { is_active: !branch.is_active });
       Alert.success(branch.is_active 
         ? t("teams.alerts.deactivateSuccess") 
@@ -118,7 +116,7 @@ export default function Teams() {
     } catch (err) {
       Alert.error(t("teams.alerts.statusUpdateFailed"));
     } finally {
-      hide();
+      setLoading(false);
     }
   };
 
@@ -142,6 +140,8 @@ export default function Teams() {
     setFormData({ name: "", email: "", password: "", branch_name: "", phone: "", is_active: true });
     setIsEditing(false);
   };
+  
+  if(loading) return <DashboardSkeleton />;
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen" onClick={() => setActiveMenu(null)}>

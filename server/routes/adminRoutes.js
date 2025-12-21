@@ -11,7 +11,8 @@ import {
   getBranchAttendanceReport,
   updateEmployeeProfile,
   getBranchShiftsCalendar,
-  deleteEmployee 
+  deleteEmployee,
+  updateBranchLocation 
 } from "../controllers/adminController.js";
 
 import {
@@ -35,7 +36,7 @@ import {
   shareReport,
   deleteReport,
   getDashboardStats,
-  generateAIAnalysis // ✅ 1. تم إضافة استيراد الدالة هنا
+  generateAIAnalysis
 } from "../controllers/reportController.js";
 
 import { createEmployee } from "../controllers/userController.js";
@@ -54,6 +55,9 @@ router.use(protect, adminOnly);
 
 // Dashboard
 router.get("/dashboard", getAdminDashboard);
+
+// Location & Branch Settings (Geofencing)
+router.put("/update-location", updateBranchLocation);
 
 // Employee management
 router.get("/employees", getBranchEmployees);

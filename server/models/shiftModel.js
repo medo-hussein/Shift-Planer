@@ -18,10 +18,10 @@ const shiftSchema = new mongoose.Schema(
     },
 
     super_admin_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true, 
-        index: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
     },
     // 
 
@@ -61,7 +61,7 @@ const shiftSchema = new mongoose.Schema(
     // Shift type (e.g., regular, overtime, holiday)
     shift_type: {
       type: String,
-      enum: ["regular", "overtime", "holiday", "weekend", "emergency"],
+      enum: ["regular", "overtime", "holiday", "weekend", "emergency", "night"],
       default: "regular",
     },
 
@@ -200,7 +200,7 @@ shiftSchema.pre("save", function (next) {
         }
         return total;
       }, 0);
-      
+
       const totalBreakMinutes = Math.floor(totalBreakMs / (1000 * 60));
       this.total_worked_minutes = Math.max(0, this.total_worked_minutes - totalBreakMinutes);
     }
@@ -208,7 +208,7 @@ shiftSchema.pre("save", function (next) {
     // Calculate overtime (if worked more than scheduled)
     const scheduledMs = this.end_date_time - this.start_date_time;
     const scheduledMinutes = Math.floor(scheduledMs / (1000 * 60));
-    
+
     if (this.total_worked_minutes > scheduledMinutes) {
       this.overtime_minutes = this.total_worked_minutes - scheduledMinutes;
     }

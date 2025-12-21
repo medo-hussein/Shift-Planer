@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useLoading } from "../../contexts/LoaderContext";
 import { employeesService } from "../../api/services/admin/employeesService";
 import {
   X,
@@ -21,7 +20,6 @@ import { useTranslation } from "react-i18next";
 const EmployeeDetailsModal = ({ employee, onClose }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { show: showLoader, hide: hideLoader } = useLoading();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -31,7 +29,6 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
   const fetchEmployeeDetails = async () => {
     try {
       setLoading(true);
-      showLoader();
       const response = await employeesService.getEmployee(employee._id);
       setDetails(response.data.data);
     } catch (error) {
@@ -39,7 +36,6 @@ const EmployeeDetailsModal = ({ employee, onClose }) => {
       console.error("Error:", error);
     } finally {
       setLoading(false);
-      hideLoader();
     }
   };
 

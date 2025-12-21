@@ -1,11 +1,10 @@
 import User from "../models/userModel.js";
 import Shift from "../models/shiftModel.js";
 import Attendance from "../models/attendanceModel.js";
-import Report from "../models/reportModel.js";
 
 // Utility function to get the Super Admin ID (Tenant Owner ID)
 const getTenantOwnerId = (user) => {
-    return user.role === "super_admin" ? user._id : user.super_admin_id;
+  return user.role === "super_admin" ? user._id : user.super_admin_id;
 };
 
 // GET ADMIN DASHBOARD STATS
@@ -17,14 +16,16 @@ export const getAdminDashboard = async (req, res) => {
 
     // 1. Find all employee IDs and the total counts for this admin and tenant
     const ownedEmployees = await User.find({
-        branch_admin_id: adminId,
-        role: "employee",
-        super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
-    }).select('_id is_active');
-    
-    const employeeIds = ownedEmployees.map(emp => emp._id);
+      branch_admin_id: adminId,
+      role: "employee",
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
+    }).select("_id is_active");
+
+    const employeeIds = ownedEmployees.map((emp) => emp._id);
     const totalEmployees = ownedEmployees.length;
-    const activeEmployees = ownedEmployees.filter(emp => emp.is_active).length;
+    const activeEmployees = ownedEmployees.filter(
+      (emp) => emp.is_active
+    ).length;
 
     // Get today's start and end
     const startOfDay = new Date();
@@ -34,135 +35,124 @@ export const getAdminDashboard = async (req, res) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     // Get dashboard data in parallel for owned employees/shifts/attendance
-    const [
-      todayShifts,
-      todayAttendance,
-      pendingShifts,
-      recentEmployees
-    ] = await Promise.all([
-      
-      // Today's shifts (Fixed: Limit to end of day)
-      Shift.countDocuments({
-        employee_id: { $in: employeeIds },
-        super_admin_id: tenantOwnerId, // ISOLATION
-        start_date_time: { 
+    const [todayShifts, todayAttendance, pendingShifts, recentEmployees] =
+      await Promise.all([
+        // Today's shifts (Fixed: Limit to end of day)
+        Shift.countDocuments({
+          employee_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
+          start_date_time: {
             $gte: startOfDay,
-            $lte: endOfDay 
-        }
-      }),
-      
-      // Today's attendance
-      Attendance.countDocuments({
-        user_id: { $in: employeeIds },
-        super_admin_id: tenantOwnerId, // ISOLATION
-        date: { $gte: startOfDay }
-      }),
-      
-      // Pending shifts (scheduled but not started)
-      Shift.countDocuments({
-        employee_id: { $in: employeeIds },
-        super_admin_id: tenantOwnerId, // ISOLATION
-        status: "scheduled"
-      }),
-      
-      // Recent employees (last 5)
-      User.find({
-        branch_admin_id: adminId,
-        role: "employee",
-        super_admin_id: tenantOwnerId // ISOLATION
-      })
-      .select('name email position is_active createdAt avatar') // ✅ Added avatar & Fixed createdAt
-      .sort({ createdAt: -1 }) // ✅ Fixed sort field
-      .limit(5)
-    ]);
+            $lte: endOfDay,
+          },
+        }),
+
+        // Today's attendance
+        Attendance.countDocuments({
+          user_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
+          date: { $gte: startOfDay },
+        }),
+
+        // Pending shifts (scheduled but not started)
+        Shift.countDocuments({
+          employee_id: { $in: employeeIds },
+          super_admin_id: tenantOwnerId, // ISOLATION
+          status: "scheduled",
+        }),
+
+        // Recent employees (last 5)
+        User.find({
+          branch_admin_id: adminId,
+          role: "employee",
+          super_admin_id: tenantOwnerId, // ISOLATION
+        })
+          .select("name email position is_active createdAt avatar") // ✅ Added avatar & Fixed createdAt
+          .sort({ createdAt: -1 }) // ✅ Fixed sort field
+          .limit(5),
+      ]);
 
     // Get weekly attendance summary (requires aggregation on owned records)
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
-    
+
     const weeklyAttendance = await Attendance.aggregate([
       {
         $match: {
           user_id: { $in: employeeIds },
           super_admin_id: tenantOwnerId, // ISOLATION
-          date: { $gte: weekStart }
-        }
+          date: { $gte: weekStart },
+        },
       },
       {
         $group: {
           _id: "$status",
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     const stats = {
       branch: {
         name: branchName,
         total_employees: totalEmployees,
-        active_employees: activeEmployees
+        active_employees: activeEmployees,
       },
       today: {
         shifts: todayShifts,
         attendance: todayAttendance,
-        pending_shifts: pendingShifts
+        pending_shifts: pendingShifts,
       },
       weekly_attendance: weeklyAttendance,
-      recent_employees: recentEmployees
+      recent_employees: recentEmployees,
     };
 
     return res.json({
       success: true,
       message: "Admin dashboard data retrieved successfully",
-      data: stats
+      data: stats,
     });
   } catch (err) {
     console.error("getAdminDashboard error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
 
-// GET BRANCH EMPLOYEES
+// GET BRANCH EMPLOYEES (✅ FIXED FOR OVERNIGHT STATUS)
 export const getBranchEmployees = async (req, res) => {
   try {
     const adminId = req.user._id;
     const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
-    const { 
-      page = 1, 
-      limit = 10, 
-      is_active, 
-      search,
-      position 
-    } = req.query;
+    const { page = 1, limit = 10, is_active, search, position } = req.query;
 
-    let query = { 
-      branch_admin_id: adminId, 
+    let query = {
+      branch_admin_id: adminId,
       role: "employee",
-      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
     };
 
     // Add filters
     if (is_active !== undefined) {
-      query.is_active = is_active === 'true';
+      query.is_active = is_active === "true";
     }
 
     if (position) {
-      query.position = { $regex: position, $options: 'i' };
+      query.position = { $regex: position, $options: "i" };
     }
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
       ];
     }
 
     const employees = await User.find(query)
-      .select('-password -resetPasswordToken -resetPasswordExpire')
-      .sort({ createdAt: -1 }) // ✅ Fixed sort field
+      .select("-password -resetPasswordToken -resetPasswordExpire")
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -174,33 +164,44 @@ export const getBranchEmployees = async (req, res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // All sub-queries must be filtered by the tenantOwnerId
-        const [todayAttendance, totalShifts, recentShifts] = await Promise.all([
-          Attendance.findOne({
+        // ✅ FIX: Find Active Session OR Today's Session
+        // This ensures the status list shows "Present" for overnight shifts
+        let todayAttendance = await Attendance.findOne({
+          user_id: employee._id,
+          super_admin_id: tenantOwnerId,
+          check_out: { $exists: false } // Priority 1: Currently Active
+        });
+
+        // If no active session, find if they attended today and left
+        if (!todayAttendance) {
+          todayAttendance = await Attendance.findOne({
             user_id: employee._id,
-            super_admin_id: tenantOwnerId, // ISOLATION
+            super_admin_id: tenantOwnerId,
             date: { $gte: today }
-          }),
-          Shift.countDocuments({ 
+          }).sort({ createdAt: -1 });
+        }
+
+        const [totalShifts, recentShifts] = await Promise.all([
+          Shift.countDocuments({
             employee_id: employee._id,
-            super_admin_id: tenantOwnerId // ISOLATION
+            super_admin_id: tenantOwnerId, // ISOLATION
           }),
-          Shift.find({ 
+          Shift.find({
             employee_id: employee._id,
-            super_admin_id: tenantOwnerId // ISOLATION
+            super_admin_id: tenantOwnerId, // ISOLATION
           })
             .sort({ start_date_time: -1 })
-            .limit(3)
+            .limit(3),
         ]);
 
         return {
           ...employee.toObject(),
           stats: {
-            clocked_in_today: !!todayAttendance,
-            today_status: todayAttendance?.status || 'absent',
+            clocked_in_today: !!(todayAttendance && !todayAttendance.check_out),
+            today_status: todayAttendance?.status || "absent",
             total_shifts: totalShifts,
-            recent_shifts: recentShifts
-          }
+            recent_shifts: recentShifts,
+          },
         };
       })
     );
@@ -212,14 +213,14 @@ export const getBranchEmployees = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        total_pages: Math.ceil(total / limit)
-      }
+        total_pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error("getBranchEmployees error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -236,21 +237,20 @@ export const getEmployeeDetails = async (req, res) => {
       _id: employeeId,
       branch_admin_id: adminId,
       role: "employee",
-      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
-    })
-    .select('-password -resetPasswordToken -resetPasswordExpire');
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
+    }).select("-password -resetPasswordToken -resetPasswordExpire");
 
     if (!employee) {
       return res.status(404).json({
         success: false,
-        message: "Employee not found in your branch"
+        message: "Employee not found in your branch",
       });
     }
 
     // Get employee statistics
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
@@ -260,60 +260,60 @@ export const getEmployeeDetails = async (req, res) => {
       weeklyAttendance,
       totalShifts,
       upcomingShifts,
-      attendanceHistory
+      attendanceHistory,
     ] = await Promise.all([
       // Today's attendance
       Attendance.findOne({
         user_id: employeeId,
         super_admin_id: tenantOwnerId, // ISOLATION
-        date: { $gte: today }
+        date: { $gte: today },
       }),
-      
+
       // Weekly attendance summary
       Attendance.aggregate([
         {
           $match: {
             user_id: employeeId,
             super_admin_id: tenantOwnerId, // ISOLATION
-            date: { $gte: weekStart }
-          }
+            date: { $gte: weekStart },
+          },
         },
         {
           $group: {
             _id: "$status",
-            count: { $sum: 1 }
-          }
-        }
+            count: { $sum: 1 },
+          },
+        },
       ]),
-      
+
       // Total shifts
-      Shift.countDocuments({ 
+      Shift.countDocuments({
         employee_id: employeeId,
-        super_admin_id: tenantOwnerId // ISOLATION
+        super_admin_id: tenantOwnerId, // ISOLATION
       }),
-      
+
       // Upcoming shifts (next 7 days)
       Shift.find({
         employee_id: employeeId,
         super_admin_id: tenantOwnerId, // ISOLATION
-        start_date_time: { 
+        start_date_time: {
           $gte: today,
-          $lte: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-        }
+          $lte: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+        },
       })
-      .sort({ start_date_time: 1 })
-      .limit(5),
-      
+        .sort({ start_date_time: 1 })
+        .limit(5),
+
       // Attendance history (last 15 days)
       Attendance.find({
         user_id: employeeId,
         super_admin_id: tenantOwnerId, // ISOLATION
-        date: { 
-          $gte: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)
-        }
+        date: {
+          $gte: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000),
+        },
       })
-      .sort({ date: -1 })
-      .limit(15)
+        .sort({ date: -1 })
+        .limit(15),
     ]);
 
     const employeeDetails = {
@@ -321,22 +321,22 @@ export const getEmployeeDetails = async (req, res) => {
       statistics: {
         total_shifts: totalShifts,
         weekly_attendance: weeklyAttendance,
-        today_attendance: todayAttendance
+        today_attendance: todayAttendance,
       },
       upcoming_shifts: upcomingShifts,
-      attendance_history: attendanceHistory
+      attendance_history: attendanceHistory,
     };
 
     return res.json({
       success: true,
       message: "Employee details retrieved successfully",
-      data: employeeDetails
+      data: employeeDetails,
     });
   } catch (err) {
     console.error("getEmployeeDetails error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -346,13 +346,22 @@ export const createEmployeeShift = async (req, res) => {
   try {
     const adminId = req.user._id;
     const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
-    const { employee_id, start_date_time, end_date_time, title, description, shift_type, location, notes } = req.body;
+    const {
+      employee_id,
+      start_date_time,
+      end_date_time,
+      title,
+      description,
+      shift_type,
+      location,
+      notes,
+    } = req.body;
 
     // Validate required fields
     if (!employee_id || !start_date_time || !end_date_time) {
       return res.status(400).json({
         success: false,
-        message: "Employee ID, start date, and end date are required"
+        message: "Employee ID, start date, and end date are required",
       });
     }
 
@@ -361,13 +370,13 @@ export const createEmployeeShift = async (req, res) => {
       _id: employee_id,
       branch_admin_id: adminId,
       role: "employee",
-      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
     });
 
     if (!employee) {
       return res.status(404).json({
         success: false,
-        message: "Employee not found in your branch"
+        message: "Employee not found in your branch",
       });
     }
 
@@ -378,14 +387,14 @@ export const createEmployeeShift = async (req, res) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
         success: false,
-        message: "Invalid date format"
+        message: "Invalid date format",
       });
     }
 
     if (start >= end) {
       return res.status(400).json({
         success: false,
-        message: "Start date must be before end date"
+        message: "Start date must be before end date",
       });
     }
 
@@ -394,7 +403,7 @@ export const createEmployeeShift = async (req, res) => {
       employee_id: employee_id,
       super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
       start_date_time: { $lt: end },
-      end_date_time: { $gt: start }
+      end_date_time: { $gt: start },
     });
 
     if (overlappingShift) {
@@ -405,9 +414,9 @@ export const createEmployeeShift = async (req, res) => {
           overlapping_shift: {
             id: overlappingShift._id,
             start: overlappingShift.start_date_time,
-            end: overlappingShift.end_date_time
-          }
-        }
+            end: overlappingShift.end_date_time,
+          },
+        },
       });
     }
 
@@ -423,7 +432,7 @@ export const createEmployeeShift = async (req, res) => {
       shift_type: shift_type || "regular",
       location: location || "",
       notes: notes || "",
-      status: "scheduled"
+      status: "scheduled",
     });
 
     const populatedShift = await Shift.findById(shift._id)
@@ -433,13 +442,13 @@ export const createEmployeeShift = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Shift created successfully",
-      data: populatedShift
+      data: populatedShift,
     });
   } catch (err) {
     console.error("createEmployeeShift error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -454,38 +463,38 @@ export const getBranchAttendanceReport = async (req, res) => {
     // Validate dates
     const start = start_date ? new Date(start_date) : new Date();
     const end = end_date ? new Date(end_date) : new Date();
-    
+
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
         success: false,
-        message: "Invalid date format"
+        message: "Invalid date format",
       });
     }
 
     // Build query
     let attendanceQuery = {
       date: { $gte: start, $lte: end },
-      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
     };
 
     // Get all employees in branch (filter by tenant owner)
-    const employees = await User.find({ 
+    const employees = await User.find({
       branch_admin_id: adminId,
-      role: "employee", 
-      super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
-    }).select('_id name email position');
+      role: "employee",
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter employees by owner ID
+    }).select("_id name email position");
 
-    const employeeIds = employees.map(emp => emp._id);
+    const employeeIds = employees.map((emp) => emp._id);
 
     if (employee_id) {
       // Verify employee belongs to this branch
-      if (!employeeIds.some(id => id.toString() === employee_id.toString())) {
+      if (!employeeIds.some((id) => id.toString() === employee_id.toString())) {
         return res.status(403).json({
           success: false,
-          message: "Employee not found in your branch"
+          message: "Employee not found in your branch",
         });
       }
       attendanceQuery.user_id = employee_id;
@@ -495,38 +504,45 @@ export const getBranchAttendanceReport = async (req, res) => {
 
     // Get attendance records
     const attendanceRecords = await Attendance.find(attendanceQuery)
-      .populate('user_id', 'name email position')
+      .populate("user_id", "name email position")
       .sort({ date: -1 });
 
     // Generate report summary
     const reportSummary = {
       period: {
         start_date: start,
-        end_date: end
+        end_date: end,
       },
       total_employees: employees.length,
       total_records: attendanceRecords.length,
       by_status: {
-        present: attendanceRecords.filter(r => r.status === 'present').length,
-        late: attendanceRecords.filter(r => r.status === 'late').length,
-        absent: attendanceRecords.filter(r => r.status === 'absent').length,
-        half_day: attendanceRecords.filter(r => r.status === 'half_day').length
+        present: attendanceRecords.filter((r) => r.status === "present").length,
+        late: attendanceRecords.filter((r) => r.status === "late").length,
+        absent: attendanceRecords.filter((r) => r.status === "absent").length,
+        half_day: attendanceRecords.filter((r) => r.status === "half_day")
+          .length,
       },
-      total_hours: attendanceRecords.reduce((sum, r) => sum + (r.total_hours || 0), 0),
-      total_overtime: attendanceRecords.reduce((sum, r) => sum + (r.overtime || 0), 0),
-      records: attendanceRecords
+      total_hours: attendanceRecords.reduce(
+        (sum, r) => sum + (r.total_hours || 0),
+        0
+      ),
+      total_overtime: attendanceRecords.reduce(
+        (sum, r) => sum + (r.overtime || 0),
+        0
+      ),
+      records: attendanceRecords,
     };
 
     return res.json({
       success: true,
       message: "Attendance report generated successfully",
-      data: reportSummary
+      data: reportSummary,
     });
   } catch (err) {
     console.error("getBranchAttendanceReport error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -537,20 +553,20 @@ export const updateEmployeeProfile = async (req, res) => {
     const adminId = req.user._id;
     const tenantOwnerId = getTenantOwnerId(req.user); // ISOLATION KEY
     const { employeeId } = req.params;
-    const { name, email, phone, position, department, is_active } = req.body;
+    const { name, email, phone, position, department, is_active, hourly_rate, currency } = req.body;
 
     // Verify employee belongs to this branch AND tenant
     const employee = await User.findOne({
       _id: employeeId,
       branch_admin_id: adminId,
       role: "employee",
-      super_admin_id: tenantOwnerId // ISOLATION: Filter by owner ID
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter by owner ID
     });
 
     if (!employee) {
       return res.status(404).json({
         success: false,
-        message: "Employee not found in your branch"
+        message: "Employee not found in your branch",
       });
     }
 
@@ -560,7 +576,7 @@ export const updateEmployeeProfile = async (req, res) => {
       if (existing) {
         return res.status(400).json({
           success: false,
-          message: "Email already exists"
+          message: "Email already exists",
         });
       }
       employee.email = email;
@@ -572,22 +588,25 @@ export const updateEmployeeProfile = async (req, res) => {
     if (position !== undefined) employee.position = position;
     if (department !== undefined) employee.department = department;
     if (is_active !== undefined) employee.is_active = is_active;
+    if (hourly_rate !== undefined) employee.hourly_rate = hourly_rate;
+    if (currency !== undefined) employee.currency = currency;
 
     await employee.save();
 
-    const updatedEmployee = await User.findById(employeeId)
-      .select('-password -resetPasswordToken -resetPasswordExpire');
+    const updatedEmployee = await User.findById(employeeId).select(
+      "-password -resetPasswordToken -resetPasswordExpire"
+    );
 
     return res.json({
       success: true,
       message: "Employee profile updated successfully",
-      data: updatedEmployee
+      data: updatedEmployee,
     });
   } catch (err) {
     console.error("updateEmployeeProfile error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -605,27 +624,27 @@ export const getBranchShiftsCalendar = async (req, res) => {
     end.setDate(end.getDate() + 7); // Default to next 7 days
 
     // Get all employees in branch (filter by tenant owner)
-    const employees = await User.find({ 
+    const employees = await User.find({
       branch_admin_id: adminId,
       role: "employee",
       is_active: true,
-      super_admin_id: tenantOwnerId // ISOLATION: Filter employees by owner ID
-    }).select('_id name email position');
+      super_admin_id: tenantOwnerId, // ISOLATION: Filter employees by owner ID
+    }).select("_id name email position");
 
-    const employeeIds = employees.map(emp => emp._id);
+    const employeeIds = employees.map((emp) => emp._id);
 
     // Get shifts for the period (filter by tenant owner)
     const shifts = await Shift.find({
       employee_id: { $in: employeeIds },
       super_admin_id: tenantOwnerId, // ISOLATION: Filter shifts by owner ID
       start_date_time: { $gte: start },
-      end_date_time: { $lte: end }
+      end_date_time: { $lte: end },
     })
-    .populate('employee_id', 'name email position')
-    .sort({ start_date_time: 1 });
+      .populate("employee_id", "name email position")
+      .sort({ start_date_time: 1 });
 
     // Format for calendar view
-    const calendarData = shifts.map(shift => ({
+    const calendarData = shifts.map((shift) => ({
       id: shift._id,
       title: `${shift.employee_id.name} - ${shift.title}`,
       start: shift.start_date_time,
@@ -633,7 +652,7 @@ export const getBranchShiftsCalendar = async (req, res) => {
       employee: shift.employee_id,
       shift_type: shift.shift_type,
       status: shift.status,
-      location: shift.location
+      location: shift.location,
     }));
 
     return res.json({
@@ -642,14 +661,14 @@ export const getBranchShiftsCalendar = async (req, res) => {
       data: {
         period: { start, end },
         employees: employees,
-        shifts: calendarData
-      }
+        shifts: calendarData,
+      },
     });
   } catch (err) {
     console.error("getBranchShiftsCalendar error:", err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: err.message 
+      message: err.message,
     });
   }
 };
@@ -666,28 +685,68 @@ export const deleteEmployee = async (req, res) => {
       _id: employeeId,
       branch_admin_id: adminId,
       role: "employee",
-      super_admin_id: tenantOwnerId
+      super_admin_id: tenantOwnerId,
     });
 
     if (!employee) {
       return res.status(404).json({
         success: false,
-        message: "Employee not found in your branch"
+        message: "Employee not found in your branch",
       });
     }
 
     // 2. Delete employee
     await User.findByIdAndDelete(employeeId);
-    
+
     return res.json({
       success: true,
-      message: "Employee deleted successfully"
+      message: "Employee deleted successfully",
     });
   } catch (err) {
     console.error("deleteEmployee error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
+    });
+  }
+};
+
+// ============================================
+// 📍 UPDATE BRANCH LOCATION (Geofencing)
+// ============================================
+export const updateBranchLocation = async (req, res) => {
+  const { lat, lng, radius, address } = req.body;
+
+  try {
+    // req.user يأتي من الـ middleware
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.branch_location = {
+        lat: lat || user.branch_location.lat,
+        lng: lng || user.branch_location.lng,
+        radius: radius || user.branch_location.radius || 200, // Default 200m
+        address: address || user.branch_location.address,
+      };
+
+      const updatedUser = await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "تم تحديث موقع الفرع بنجاح",
+        data: updatedUser.branch_location, // إرجاع البيانات المحدثة
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "المستخدم غير موجود",
+      });
+    }
+  } catch (error) {
+    console.error("updateBranchLocation error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

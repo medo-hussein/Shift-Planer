@@ -1,6 +1,7 @@
 import React, { use } from "react";
 import Button from "../../utils/Button.jsx";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 
 const Branding = () => {
   const { t } = useTranslation();
@@ -14,29 +15,33 @@ const Branding = () => {
 
         {/* SUBTEXT */}
         <p className="mt-4 text-[#3F72AF] dark:text-sky-300 text-base md:text-lg">
-    {t( "Join companies already using our platform to automate scheduling andimprove productivity")}
+          {t("Join companies already using our platform to automate scheduling andimprove productivity")}
         </p>
 
         {/* BUTTONS */}
         <div className="mt-8 flex justify-center flex-wrap gap-4">
-          <Button
-            variant="primary"
-            className="px-6 py-3 rounded-xl font-medium"
-          >
-           {t( "startFreeTrial")}
-          </Button>
+          <Link to={"/register"}>
+            <Button
+              variant="primary"
+              className="px-6 py-3 rounded-xl font-medium"
+            >
+              {t("startFreeTrial")}
+            </Button>
+          </Link>
+          <Link to={"/contact"}>
+            <Button
+              variant="outline"
+              className="px-6 py-3 rounded-xl font-medium"
+            >
+              {t("scheduleDemo")}
+            </Button>
+          </Link>
 
-          <Button
-            variant="outline"
-            className="px-6 py-3 rounded-xl font-medium"
-          >
-           {t("scheduleDemo")}
-          </Button>
         </div>
 
         {/* FOOTNOTE */}
         <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
-         {t("noCreditCardRequired")}
+          {t("noCreditCardRequired")}
         </p>
       </div>
     </section>

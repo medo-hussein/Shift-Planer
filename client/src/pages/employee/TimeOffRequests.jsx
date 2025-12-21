@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Calendar,
   Clock,
@@ -11,16 +11,15 @@ import {
 } from "lucide-react";
 import Button from "../../utils/Button";
 import apiClient from "../../api/apiClient";
-import { useLoading } from "../../contexts/LoaderContext";
 import { useToast } from "../../hooks/useToast";
 import { useTranslation } from "react-i18next";
+import DashboardSkeleton from "../../utils/DashboardSkeleton.jsx";
 
 const TimeOffRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("all");
-  const { show: showGlobalLoading, hide: hideGlobalLoading } = useLoading();
   const { success, error } = useToast();
   const { t, i18n } = useTranslation();
 
@@ -67,7 +66,7 @@ const TimeOffRequests = () => {
     }
 
     try {
-      showGlobalLoading();
+      setLoading(true);
       const response = await apiClient.post("/api/employee/leave-requests", {
         ...formData,
         start_date: formData.start_date,
@@ -91,7 +90,7 @@ const TimeOffRequests = () => {
       console.error(t("timeOffRequests.errors.submit"), err);
       error(err.response?.data?.message || t("timeOffRequests.alerts.submitFailed"));
     } finally {
-      hideGlobalLoading();
+      setLoading(false);
     }
   };
 
@@ -107,7 +106,7 @@ const TimeOffRequests = () => {
   // Handle cancel request
   const handleCancelRequest = async (requestId) => {
     try {
-      showGlobalLoading();
+      setLoading(true);
       await apiClient.patch(`/api/employee/leave-requests/${requestId}/cancel`);
       await fetchRequests();
       success(t("timeOffRequests.alerts.cancelSuccess"));
@@ -115,7 +114,7 @@ const TimeOffRequests = () => {
       console.error(t("timeOffRequests.errors.cancel"), error);
       error(error.response?.data?.message || t("timeOffRequests.alerts.cancelFailed"));
     } finally {
-      hideGlobalLoading();
+      setLoading(false);
     }
   };
 
@@ -212,6 +211,8 @@ const TimeOffRequests = () => {
     }
   };
 
+  if(loading) return <DashboardSkeleton />;
+
   return (
     <div className="p-4 sm:p-10 dark:bg-slate-900 dark:text-slate-50 min-h-screen">
       {/* Header */}
@@ -303,7 +304,7 @@ const TimeOffRequests = () => {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Filter size={20} className="text-gray-500 dark:text-slate-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              {t("timeOffRequests.filter.label")}:
+              Filter :
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -339,7 +340,7 @@ const TimeOffRequests = () => {
               className="mx-auto text-gray-300 dark:text-slate-600 mb-3"
             />
             <p className="text-gray-500 dark:text-slate-400 mb-4">
-              {t("timeOffRequests.noRequests")}
+              No requests found.
             </p>
             <Button
               variant="outline"
@@ -391,7 +392,7 @@ const TimeOffRequests = () => {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-2">
                         <Clock
                           size={16}
                           className="text-gray-500 dark:text-slate-400"
@@ -403,7 +404,7 @@ const TimeOffRequests = () => {
                           )}{" "}
                           {t("timeOffRequests.days")}
                         </span>
-                      </div>
+                      </div> */}
                     </div>
 
                     {request.reason && (
@@ -442,7 +443,7 @@ const TimeOffRequests = () => {
 
       {/* New Request Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 bg-opacity-50 dark:bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
